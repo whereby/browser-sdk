@@ -1,0 +1,51 @@
+{
+  "name": "@whereby.com/browser-sdk",
+  "version": "0.1.0",
+  "description": "Configurable web component for embedding Whereby video rooms in web applications",
+  "author": "Whereby AS",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/whereby/browser-sdk.git"
+  },
+  "browserslist": "> 0.5%, last 2 versions, not dead",
+  "source": "src/index.js",
+  "main": "dist/lib.cjs.js",
+  "module": "dist/lib.esm.js",
+  "type": "module",
+  "scripts": {
+    "prebuild": "rimraf dist",
+    "build": "rollup -c",
+    "build:storybook": "build-storybook",
+    "dev": "start-storybook -p 6006",
+    "test": "yarn test:lint && yarn test:unit",
+    "test:lint": "eslint src/",
+    "test:unit": "node --experimental-vm-modules node_modules/jest/bin/jest.js"
+  },
+  "devDependencies": {
+    "@babel/core": "^7.18.5",
+    "@rollup/plugin-node-resolve": "^13.3.0",
+    "@rollup/plugin-replace": "^4.0.0",
+    "@storybook/addon-actions": "^6.5.9",
+    "@storybook/addon-essentials": "^6.5.9",
+    "@storybook/addon-links": "^6.5.9",
+    "@storybook/builder-webpack4": "^6.5.9",
+    "@storybook/manager-webpack4": "^6.5.9",
+    "@storybook/web-components": "^6.5.9",
+    "babel-loader": "^8.2.5",
+    "eslint": "^8.18.0",
+    "eslint-plugin-jest": "^26.5.3",
+    "jest": "^28.1.1",
+    "jest-environment-jsdom": "^28.1.1",
+    "lit-html": "^2.2.6",
+    "prettier": "^2.7.1",
+    "rimraf": "^3.0.2",
+    "rollup": "^2.75.6",
+    "rollup-plugin-terser": "^7.0.2",
+    "storybook": "^6.5.9"
+  },
+  "dependencies": {
+    "@swc/helpers": "^0.3.13",
+    "heresy": "^1.0.4"
+  }
+}
