@@ -32,4 +32,4 @@ export default MyComponent
 
 **Note**
 
-Although we have just higlighted two combinations of how to load and use the web component, it should be possible to use this library with all the major frontend frameworks
+Although we have just higlighted two combinations of how to load and use the web component, it should be possible to use this library with all the major frontend frameworks.
