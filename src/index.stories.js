@@ -5,6 +5,7 @@ export default {
     title: "Examples/<whereby-embed>",
     argTypes: {
         audio: { control: "boolean" },
+        avatarUrl: { control: "text", description: "Image url to use for avatar" },
         background: { control: "boolean" },
         chat: { control: "boolean" },
         displayName: { control: "text", description: "The name to use for the local participant" },
@@ -30,6 +31,7 @@ const offOn = (arg) => (arg ? "on" : "off");
 
 const WherebyEmbed = ({
     audio,
+    avatarUrl,
     background,
     chat,
     displayName,
@@ -48,6 +50,7 @@ const WherebyEmbed = ({
 }) => {
     return html`<whereby-embed
         audio=${offOn(audio)}
+        avatarUrl=${avatarUrl}
         background=${offOn(background)}
         chat=${offOn(chat)}
         displayName=${displayName}
@@ -72,6 +75,7 @@ export const Primary = Template.bind({});
 
 Primary.args = {
     audio: true,
+    avatarUrl: "",
     background: true,
     chat: true,
     displayName: "Your name",

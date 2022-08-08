@@ -34,6 +34,7 @@ describe("@whereby/browser-sdk", () => {
                         "metadata",
                         "groups",
                         "virtualbackgroundurl",
+                        "avatarurl",
                         "audio",
                         "background",
                         "chat",

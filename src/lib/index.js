@@ -45,6 +45,7 @@ define("WherebyEmbed", {
         "metadata",
         "groups",
         "virtualBackgroundUrl",
+        "avatarUrl",
         ...boolAttrs,
     ].map((a) => a.toLowerCase()),
     onattributechanged({ attributeName, oldValue }) {
@@ -89,6 +90,7 @@ define("WherebyEmbed", {
     },
     render() {
         const {
+            avatarurl: avatarUrl,
             displayname: displayName,
             lang,
             metadata,
@@ -112,6 +114,7 @@ define("WherebyEmbed", {
             ...(metadata && { metadata: metadata }),
             ...(groups && { groups: groups }),
             ...(virtualBackgroundUrl && { virtualBackgroundUrl: virtualBackgroundUrl }),
+            ...(avatarUrl && { avatarUrl: avatarUrl }),
             // the original ?embed name was confusing, so we give minimal
             ...(minimal != null && { embed: minimal }),
             ...boolAttrs.reduce(

@@ -1,6 +1,6 @@
 {
   "name": "@whereby.com/browser-sdk",
-  "version": "1.4.0",
+  "version": "1.5.0",
   "description": "Configurable web component for embedding Whereby video rooms in web applications",
   "author": "Whereby AS",
   "license": "MIT",
