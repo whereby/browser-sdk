@@ -44,7 +44,7 @@ jobs:
                   AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
                   AWS_REGION: "es-west-1"
                   SOURCE_DIR: "dist/"
-                  DEST_DIR: "embed-test-deploy/"
+                  DEST_DIR: "embed/"
 
             - name: Invalidate cloudfront publication
-              run: aws cloudfront create-invalidation --distribution-id=E6H48QPJYYL39 --paths "/embed-test-deploy/*"
+              run: aws cloudfront create-invalidation --distribution-id=E6H48QPJYYL39 --paths "/embed/*"
