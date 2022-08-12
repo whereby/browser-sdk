@@ -1,0 +1,24 @@
+---
+name: Test
+on:
+    push:
+        branches:
+            - main
+    pull_request:
+        branches:
+            - main
+jobs:
+    test:
+        name: Test
+        concurrency: test_${{ github.head_ref }}
+        runs-on: ubuntu-latest
+
+        steps:
+            - name: Checkout source code
+              uses: actions/checkout@v2
+
+            - name: Build
+              uses: ./.github/actions/build
+
+            - name: Test
+              run: yarn test
