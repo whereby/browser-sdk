@@ -33,6 +33,7 @@ describe("@whereby/browser-sdk", () => {
                         "groups",
                         "lang",
                         "metadata",
+                        "groups",
                         "audio",
                         "background",
                         "chat",
@@ -55,6 +56,7 @@ describe("@whereby/browser-sdk", () => {
                         "personality",
                         "subgridlabels",
                         "lowdata",
+                        "breakout",
                     ],
                 })
             );

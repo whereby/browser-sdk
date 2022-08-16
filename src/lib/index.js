@@ -23,6 +23,7 @@ const boolAttrs = [
     "personality",
     "subgridLabels",
     "lowData",
+    "breakout",
 ];
 
 define("WherebyEmbed", {
@@ -35,7 +36,7 @@ define("WherebyEmbed", {
     ondisconnected() {
         window.removeEventListener("message", this);
     },
-    observedAttributes: ["displayName", "minimal", "room", "subdomain", "groups", "lang", "metadata", ...boolAttrs].map(
+    observedAttributes: ["displayName", "minimal", "room", "subdomain", "groups", "lang", "metadata", "groups", ...boolAttrs].map(
         (a) => a.toLowerCase()
     ),
     onattributechanged({ attributeName, oldValue }) {
