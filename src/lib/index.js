@@ -36,9 +36,17 @@ define("WherebyEmbed", {
     ondisconnected() {
         window.removeEventListener("message", this);
     },
-    observedAttributes: ["displayName", "minimal", "room", "subdomain", "groups", "lang", "metadata", "groups", ...boolAttrs].map(
-        (a) => a.toLowerCase()
-    ),
+    observedAttributes: [
+        "displayName",
+        "minimal",
+        "room",
+        "subdomain",
+        "lang",
+        "metadata",
+        "groups",
+        "virtualBackgroundUrl",
+        ...boolAttrs,
+    ].map((a) => a.toLowerCase()),
     onattributechanged({ attributeName, oldValue }) {
         if (["room", "subdomain"].includes(attributeName) && oldValue == null) return;
         this.render();
@@ -80,7 +88,15 @@ define("WherebyEmbed", {
         this.dispatchEvent(new CustomEvent(type, { detail }));
     },
     render() {
-        const { displayname: displayName, lang, metadata, minimal, room } = this;
+        const {
+            displayname: displayName,
+            lang,
+            metadata,
+            minimal,
+            room,
+            groups,
+            virtualbackgroundurl: virtualBackgroundUrl,
+        } = this;
         if (!room) return this.html`Whereby: Missing room attr.`;
         // Get subdomain from room URL, or use it specified
         let m = /https:\/\/([^.]+)\.whereby.com\/.+/.exec(room);
@@ -94,6 +110,8 @@ define("WherebyEmbed", {
             ...(displayName && { displayName }),
             ...(lang && { lang: lang }),
             ...(metadata && { metadata: metadata }),
+            ...(groups && { groups: groups }),
+            ...(virtualBackgroundUrl && { virtualBackgroundUrl: virtualBackgroundUrl }),
             // the original ?embed name was confusing, so we give minimal
             ...(minimal != null && { embed: minimal }),
             ...boolAttrs.reduce(

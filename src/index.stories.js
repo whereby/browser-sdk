@@ -1,23 +1,6 @@
 import { html } from "lit-html";
 import "./lib";
 
-/**
- 
- 
- 
-    
-    "embed",
-    
-    "locking",
-    "participantCount",
-    "settingsButton",
-    "pipButton",
-    "moreButton",
-    "personality",
-    "subgridLabels",
-    "topToolbar",
- */
-
 export default {
     title: "Examples/<whereby-embed>",
     argTypes: {
@@ -39,6 +22,7 @@ export default {
         screenshare: { control: "boolean" },
         topToolbar: { control: "boolean" },
         video: { control: "boolean" },
+        virtualBackgroundUrl: { control: "text", description: "Image url to use for virtual background" },
     },
 };
 
@@ -60,6 +44,7 @@ const WherebyEmbed = ({
     room,
     screenshare,
     video,
+    virtualBackgroundUrl,
 }) => {
     return html`<whereby-embed
         audio=${offOn(audio)}
@@ -76,6 +61,7 @@ const WherebyEmbed = ({
         recording=${offOn(recording)}
         screenshare=${offOn(screenshare)}
         video=${offOn(video)}
+        virtualBackgroundUrl=${virtualBackgroundUrl}
         room="${room}"
         style="height: 100vh"
     />`;
@@ -99,6 +85,7 @@ Primary.args = {
     room: process.env.STORYBOOK_ROOM,
     screenshare: true,
     video: true,
+    virtualBackgroundUrl: "",
 };
 
 Primary.parameters = {
