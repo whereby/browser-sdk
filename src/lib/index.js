@@ -66,20 +66,23 @@ define("WherebyEmbed", {
     },
 
     // Commands
-    toggleCamera(enabled) {
+    _postCommand(command, args = []) {
         if (this.iframe.current) {
             const url = new URL(this.room, `https://${this.subdomain}.whereby.com`);
-            this.iframe.current.contentWindow.postMessage({ command: "toggle_camera", args: [enabled] }, url.origin);
+            this.iframe.current.contentWindow.postMessage({ command, args }, url.origin);
         }
     },
+    startRecording() {
+        this._postCommand("start_recording");
+    },
+    stopRecording() {
+        this._postCommand("stop_recording");
+    },
+    toggleCamera(enabled) {
+        this._postCommand("toggle_camera", [enabled]);
+    },
     toggleMicrophone(enabled) {
-        if (this.iframe.current) {
-            const url = new URL(this.room, `https://${this.subdomain}.whereby.com`);
-            this.iframe.current.contentWindow.postMessage(
-                { command: "toggle_microphone", args: [enabled] },
-                url.origin
-            );
-        }
+        this._postCommand("toggle_microphone", [enabled]);
     },
 
     onmessage({ origin, data }) {
