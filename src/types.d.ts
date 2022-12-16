@@ -1,11 +1,16 @@
+interface AttrChanged {
+    attributeName: string;
+    oldValue: string | boolean;
+}
+
 interface element {
     observedAttributes?: string[];
-    onattributechanged?: Function;
-    onconnected?: Function;
-    ondisconnected?: Function;
-    oninit?: Function;
-    render: Function;
-    style?: Function;
+    onattributechanged?: (attrChanged: AttrChanged) => void;
+    onconnected?: () => void;
+    ondisconnected?: () => void;
+    oninit?: () => void;
+    render: () => void;
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     [x: string]: any;
 }
 
