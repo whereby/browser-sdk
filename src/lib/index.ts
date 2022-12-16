@@ -1,5 +1,33 @@
 import { define, ref } from "heresy";
 
+interface WherebyEmbedAttributes {
+    audio: string;
+    avatarUrl: string;
+    background: string;
+    chat: string;
+    displayName: string;
+    emptyRoomInvitation: string;
+    floatSelf: string;
+    help: string;
+    leaveButton: string;
+    logo: string;
+    people: string;
+    precallReview: string;
+    recording: string;
+    screenshare: string;
+    video: string;
+    virtualBackgroundUrl: string;
+    room: string;
+    style: { [key: string]: string };
+}
+declare global {
+    namespace JSX {
+        interface IntrinsicElements {
+            ["whereby-embed"]: Partial<WherebyEmbedAttributes>;
+        }
+    }
+}
+
 const boolAttrs = [
     "audio",
     "background",
@@ -49,7 +77,7 @@ define("WherebyEmbed", {
         "avatarUrl",
         ...boolAttrs,
     ].map((a) => a.toLowerCase()),
-    onattributechanged({ attributeName, oldValue }: { attributeName: string; oldValue: any }) {
+    onattributechanged({ attributeName, oldValue }: { attributeName: string; oldValue: string | boolean }) {
         if (["room", "subdomain"].includes(attributeName) && oldValue == null) return;
         this.render();
     },
@@ -89,7 +117,7 @@ define("WherebyEmbed", {
         this._postCommand("toggle_screenshare", [enabled]);
     },
 
-    onmessage({ origin, data }: { origin: string; data: any }) {
+    onmessage({ origin, data }: { origin: string; data: { type: string; payload: string } }) {
         const url = new URL(this.room, `https://${this.subdomain}.whereby.com`);
         if (origin !== url.origin) return;
         const { type, payload: detail } = data;
@@ -108,7 +136,7 @@ define("WherebyEmbed", {
         } = this;
         if (!room) return this.html`Whereby: Missing room attribute.`;
         // Get subdomain from room URL, or use it specified
-        let m = /https:\/\/([^.]+)\.whereby.com\/.+/.exec(room);
+        const m = /https:\/\/([^.]+)\.whereby.com\/.+/.exec(room);
         const subdomain = (m && m[1]) || this.subdomain;
         if (!subdomain) return this.html`Whereby: Missing subdomain attr.`;
         const url = new URL(room, `https://${subdomain}.whereby.com`);
@@ -117,11 +145,11 @@ define("WherebyEmbed", {
             we: "__SDK_VERSION__",
             iframeSource: subdomain,
             ...(displayName && { displayName }),
-            ...(lang && { lang: lang }),
-            ...(metadata && { metadata: metadata }),
-            ...(groups && { groups: groups }),
-            ...(virtualBackgroundUrl && { virtualBackgroundUrl: virtualBackgroundUrl }),
-            ...(avatarUrl && { avatarUrl: avatarUrl }),
+            ...(lang && { lang }),
+            ...(metadata && { metadata }),
+            ...(groups && { groups }),
+            ...(virtualBackgroundUrl && { virtualBackgroundUrl }),
+            ...(avatarUrl && { avatarUrl }),
             // the original ?embed name was confusing, so we give minimal
             ...(minimal != null && { embed: minimal }),
             ...boolAttrs.reduce(
@@ -134,12 +162,12 @@ define("WherebyEmbed", {
                 url.searchParams.set(k, v);
             }
         });
-        this.html`
-      <iframe
-        ref=${this.iframe}
-        src=${url}
-        allow="autoplay; camera; microphone; fullscreen; speaker; display-capture" />
-      `;
+        return this.html`
+        <iframe
+            ref=${this.iframe}
+            src=${url}
+            allow="autoplay; camera; microphone; fullscreen; speaker; display-capture" />
+        `;
     },
 });
 
