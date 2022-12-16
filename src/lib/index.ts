@@ -33,10 +33,10 @@ define("WherebyEmbed", {
         this.iframe = ref();
     },
     onconnected() {
-        window.addEventListener("message", this);
+        window.addEventListener("message", this.onmessage);
     },
     ondisconnected() {
-        window.removeEventListener("message", this);
+        window.removeEventListener("message", this.onmessage);
     },
     observedAttributes: [
         "displayName",
@@ -52,11 +52,11 @@ define("WherebyEmbed", {
         "title",
         ...boolAttrs,
     ].map((a) => a.toLowerCase()),
-    onattributechanged({ attributeName, oldValue }) {
+    onattributechanged({ attributeName, oldValue }: { attributeName: string; oldValue: any }) {
         if (["room", "subdomain"].includes(attributeName) && oldValue == null) return;
         this.render();
     },
-    style(self) {
+    style(self: string) {
         return `
     ${self} {
       display: block;
@@ -70,7 +70,7 @@ define("WherebyEmbed", {
     },
 
     // Commands
-    _postCommand(command, args = []) {
+    _postCommand(command: string, args = []) {
         if (this.iframe.current) {
             this.iframe.current.contentWindow.postMessage({ command, args }, this.roomUrl.origin);
         }
@@ -81,16 +81,10 @@ define("WherebyEmbed", {
     stopRecording() {
         this._postCommand("stop_recording");
     },
-    startStreaming() {
-        this._postCommand("start_streaming");
-    },
-    stopStreaming() {
-        this._postCommand("stop_streaming");
-    },
-    toggleCamera(enabled) {
+    toggleCamera(enabled: boolean) {
         this._postCommand("toggle_camera", [enabled]);
     },
-    toggleMicrophone(enabled) {
+    toggleMicrophone(enabled: boolean) {
         this._postCommand("toggle_microphone", [enabled]);
     },
     toggleScreenshare(enabled) {
@@ -100,8 +94,9 @@ define("WherebyEmbed", {
         this._postCommand("toggle_chat", [enabled]);
     },
 
-    onmessage({ origin, data }) {
-        if (!this.roomUrl || origin !== this.roomUrl.origin) return;
+    onmessage({ origin, data }: { origin: string; data: any }) {
+        const url = new URL(this.room, `https://${this.subdomain}.whereby.com`);
+        if (origin !== url.origin) return;
         const { type, payload: detail } = data;
         this.dispatchEvent(new CustomEvent(type, { detail }));
     },
@@ -118,16 +113,12 @@ define("WherebyEmbed", {
             virtualbackgroundurl: virtualBackgroundUrl,
             title,
         } = this;
-        let roomUrl, subdomain;
-
-        try {
-            ({ roomUrl, subdomain } = parseRoomUrlAndSubdomain(room, this.subdomain));
-        } catch (error) {
-            return this.html`Whereby: ${error.message}`;
-        }
-
-        this.roomUrl = roomUrl;
-
+        if (!room) return this.html`Whereby: Missing room attribute.`;
+        // Get subdomain from room URL, or use it specified
+        let m = /https:\/\/([^.]+)\.whereby.com\/.+/.exec(room);
+        const subdomain = (m && m[1]) || this.subdomain;
+        if (!subdomain) return this.html`Whereby: Missing subdomain attr.`;
+        const url = new URL(room, `https://${subdomain}.whereby.com`);
         Object.entries({
             jsApi: true,
             we: "__SDK_VERSION__",
@@ -147,8 +138,8 @@ define("WherebyEmbed", {
                 {}
             ),
         }).forEach(([k, v]) => {
-            if (!this.roomUrl.searchParams.has(k)) {
-                this.roomUrl.searchParams.set(k, v);
+            if (!url.searchParams.has(k) && typeof v === "string") {
+                url.searchParams.set(k, v);
             }
         });
         this.html`

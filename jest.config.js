@@ -1,5 +1,5 @@
 export default {
-    rootDir: "src",
+    preset: "ts-jest",
     testEnvironment: "jest-environment-node",
     transform: {},
 };

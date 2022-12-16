@@ -1,7 +1,28 @@
+import { Story, Meta } from "@storybook/web-components";
 import { html } from "lit-html";
 import { action } from "@storybook/addon-actions";
 
 import "./lib";
+
+interface WherebyEmbedAttributes {
+    audio: boolean;
+    avatarUrl: string;
+    background: boolean;
+    chat: boolean;
+    displayName: string;
+    emptyRoomInvitation: boolean;
+    floatSelf: boolean;
+    help: boolean;
+    leaveButton: boolean;
+    logo: boolean;
+    people: boolean;
+    precallReview: boolean;
+    recording: boolean;
+    room: string;
+    screenshare: boolean;
+    video: boolean;
+    virtualBackgroundUrl: string;
+}
 
 export default {
     title: "Examples/<whereby-embed>",
@@ -31,7 +52,7 @@ export default {
     },
 };
 
-const offOn = (arg) => (arg ? "on" : "off");
+const offOn = (arg: any) => (!!arg ? "on" : "off");
 
 const WherebyEmbed = ({
     audio,
@@ -54,34 +75,31 @@ const WherebyEmbed = ({
     style,
     video,
     virtualBackgroundUrl,
-}) => {
-    const el = document.createElement("whereby-embed");
-
-    el.setAttribute("audio", offOn(audio));
-    el.setAttribute("avatarUrl", avatarUrl);
-    el.setAttribute("background", offOn(background));
-    el.setAttribute("cameraAccess", offOn(cameraAccess));
-    el.setAttribute("chat", offOn(chat));
-    el.setAttribute("displayName", displayName);
-    el.setAttribute("emptyRoomInvitation", emptyRoomInvitation);
-    el.setAttribute("externalId", externalId);
-    el.setAttribute("floatSelf", offOn(floatSelf));
-    el.setAttribute("help", offOn(help));
-    el.setAttribute("leaveButton", offOn(leaveButton));
-    el.setAttribute("logo", offOn(logo));
-    el.setAttribute("people", offOn(people));
-    el.setAttribute("precallReview", offOn(precallReview));
-    el.setAttribute("recording", recording);
-    el.setAttribute("screenshare", offOn(screenshare));
-    el.setAttribute("video", offOn(video));
-    el.setAttribute("virtualBackgroundUrl", virtualBackgroundUrl);
-    el.setAttribute("room", room);
-    el.setAttribute("style", style);
-
-    return el;
+}: Partial<WherebyEmbedAttributes>) => {
+    return html`<whereby-embed
+        audio=${offOn(audio)}
+        avatarUrl=${avatarUrl}
+        background=${offOn(background)}
+        cameraAccess=${offOn(cameraAccess)}
+        chat=${offOn(chat)}
+        displayName=${displayName}
+        emptyRoomInvitation=${emptyRoomInvitation}
+        floatSelf=${offOn(floatSelf)}
+        help=${offOn(help)}
+        leaveButton=${offOn(leaveButton)}
+        logo=${offOn(logo)}
+        people=${offOn(people)}
+        precallReview=${offOn(precallReview)}
+        recording=${offOn(recording)}
+        screenshare=${offOn(screenshare)}
+        video=${offOn(video)}
+        virtualBackgroundUrl=${virtualBackgroundUrl}
+        room="${room}"
+        style="height: 100vh"
+    />`;
 };
 
-const Template = (args) => WherebyEmbed(args);
+const Template: Story<Partial<WherebyEmbedAttributes>> = (args) => WherebyEmbed(args);
 export const Primary = Template.bind({});
 
 Primary.args = {
@@ -108,7 +126,7 @@ Primary.args = {
 
 Primary.parameters = {
     docs: {
-        transformSource: (src) => {
+        transformSource: (src: any) => {
             return (src || "").replace(/><iframe(.+)$/, " />");
         },
     },
