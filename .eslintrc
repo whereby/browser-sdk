@@ -13,9 +13,10 @@
             "experimentalObjectRestSpread": true
         }
     },
-    "extends": ["eslint:recommended"],
+    "extends": ["eslint:recommended", "plugin:@typescript-eslint/recommended"],
     "plugins": ["jest"],
     "rules": {
-        "no-console": ["error", { "allow": ["warn", "error"] }]
+        "no-console": ["error", { "allow": ["warn", "error"] }],
+        "@typescript-eslint/no-namespace": "off"
     }
 }
