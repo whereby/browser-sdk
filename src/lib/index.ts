@@ -31,10 +31,10 @@ define("WherebyEmbed", {
         this.iframe = ref();
     },
     onconnected() {
-        window.addEventListener("message", this);
+        window.addEventListener("message", this.onmessage);
     },
     ondisconnected() {
-        window.removeEventListener("message", this);
+        window.removeEventListener("message", this.onmessage);
     },
     observedAttributes: [
         "displayName",
@@ -48,11 +48,11 @@ define("WherebyEmbed", {
         "avatarUrl",
         ...boolAttrs,
     ].map((a) => a.toLowerCase()),
-    onattributechanged({ attributeName, oldValue }) {
+    onattributechanged({ attributeName, oldValue }: { attributeName: string; oldValue: any }) {
         if (["room", "subdomain"].includes(attributeName) && oldValue == null) return;
         this.render();
     },
-    style(self) {
+    style(self: string) {
         return `
     ${self} {
       display: block;
@@ -66,7 +66,7 @@ define("WherebyEmbed", {
     },
 
     // Commands
-    _postCommand(command, args = []) {
+    _postCommand(command: string, args = []) {
         if (this.iframe.current) {
             const url = new URL(this.room, `https://${this.subdomain}.whereby.com`);
             this.iframe.current.contentWindow.postMessage({ command, args }, url.origin);
@@ -78,14 +78,14 @@ define("WherebyEmbed", {
     stopRecording() {
         this._postCommand("stop_recording");
     },
-    toggleCamera(enabled) {
+    toggleCamera(enabled: boolean) {
         this._postCommand("toggle_camera", [enabled]);
     },
-    toggleMicrophone(enabled) {
+    toggleMicrophone(enabled: boolean) {
         this._postCommand("toggle_microphone", [enabled]);
     },
 
-    onmessage({ origin, data }) {
+    onmessage({ origin, data }: { origin: string; data: any }) {
         const url = new URL(this.room, `https://${this.subdomain}.whereby.com`);
         if (origin !== url.origin) return;
         const { type, payload: detail } = data;
@@ -102,7 +102,7 @@ define("WherebyEmbed", {
             groups,
             virtualbackgroundurl: virtualBackgroundUrl,
         } = this;
-        if (!room) return this.html`Whereby: Missing room attr.`;
+        if (!room) return this.html`Whereby: Missing room attribute.`;
         // Get subdomain from room URL, or use it specified
         let m = /https:\/\/([^.]+)\.whereby.com\/.+/.exec(room);
         const subdomain = (m && m[1]) || this.subdomain;
@@ -126,7 +126,7 @@ define("WherebyEmbed", {
                 {}
             ),
         }).forEach(([k, v]) => {
-            if (!url.searchParams.has(k)) {
+            if (!url.searchParams.has(k) && typeof v === "string") {
                 url.searchParams.set(k, v);
             }
         });

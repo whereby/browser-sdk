@@ -1,5 +1,26 @@
+import { Story, Meta } from "@storybook/web-components";
 import { html } from "lit-html";
 import "./lib";
+
+interface WherebyEmbedAttributes {
+    audio: boolean;
+    avatarUrl: string;
+    background: boolean;
+    chat: boolean;
+    displayName: string;
+    emptyRoomInvitation: boolean;
+    floatSelf: boolean;
+    help: boolean;
+    leaveButton: boolean;
+    logo: boolean;
+    people: boolean;
+    precallReview: boolean;
+    recording: boolean;
+    room: string;
+    screenshare: boolean;
+    video: boolean;
+    virtualBackgroundUrl: string;
+}
 
 export default {
     title: "Examples/<whereby-embed>",
@@ -27,7 +48,7 @@ export default {
     },
 };
 
-const offOn = (arg) => (arg ? "on" : "off");
+const offOn = (arg: any) => (!!arg ? "on" : "off");
 
 const WherebyEmbed = ({
     audio,
@@ -47,7 +68,7 @@ const WherebyEmbed = ({
     screenshare,
     video,
     virtualBackgroundUrl,
-}) => {
+}: Partial<WherebyEmbedAttributes>) => {
     return html`<whereby-embed
         audio=${offOn(audio)}
         avatarUrl=${avatarUrl}
@@ -70,7 +91,7 @@ const WherebyEmbed = ({
     />`;
 };
 
-const Template = (args) => WherebyEmbed(args);
+const Template: Story<Partial<WherebyEmbedAttributes>> = (args) => WherebyEmbed(args);
 export const Primary = Template.bind({});
 
 Primary.args = {
@@ -94,7 +115,7 @@ Primary.args = {
 
 Primary.parameters = {
     docs: {
-        transformSource: (src) => {
+        transformSource: (src: any) => {
             return (src || "").replace(/><iframe(.+)$/, " />");
         },
     },
