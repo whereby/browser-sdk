@@ -1,6 +1,6 @@
 import { Story } from "@storybook/react";
 import React from "react";
-import "./lib";
+import "../lib";
 
 interface WherebyEmbedAttributes {
     audio: boolean;
@@ -23,7 +23,7 @@ interface WherebyEmbedAttributes {
 }
 
 export default {
-    title: "Examples/<whereby-embed>",
+    title: "Examples/Pre-built UI",
     argTypes: {
         audio: { control: "boolean" },
         avatarUrl: { control: "text", description: "Image url to use for avatar" },
@@ -96,9 +96,9 @@ const WherebyEmbed = ({
 };
 
 const Template: Story<Partial<WherebyEmbedAttributes>> = (args) => WherebyEmbed(args);
-export const Primary = Template.bind({});
+export const WherebyEmbedElement = Template.bind({});
 
-Primary.args = {
+WherebyEmbedElement.args = {
     audio: true,
     avatarUrl: "",
     background: true,
@@ -117,7 +117,7 @@ Primary.args = {
     virtualBackgroundUrl: "",
 };
 
-Primary.parameters = {
+WherebyEmbedElement.parameters = {
     docs: {
         transformSource: (src: string) => {
             return (src || "").replace(/><iframe(.+)$/, " />");
