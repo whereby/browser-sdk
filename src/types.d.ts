@@ -100,6 +100,8 @@ declare module "@whereby/jslib-commons/src/utils/ServerSocket" {
         displayName: string;
         id: string;
         streams: string[];
+        isAudioEnabled: boolean;
+        isVideoEnabled: boolean;
     }
 
     interface AudioEnabledEvent {
@@ -121,6 +123,11 @@ declare module "@whereby/jslib-commons/src/utils/ServerSocket" {
         selfId: string;
     }
 
+    interface VideoEnabledEvent {
+        clientId: string;
+        isVideoEnabled: boolean;
+    }
+
     interface SignalEvents {
         audio_enabled: AudioEnabledEvent;
         client_left: ClientLeftEvent;
@@ -128,6 +135,7 @@ declare module "@whereby/jslib-commons/src/utils/ServerSocket" {
         new_client: NewClientEvent;
         room_joined: RoomJoinedEvent;
         room_left: void;
+        video_enabled: VideoEnabledEvent;
     }
 
     interface IdentifyDeviceRequest {
@@ -142,6 +150,8 @@ declare module "@whereby/jslib-commons/src/utils/ServerSocket" {
     }
 
     interface SignalRequests {
+        enable_audio: { enabled: boolean };
+        enable_video: { enabled: boolean };
         identify_device: IdentifyDeviceRequest;
         join_room: JoinRoomRequest;
         leave_room: void;

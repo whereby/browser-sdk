@@ -56,11 +56,17 @@ type ParticipantAudioEnabledEvent = {
     isAudioEnabled: boolean;
 };
 
+type ParticipantVideoEnabledEvent = {
+    participantId: string;
+    isVideoEnabled: boolean;
+};
+
 interface RoomEventsMap {
     participant_audio_enabled: CustomEvent<ParticipantAudioEnabledEvent>;
     participant_joined: CustomEvent<ParticipantJoinedEvent>;
     participant_left: CustomEvent<ParticipantLeftEvent>;
     participant_stream_added: CustomEvent<ParticipantStreamAddedEvent>;
+    participant_video_enabled: CustomEvent<ParticipantVideoEnabledEvent>;
     room_joined: CustomEvent<RoomJoinedEvent>;
 }
 
@@ -159,6 +165,7 @@ export default class RoomConnection extends TypedEventTarget {
         this.signalSocket.on("new_client", this._handleNewClient.bind(this));
         this.signalSocket.on("client_left", this._handleClientLeft.bind(this));
         this.signalSocket.on("audio_enabled", this._handleClientAudioEnabled.bind(this));
+        this.signalSocket.on("video_enabled", this._handleClientVideoEnabled.bind(this));
     }
 
     private _handleNewClient({ client }: NewClientEvent) {
@@ -189,6 +196,18 @@ export default class RoomConnection extends TypedEventTarget {
         );
     }
 
+    private _handleClientVideoEnabled({ clientId, isVideoEnabled }: { clientId: string; isVideoEnabled: boolean }) {
+        const remoteParticipant = this.remoteParticipants.find((p) => p.id === clientId);
+        if (!remoteParticipant) {
+            return;
+        }
+        this.dispatchEvent(
+            new CustomEvent("participant_video_enabled", {
+                detail: { participantId: remoteParticipant.id, isVideoEnabled },
+            })
+        );
+    }
+
     private _handleRtcEvent<K extends keyof RtcEvents>(eventName: K, data: RtcEvents[K]) {
         this.logger.log(`Got RTC event ${eventName}`);
 
@@ -209,9 +228,7 @@ export default class RoomConnection extends TypedEventTarget {
             if (this.remoteParticipants.length) {
                 this._handleAcceptStreams(this.remoteParticipants);
             }
-        }
-
-        if (eventName === "stream_added") {
+        } else if (eventName === "stream_added") {
             const typedData = data as RtcStreamAddedPayload;
             this._handleStreamAdded(typedData);
         }
@@ -255,6 +272,10 @@ export default class RoomConnection extends TypedEventTarget {
             new CustomEvent("participant_stream_added", { detail: { participantId: clientId, stream, streamId } })
         );
     }
+
+    /**
+     * Public API
+     */
 
     async join(): Promise<void> {
         if (["connected", "connecting"].includes(this.roomConnectionState)) {
@@ -380,5 +401,29 @@ export default class RoomConnection extends TypedEventTarget {
                 resolve();
             });
         });
+    }
+
+    toggleCamera(enabled?: boolean): void {
+        const localVideoTrack = this.localStream?.getVideoTracks()[0];
+        if (!localVideoTrack) {
+            this.logger.log("Tried toggling non-existing video track");
+            return;
+        }
+        // TODO: Do stopOrResumeVideo
+        const newValue = enabled ?? !localVideoTrack.enabled;
+        localVideoTrack.enabled = newValue;
+        this.signalSocket.emit("enable_video", { enabled: newValue });
+    }
+
+    toggleMicrophone(enabled?: boolean): void {
+        const localAudioTrack = this.localStream?.getAudioTracks()[0];
+        if (!localAudioTrack) {
+            this.logger.log("Tried toggling non-existing audio track");
+            return;
+        }
+        // TODO: Do stopOrResumeAudio
+        const newValue = enabled ?? !localAudioTrack.enabled;
+        localAudioTrack.enabled = newValue;
+        this.signalSocket.emit("enable_audio", { enabled: newValue });
     }
 }
