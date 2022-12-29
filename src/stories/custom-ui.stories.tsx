@@ -11,13 +11,17 @@ const Template: Story = () => {
     const [roomName, setRoomName] = useState("");
 
     const VideoExperience = ({ roomName }: { roomName: string }) => {
-        const [{ localParticipant, remoteParticipants }] = useRoomConnection(roomName, {
+        const [state, actions] = useRoomConnection(roomName, {
             localMediaConstraints: {
                 audio: true,
                 video: true,
             },
             logger: console,
         });
+
+        const { localParticipant, remoteParticipants } = state;
+        const { toggleCamera, toggleMicrophone } = actions;
+
         return (
             <div style={{ minHeight: 400, backgroundColor: "pink" }}>
                 {[localParticipant, ...remoteParticipants].map((participant, i) => (
@@ -26,9 +30,22 @@ const Template: Story = () => {
                             <div
                                 key={participant.id}
                                 className="bouncingball"
-                                style={{ animationDelay: `${Math.random() * 1000}ms`, left: i * 145 }}
+                                style={{
+                                    animationDelay: `${Math.random() * 1000}ms`,
+                                    left: i * 145,
+                                    ...(participant.isAudioEnabled
+                                        ? {
+                                              border: "2px solid grey",
+                                          }
+                                        : null),
+                                    ...(!participant.isVideoEnabled
+                                        ? {
+                                              backgroundColor: "green",
+                                          }
+                                        : null),
+                                }}
                             >
-                                {participant.stream && (
+                                {participant.stream && participant.isVideoEnabled && (
                                     <VideoElement
                                         stream={participant.stream}
                                         style={{ width: "100%", height: "100%", objectFit: "cover" }}
@@ -38,6 +55,9 @@ const Template: Story = () => {
                         ) : null}
                     </>
                 ))}
+
+                <button onClick={() => toggleCamera()}>Toggle camera</button>
+                <button onClick={() => toggleMicrophone()}>Toggle microphone</button>
             </div>
         );
     };
