@@ -131,6 +131,7 @@ declare module "@whereby/jslib-commons/src/utils/ServerSocket" {
     interface SignalEvents {
         audio_enabled: AudioEnabledEvent;
         client_left: ClientLeftEvent;
+        connect: void;
         device_identified: void;
         new_client: NewClientEvent;
         room_joined: RoomJoinedEvent;
