@@ -277,7 +277,7 @@ export default class RoomConnection extends TypedEventTarget {
      * Public API
      */
 
-    async join(): Promise<void> {
+    async join() {
         if (["connected", "connecting"].includes(this.roomConnectionState)) {
             console.warn(`Trying to join room state is ${this.roomConnectionState}`);
             return;
@@ -338,51 +338,53 @@ export default class RoomConnection extends TypedEventTarget {
         const deviceCredentials = await this.credentialsService.getCredentials();
         this.signalSocket.connect();
 
-        // TODO: Clean up so we dont need to explicitly wait for socket connection
+        // TODO: Handle connection and failed connection properly
         setTimeout(() => {
+            this.logger.log("Connected to signal socket");
             this.signalSocket.emit("identify_device", { deviceCredentials });
-            this.signalSocket.once("device_identified", () => {
-                this.signalSocket.emit("join_room", {
-                    config: {
-                        isAudioEnabled: !!this.localStream?.getAudioTracks().find((t) => t.enabled),
-                        isVideoEnabled: !!this.localStream?.getVideoTracks().find((t) => t.enabled),
-                    },
-                    organizationId: organization.organizationId,
-                    roomName: this.roomUrl.pathname,
-                    displayName: "SDK",
-                });
-                this.signalSocket.once("room_joined", (res: SignalRoomJoinedEvent) => {
-                    const {
-                        selfId,
-                        room: { clients },
-                    } = res;
+        }, 2000);
 
-                    const localClient = clients.find((c) => c.id === selfId);
-                    if (!localClient) throw new Error("Missing local client");
-
-                    this.localParticipant = new LocalParticipant({ ...localClient, stream: this.localStream });
-                    this.remoteParticipants = clients
-                        .filter((c) => c.id !== selfId)
-                        .map((c) => new RemoteParticipant({ ...c, newJoiner: false }));
-
-                    // Accept remote streams if RTC manager has been initialized
-                    if (this.rtcManager) {
-                        this._handleAcceptStreams(this.remoteParticipants);
-                    }
-
-                    this.dispatchEvent(
-                        new CustomEvent("room_joined", {
-                            detail: {
-                                localParticipant: this.localParticipant,
-                                remoteParticipants: this.remoteParticipants,
-                            },
-                        })
-                    );
-                });
+        this.signalSocket.once("device_identified", () => {
+            this.signalSocket.emit("join_room", {
+                config: {
+                    isAudioEnabled: !!this.localStream?.getAudioTracks().find((t) => t.enabled),
+                    isVideoEnabled: !!this.localStream?.getVideoTracks().find((t) => t.enabled),
+                },
+                organizationId: organization.organizationId,
+                roomName: this.roomUrl.pathname,
+                displayName: "SDK",
             });
-        }, 1000);
+        });
 
-        return;
+        this.signalSocket.once("room_joined", (res: SignalRoomJoinedEvent) => {
+            const {
+                selfId,
+                room: { clients },
+            } = res;
+
+            const localClient = clients.find((c) => c.id === selfId);
+            if (!localClient) throw new Error("Missing local client");
+
+            this.localParticipant = new LocalParticipant({ ...localClient, stream: this.localStream });
+            this.remoteParticipants = clients
+                .filter((c) => c.id !== selfId)
+                .map((c) => new RemoteParticipant({ ...c, newJoiner: false }));
+
+            // Accept remote streams if RTC manager has been initialized
+            if (this.rtcManager) {
+                this._handleAcceptStreams(this.remoteParticipants);
+            }
+
+            this.roomConnectionState = "connected";
+            this.dispatchEvent(
+                new CustomEvent("room_joined", {
+                    detail: {
+                        localParticipant: this.localParticipant,
+                        remoteParticipants: this.remoteParticipants,
+                    },
+                })
+            );
+        });
     }
 
     leave(): Promise<void> {
