@@ -8,7 +8,7 @@ export default {
 
 const Template: Story = () => {
     const [isConnected, setIsConnected] = useState(false);
-    const [roomName, setRoomName] = useState("");
+    const [roomName, setRoomName] = useState(process.env.STORYBOOK_ROOM);
 
     const VideoExperience = ({ roomName }: { roomName: string }) => {
         const [state, actions] = useRoomConnection(roomName, {
