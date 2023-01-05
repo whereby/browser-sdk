@@ -28,9 +28,18 @@ interface RemoteParticipantData {
     streams: string[];
 }
 
+export type StreamState =
+    | "new_accept"
+    | "to_accept"
+    | "old_accept"
+    | "done_accept"
+    | "to_unaccept"
+    | "done_unaccept"
+    | "auto";
+
 interface Stream {
     id: string;
-    state: "new_accept" | "to_accept" | "done_accept" | "to_unaccept" | "done_unaccept" | "auto";
+    state: StreamState;
 }
 
 export class RemoteParticipant extends RoomParticipant {
@@ -49,6 +58,13 @@ export class RemoteParticipant extends RoomParticipant {
         this.newJoiner = newJoiner;
 
         this.streams = streams.map((streamId) => ({ id: streamId, state: newJoiner ? "new_accept" : "to_accept" }));
+    }
+
+    updateStreamState(streamId: string, state: StreamState) {
+        const stream = this.streams.find((s) => s.id === streamId);
+        if (stream) {
+            stream.state = state;
+        }
     }
 }
 
