@@ -78,8 +78,9 @@ declare module "@whereby/jslib-commons/src/webrtc/RtcManager" {
             shouldAddLocalVideo: boolean,
             streamId: string,
         }) => void;
-
         addNewStream: (streamId: string, stream: MediaStream, isAudioEnabled: boolean, isVideoEnabled: boolean) => void;
+        disconnect(streamId: string, activeBreakout: boolean): void;
+        shouldAcceptStreamsFromBothSides?: () => boolean;
     }
 }
 
