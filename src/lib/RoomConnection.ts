@@ -13,7 +13,7 @@ import {
     OrganizationServiceCache,
     RoomService,
 } from "@whereby/jslib-api";
-import { LocalParticipant, RemoteParticipant } from "./RoomParticipant";
+import { LocalParticipant, RemoteParticipant, StreamState } from "./RoomParticipant";
 
 import ServerSocket, {
     ClientLeftEvent,
@@ -235,19 +235,45 @@ export default class RoomConnection extends TypedEventTarget {
     }
 
     private _handleAcceptStreams(remoteParticipants: RemoteParticipant[]) {
+        if (!this.rtcManager) {
+            this.logger.log("Unable to accept streams, no rtc manager");
+            return;
+        }
+
+        const shouldAcceptNewClients = this.rtcManager.shouldAcceptStreamsFromBothSides?.();
+        const activeBreakout = false; // TODO: Remove this once breakout is implemented
+
         remoteParticipants.forEach((participant) => {
-            const { streams, id: participantId } = participant;
+            const { id: participantId, streams, newJoiner } = participant;
             streams.forEach((stream) => {
-                const { id: streamId, state } = stream;
-                if (state !== "done_accept") {
-                    //const newState = `${newJoiner && streamId === "0" ? "new" : "to"}_accept`
+                const { id: streamId, state: streamState } = stream;
+
+                // Determine the new state of the client
+                // TODO: Replace this with correct logic catering for breakouts etc
+                const shouldAcceptMedia = true;
+                let newState: StreamState | undefined = undefined;
+
+                if (shouldAcceptMedia && streamState !== "done_accept") {
+                    newState = `${newJoiner && streamId === "0" ? "new" : "to"}_accept`;
+                } else if (streamState !== "done_unaccept") {
+                    newState = `to_unaccept`;
+                }
+
+                if (newState === "to_accept" || (newState === "new_accept" && shouldAcceptNewClients)) {
                     this.logger.log(`Accepting stream ${streamId} from ${participantId}`);
                     this.rtcManager?.acceptNewStream({
                         streamId: streamId === "0" ? participantId : streamId,
                         clientId: participantId,
                         shouldAddLocalVideo: streamId === "0",
-                        activeBreakout: false,
+                        activeBreakout,
                     });
+                } else if (newState === "new_accept") {
+                    // do nothing - let this be marked as done_accept as the rtcManager
+                    // will trigger accept from other end
+                } else if (newState === "to_unaccept") {
+                    this.rtcManager?.disconnect(streamId === "0" ? participantId : streamId, activeBreakout);
+                } else {
+                    // done_accept
                 }
             });
         });
