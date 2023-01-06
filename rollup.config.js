@@ -13,6 +13,18 @@ const replaceValues = {
     },
 };
 
+function makeCdnFilename() {
+    const major = pkg.version.split(".")[0];
+    const preRelease = pkg.version.split("-")[1];
+    let tag = "";
+
+    if (preRelease) {
+        tag = `-${preRelease.split(".")[0]}`;
+    }
+
+    return `v${major}${tag}.js`;
+}
+
 export default [
     // Commonjs build of lib, to be used with bundlers
     {
@@ -41,7 +53,7 @@ export default [
         input: "src/lib/index.ts",
         output: {
             exports: "default",
-            file: `dist/v${pkg.version.split(".")[0]}.js`,
+            file: `dist/${makeCdnFilename()}`,
             format: "esm",
         },
         plugins: [nodeResolve(), commonjs(), json(), terser(), replace(replaceValues), typescript()],
