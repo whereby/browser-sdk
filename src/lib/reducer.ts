@@ -1,9 +1,11 @@
 import { LocalParticipant, RemoteParticipant } from "./RoomParticipant";
 
+type RemoteParticipantState = Omit<RemoteParticipant, "updateStreamState">;
+
 export interface RoomState {
     localParticipant?: LocalParticipant;
     roomConnectionStatus?: "connecting" | "connected" | "disconnected";
-    remoteParticipants: RemoteParticipant[];
+    remoteParticipants: RemoteParticipantState[];
 }
 
 type Action =
@@ -11,7 +13,7 @@ type Action =
           type: "ROOM_JOINED";
           payload: {
               localParticipant: LocalParticipant;
-              remoteParticipants: RemoteParticipant[];
+              remoteParticipants: RemoteParticipantState[];
           };
       }
     | {
@@ -24,7 +26,7 @@ type Action =
     | {
           type: "PARTICIPANT_JOINED";
           payload: {
-              paritipant: RemoteParticipant;
+              paritipant: RemoteParticipantState;
           };
       }
     | {
@@ -49,10 +51,10 @@ type Action =
       };
 
 function updateParticipant(
-    remoteParticipants: RemoteParticipant[],
+    remoteParticipants: RemoteParticipantState[],
     participantId: string,
-    updates: Partial<RemoteParticipant>
-): RemoteParticipant[] {
+    updates: Partial<RemoteParticipantState>
+): RemoteParticipantState[] {
     const existingParticipant = remoteParticipants.find((p) => p.id === participantId);
     if (!existingParticipant) {
         return remoteParticipants;
