@@ -11,10 +11,18 @@ export default function useRoomConnection(
     roomUrl: string,
     roomConnectionOptions: RoomConnectionOptions
 ): [state: RoomState, actions: RoomConnectionActions] {
-    const [roomConnection] = useState(new RoomConnection(roomUrl, roomConnectionOptions));
+    const [roomConnection, setRoomConnection] = useState<RoomConnection | null>(null);
     const [state, dispatch] = useReducer(reducer, { remoteParticipants: [] });
 
     useEffect(() => {
+        setRoomConnection(new RoomConnection(roomUrl, roomConnectionOptions));
+    }, [roomUrl]);
+
+    useEffect(() => {
+        if (!roomConnection) {
+            return;
+        }
+
         roomConnection.addEventListener("participant_audio_enabled", (e) => {
             const { participantId, isAudioEnabled } = e.detail;
             dispatch({ type: "PARTICIPANT_AUDIO_ENABLED", payload: { participantId, isAudioEnabled } });
@@ -50,16 +58,16 @@ export default function useRoomConnection(
         return () => {
             roomConnection.leave();
         };
-    }, [roomUrl]);
+    }, [roomConnection]);
 
     return [
         state,
         {
             toggleCamera: (enabled) => {
-                roomConnection.toggleCamera(enabled);
+                roomConnection?.toggleCamera(enabled);
             },
             toggleMicrophone: (enabled) => {
-                roomConnection.toggleMicrophone(enabled);
+                roomConnection?.toggleMicrophone(enabled);
             },
         },
     ];
