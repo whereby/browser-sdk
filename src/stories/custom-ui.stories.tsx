@@ -25,10 +25,9 @@ const Template: Story = () => {
         return (
             <div style={{ minHeight: 400, backgroundColor: "pink" }}>
                 {[localParticipant, ...remoteParticipants].map((participant, i) => (
-                    <>
+                    <div key={participant?.id || i}>
                         {participant ? (
                             <div
-                                key={participant.id}
                                 className="bouncingball"
                                 style={{
                                     animationDelay: `${Math.random() * 1000}ms`,
@@ -53,7 +52,7 @@ const Template: Story = () => {
                                 )}
                             </div>
                         ) : null}
-                    </>
+                    </div>
                 ))}
 
                 <button onClick={() => toggleCamera()}>Toggle camera</button>
@@ -64,14 +63,14 @@ const Template: Story = () => {
 
     return (
         <div>
-            {!isConnected ? (
+            {roomName && isConnected ? (
+                <VideoExperience roomName={roomName} />
+            ) : (
                 <div>
                     <label>Room name</label>
                     <input type="text" value={roomName} onChange={(e) => setRoomName(e.target.value)} />
                     <button onClick={() => setIsConnected(true)}>Connect</button>
                 </div>
-            ) : (
-                <VideoExperience roomName={roomName} />
             )}
         </div>
     );
