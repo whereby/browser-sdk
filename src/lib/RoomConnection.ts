@@ -21,9 +21,7 @@ import ServerSocket, {
     RoomJoinedEvent as SignalRoomJoinedEvent,
 } from "@whereby/jslib-commons/src/utils/ServerSocket";
 
-interface Logger {
-    log: (msg: string) => void;
-}
+type Logger = Pick<Console, "debug" | "error" | "log" | "warn">;
 
 export interface RoomConnectionOptions {
     displayName?: string; // Might not be needed at all
@@ -106,6 +104,10 @@ interface RoomEventTarget extends EventTarget {
     ): void;
 }
 
+const noop = () => {
+    return;
+};
+
 const TypedEventTarget = EventTarget as { new (): RoomEventTarget };
 export default class RoomConnection extends TypedEventTarget {
     public localParticipant: LocalParticipant | null = null;
@@ -131,9 +133,10 @@ export default class RoomConnection extends TypedEventTarget {
         super();
         this.roomUrl = new URL(roomUrl); // Throw if invalid Whereby room url
         this.logger = logger || {
-            log: () => {
-                return;
-            },
+            debug: noop,
+            error: noop,
+            log: noop,
+            warn: noop,
         };
         this.localStream = localStream;
         this.localMediaConstraints = localMediaConstraints;
@@ -209,28 +212,24 @@ export default class RoomConnection extends TypedEventTarget {
     }
 
     private _handleRtcEvent<K extends keyof RtcEvents>(eventName: K, data: RtcEvents[K]) {
-        this.logger.log(`Got RTC event ${eventName}`);
-
         if (eventName === "rtc_manager_created") {
-            const typedData = data as RtcManagerCreatedPayload;
-            this.rtcManager = typedData.rtcManager;
-
-            if (this.rtcManager && this.localStream) {
-                this.rtcManager.addNewStream(
-                    "0",
-                    this.localStream,
-                    !this.localStream?.getAudioTracks().find((t) => t.enabled),
-                    !this.localStream?.getVideoTracks().find((t) => t.enabled)
-                );
-            }
-
-            // Handle any existing remote participants
-            if (this.remoteParticipants.length) {
-                this._handleAcceptStreams(this.remoteParticipants);
-            }
+            return this._handleRtcManagerCreated(data as RtcManagerCreatedPayload);
         } else if (eventName === "stream_added") {
-            const typedData = data as RtcStreamAddedPayload;
-            this._handleStreamAdded(typedData);
+            return this._handleStreamAdded(data as RtcStreamAddedPayload);
+        } else {
+            this.logger.log(`Unhandled RTC event ${eventName}`);
+        }
+    }
+
+    private _handleRtcManagerCreated({ rtcManager }: RtcManagerCreatedPayload) {
+        this.rtcManager = rtcManager;
+        if (this.localStream) {
+            this.rtcManager?.addNewStream(
+                "0",
+                this.localStream,
+                !this.localStream?.getAudioTracks().find((t) => t.enabled),
+                !this.localStream?.getVideoTracks().find((t) => t.enabled)
+            );
         }
     }
 
@@ -242,24 +241,47 @@ export default class RoomConnection extends TypedEventTarget {
 
         const shouldAcceptNewClients = this.rtcManager.shouldAcceptStreamsFromBothSides?.();
         const activeBreakout = false; // TODO: Remove this once breakout is implemented
+        const myselfBroadcasting = false; // TODO: Remove once breakout is implemented
 
         remoteParticipants.forEach((participant) => {
             const { id: participantId, streams, newJoiner } = participant;
+
             streams.forEach((stream) => {
                 const { id: streamId, state: streamState } = stream;
-
-                // Determine the new state of the client
-                // TODO: Replace this with correct logic catering for breakouts etc
-                const shouldAcceptMedia = true;
                 let newState: StreamState | undefined = undefined;
 
-                if (shouldAcceptMedia && streamState !== "done_accept") {
-                    newState = `${newJoiner && streamId === "0" ? "new" : "to"}_accept`;
-                } else if (streamState !== "done_unaccept") {
-                    newState = `to_unaccept`;
+                // Determine the new state of the client, equivalent of "reactAcceptStreams"
+                // TODO: Replace this with correct logic catering for breakouts etc
+
+                // #region reactAcceptStreams
+                const isInSameRoomOrGroupOrClientBroadcasting = true; // TODO: Remove once breakout is implemented
+
+                if (isInSameRoomOrGroupOrClientBroadcasting) {
+                    if (streamState !== "done_accept") {
+                        newState = `${newJoiner && streamId === "0" ? "new" : "to"}_accept`;
+                    }
+                } else if (myselfBroadcasting) {
+                    if (streamState !== "done_accept") {
+                        newState = `${newJoiner && streamId === "0" ? "done" : "old"}_accept`;
+                    }
+                } else {
+                    if (streamState !== "done_unaccept") {
+                        newState = "to_unaccept";
+                    }
                 }
 
-                if (newState === "to_accept" || (newState === "new_accept" && shouldAcceptNewClients)) {
+                if (!newState) {
+                    return;
+                }
+
+                // #endregion
+
+                // #region doAcceptStreams
+                if (
+                    newState === "to_accept" ||
+                    (newState === "new_accept" && shouldAcceptNewClients) ||
+                    (newState === "old_accept" && !shouldAcceptNewClients)
+                ) {
                     this.logger.log(`Accepting stream ${streamId} from ${participantId}`);
                     this.rtcManager?.acceptNewStream({
                         streamId: streamId === "0" ? participantId : streamId,
@@ -267,27 +289,28 @@ export default class RoomConnection extends TypedEventTarget {
                         shouldAddLocalVideo: streamId === "0",
                         activeBreakout,
                     });
-                } else if (newState === "new_accept") {
+                } else if (newState === "new_accept" || newState === "old_accept") {
                     // do nothing - let this be marked as done_accept as the rtcManager
                     // will trigger accept from other end
                 } else if (newState === "to_unaccept") {
+                    this.logger.log(`Disconnecting stream ${streamId} from ${participantId}`);
                     this.rtcManager?.disconnect(streamId === "0" ? participantId : streamId, activeBreakout);
+                } else if (newState !== "done_accept") {
+                    this.logger.warn(`Stream state not handled: ${newState} for ${participantId}-${streamId}`);
+                    return;
                 } else {
                     // done_accept
                 }
+
+                // Update stream state
+                participant.updateStreamState(streamId, streamState.replace(/to_|new_|old_/, "done_") as StreamState);
+
+                // #endregion
             });
         });
     }
 
-    private _handleStreamAdded({
-        clientId,
-        stream,
-        streamId,
-    }: {
-        clientId: string;
-        stream: MediaStream;
-        streamId: string;
-    }) {
+    private _handleStreamAdded({ clientId, stream, streamId }: RtcStreamAddedPayload) {
         const remoteParticipant = this.remoteParticipants.find((p) => p.id === clientId);
         if (!remoteParticipant) {
             this.logger.log("WARN: Could not find participant for incoming stream");
@@ -362,7 +385,6 @@ export default class RoomConnection extends TypedEventTarget {
 
         // Identify device on signal connection
         const deviceCredentials = await this.credentialsService.getCredentials();
-        this.signalSocket.connect();
 
         // TODO: Handle connection and failed connection properly
         setTimeout(() => {
@@ -372,13 +394,20 @@ export default class RoomConnection extends TypedEventTarget {
 
         this.signalSocket.once("device_identified", () => {
             this.signalSocket.emit("join_room", {
+                avatarUrl: null,
                 config: {
                     isAudioEnabled: !!this.localStream?.getAudioTracks().find((t) => t.enabled),
                     isVideoEnabled: !!this.localStream?.getVideoTracks().find((t) => t.enabled),
                 },
-                organizationId: organization.organizationId,
-                roomName: this.roomUrl.pathname,
+                deviceCapabilities: { canScreenshare: true },
                 displayName: "SDK",
+                isCoLocated: false,
+                isDevicePermissionDenied: false,
+                kickFromOtherRooms: false,
+                organizationId: organization.organizationId,
+                roomKey: null,
+                roomName: this.roomUrl.pathname,
+                selfId: "",
             });
         });
 
