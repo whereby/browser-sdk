@@ -95,7 +95,7 @@ const WherebyEmbed = ({
                 video={offOn(video)}
                 virtualBackgroundUrl={virtualBackgroundUrl}
                 room={room}
-                style={{ height: "100vh" }}
+                style={{ height: "100vh", width: "100%" }}
             />
         </p>
     );
