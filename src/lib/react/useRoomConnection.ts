@@ -1,16 +1,21 @@
 import { useEffect, useReducer, useState } from "react";
 import RoomConnection, { RoomConnectionOptions } from "../RoomConnection";
 import reducer, { RoomState } from "../reducer";
+import VideoElement from "./VideoElement";
 
 interface RoomConnectionActions {
     toggleCamera(enabled?: boolean): void;
     toggleMicrophone(enabled?: boolean): void;
 }
 
+interface RoomConnectionComponents {
+    VideoView: typeof VideoElement;
+}
+
 export default function useRoomConnection(
     roomUrl: string,
     roomConnectionOptions: RoomConnectionOptions
-): [state: RoomState, actions: RoomConnectionActions] {
+): [state: RoomState, actions: RoomConnectionActions, components: RoomConnectionComponents] {
     const [roomConnection, setRoomConnection] = useState<RoomConnection | null>(null);
     const [state, dispatch] = useReducer(reducer, { remoteParticipants: [] });
 
@@ -69,6 +74,9 @@ export default function useRoomConnection(
             toggleMicrophone: (enabled) => {
                 roomConnection?.toggleMicrophone(enabled);
             },
+        },
+        {
+            VideoView: VideoElement,
         },
     ];
 }
