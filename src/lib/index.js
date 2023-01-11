@@ -84,6 +84,9 @@ define("WherebyEmbed", {
     toggleMicrophone(enabled) {
         this._postCommand("toggle_microphone", [enabled]);
     },
+    toggleScreenshare(enabled) {
+        this._postCommand("toggle_screenshare", [enabled]);
+    },
 
     onmessage({ origin, data }) {
         const url = new URL(this.room, `https://${this.subdomain}.whereby.com`);
