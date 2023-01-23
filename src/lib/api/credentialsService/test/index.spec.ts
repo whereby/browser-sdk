@@ -1,19 +1,24 @@
 // @ts-nocheck
-import sinon from "sinon";
+import ApiClient from "../../ApiClient";
 import Credentials from "../../Credentials";
 import CredentialsService, { events } from "../index";
 import LocalStorageStore from "../../modules/LocalStorageStore";
 import DeviceService from "../../deviceService/index";
 
+jest.mock("../../modules/LocalStorageStore")
+jest.mock("../../deviceService")
+
 describe("CredentialsService", () => {
+    let apiClient;
     let deviceService;
     let credentialsStore;
     let credentialsService;
     let storedCredentials;
 
     beforeEach(() => {
-        credentialsStore = sinon.createStubInstance(LocalStorageStore);
-        deviceService = sinon.createStubInstance(DeviceService);
+        apiClient = new ApiClient() as jest.Mocked<ApiClient>;
+        credentialsStore = new LocalStorageStore;
+        deviceService = new DeviceService({ apiClient });
         credentialsService = new CredentialsService({
             deviceService,
             credentialsStore,
@@ -23,20 +28,19 @@ describe("CredentialsService", () => {
 
     describe("getCurrentCredentials", () => {
         it("should load credentials from the store", async () => {
-            credentialsStore.loadOrDefault.resolves(storedCredentials.toJson());
+            credentialsStore.loadOrDefault.mockResolvedValue(storedCredentials.toJson());
 
             const result = await credentialsService.getCurrentCredentials();
 
-            expect(result).to.eql(storedCredentials);
+            expect(result).toEqual(storedCredentials);
         });
 
-        // eslint-disable-next-line mocha/no-identical-title
         it("should load credentials from the store", () => {
-            credentialsStore.loadOrDefault.resolves(storedCredentials.toJson());
+            credentialsStore.loadOrDefault.mockResolvedValue(storedCredentials.toJson());
 
             credentialsService.getCurrentCredentials();
 
-            return expect(credentialsStore.loadOrDefault).to.have.been.called();
+            return expect(credentialsStore.loadOrDefault).toBeCalled();
         });
     });
 
@@ -45,76 +49,74 @@ describe("CredentialsService", () => {
             let apiCredentials;
             beforeEach(() => {
                 apiCredentials = new Credentials("test-fetched-uuid", "test-fetched-hmac");
-                credentialsStore.loadOrDefault.resolves(null);
-                credentialsStore.save.resolves();
-                deviceService.getCredentials.resolves(apiCredentials);
+                credentialsStore.loadOrDefault.mockResolvedValue(null);
+                credentialsStore.save.mockResolvedValue();
+                deviceService.getCredentials.mockResolvedValue(apiCredentials);
             });
 
             it("should save the fetched credentials to credentialsStore", () => {
                 const promise = credentialsService.getCredentials();
 
                 return promise.then(() => {
-                    expect(credentialsStore.save).to.have.been.calledWithExactly(apiCredentials.toJson());
+                    expect(credentialsStore.save).toBeCalledWith(apiCredentials.toJson());
                 });
             });
 
-            it("should fetch new credentials from the API", () => {
-                const promise = credentialsService.getCredentials();
+            it("should fetch new credentials from the API", async () => {
+                await credentialsService.getCredentials();
 
-                return promise.then(() => {
-                    expect(deviceService.getCredentials.withArgs()).to.have.been.calledOnce();
-                });
+                expect(deviceService.getCredentials).toBeCalledTimes(1);
             });
 
             it("should resolve with the credentials from the api", async () => {
                 const result = await credentialsService.getCredentials();
 
-                return expect(result).to.eql(apiCredentials);
+                return expect(result).toEqual(apiCredentials);
             });
         });
 
         describe("when credentials are available in localStorage", () => {
             beforeEach(() => {
-                credentialsStore.loadOrDefault.resolves(storedCredentials);
-                deviceService.getCredentials.resolves(null);
+                credentialsStore.loadOrDefault.mockResolvedValue(storedCredentials);
+                deviceService.getCredentials.mockResolvedValue(null);
             });
 
             it("should not fetch new credentials from the api", () => {
                 const promise = credentialsService.getCredentials();
 
                 return promise.then(() => {
-                    expect(deviceService.getCredentials).to.not.have.been.called();
+                    expect(deviceService.getCredentials).not.toBeCalled();
                 });
             });
 
             it("should return credentials from localstorage", async () => {
                 const result = await credentialsService.getCredentials();
 
-                expect(result).to.eql(storedCredentials);
+                expect(result).toEqual(storedCredentials);
             });
         });
     });
 
     describe("saveCredentials", () => {
         it("should save the credentials to localStorage", () => {
-            credentialsStore.save.resolves();
+            credentialsStore.save.mockResolvedValue();
 
             const promise = credentialsService.saveCredentials(storedCredentials);
 
             return promise.then(() => {
-                expect(credentialsStore.save).to.have.been.calledWithExactly(storedCredentials.toJson());
+                expect(credentialsStore.save).toBeCalledWith(storedCredentials.toJson());
             });
         });
 
         it("should fire the CREDENTIALS_SAVED event", () => {
-            credentialsStore.save.resolves();
-            const callback = sinon.stub();
+            credentialsStore.save.mockResolvedValue();
+            const callback = jest.fn();
             credentialsService.on(events.CREDENTIALS_SAVED, callback);
 
             const promise = credentialsService.saveCredentials(storedCredentials);
 
             return promise.then(() => {
-                expect(callback).to.have.been.called();
+                expect(callback).toBeCalled();
             });
         });
     });
@@ -124,26 +126,26 @@ describe("CredentialsService", () => {
 
         describe("when no credentials are stored", () => {
             beforeEach(() => {
-                sinon.stub(console, "error");
-                credentialsStore.loadOrDefault.resolves(null);
+                jest.spyOn(console, "error").mockClear().mockImplementation();
+                credentialsStore.loadOrDefault.mockResolvedValue(null);
             });
 
             afterEach(() => {
-                console.error.restore(); // eslint-disable-line no-console
+                console.error.mockRestore(); // eslint-disable-line no-console
             });
 
             it("should call log an error", () => {
                 const promise = credentialsService.setUserId(mockUserId);
 
                 return promise.then(() => {
-                    expect(console.error).to.have.been.called(); // eslint-disable-line no-console
+                    expect(console.error).toBeCalled(); // eslint-disable-line no-console
                 });
             });
 
             it("should return undefined", async () => {
                 const result = await credentialsService.setUserId(mockUserId);
 
-                expect(result).to.eql(undefined);
+                expect(result).toBeUndefined();
             });
         });
 
@@ -152,24 +154,27 @@ describe("CredentialsService", () => {
                 let credentialsWithUserId;
                 beforeEach(() => {
                     credentialsWithUserId = new Credentials("some-uuid", "some-hmac", "some-userId");
-                    credentialsStore.loadOrDefault.resolves(credentialsWithUserId);
+                    credentialsStore.loadOrDefault.mockResolvedValue(credentialsWithUserId);
                 });
 
                 it("should return undefined", async () => {
                     const result = await credentialsService.setUserId(newUserId);
 
-                    expect(result).to.eql(undefined);
+                    expect(result).toBeUndefined();
                 });
 
-                it("should set the userId property in the credentials and store them when it has changed", () => {
-                    const expectedCredentials = Object.assign({}, credentialsWithUserId, { userId: newUserId });
+                it(
+                    "should set the userId property in the credentials and store them when it has changed",
+                    () => {
+                        const expectedCredentials = Object.assign({}, credentialsWithUserId, { userId: newUserId });
 
-                    const promise = credentialsService.setUserId(newUserId);
+                        const promise = credentialsService.setUserId(newUserId);
 
-                    return promise.then(() => {
-                        expect(credentialsStore.save).to.have.been.calledWithExactly(expectedCredentials);
-                    });
-                });
+                        return promise.then(() => {
+                            expect(credentialsStore.save).toBeCalledWith(expectedCredentials);
+                        });
+                    }
+                );
             });
         });
     });

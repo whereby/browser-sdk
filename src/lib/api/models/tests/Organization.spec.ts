@@ -1,6 +1,5 @@
 import Organization, { hasValue } from "../Organization";
 import Account from "../Account";
-import { expect } from "chai";
 
 const defaultOrganization = {};
 
@@ -79,81 +78,84 @@ describe("Organization", () => {
             const organization = new Organization(properties);
             const expectedObj = Object.assign({}, defaultOrganization, properties);
 
-            expect(organization).deep.equal(expectedObj);
+            expect(organization).toEqual(expectedObj);
         });
 
-        it("should instantiate an Account object if account information is provided", () => {
-            const permissions = {
-                rooms: {
-                    changeTypeToPersonal: { isAllowed: true, isSupported: true },
-                    changeTypeToPersonalXl: { isAllowed: true, isSupported: true },
-                    customize: { isAllowed: true, isSupported: true },
-                    customizeSelf: { isAllowed: true, isSupported: true },
-                    list: { isAllowed: true, isSupported: true },
-                    lock: { isAllowed: true, isSupported: true },
-                    unclaim: { isAllowed: true, isSupported: true },
-                    unclaimSelf: { isAllowed: true, isSupported: true },
-                },
-                subscriptions: {
-                    add: { isAllowed: true, isSupported: true },
-                    list: { isAllowed: true, isSupported: true },
-                    payLatestInvoice: { isAllowed: true, isSupported: true },
-                    updatePlan: { isAllowed: true, isSupported: true },
-                },
-                browserExtension: {
-                    install: { isAllowed: true, isSupported: true },
-                },
-            };
-            const properties = {
-                account: {
-                    basePlanId: "some-base-plan-id",
-                    isDeactivated: false,
-                    onTrialUntil: null,
-                    isOnTrial: false,
-                    trialStatus: "some-status",
-                    embeddedFreeTierStatus: null,
-                },
-                organizationId,
-                organizationName,
-                subdomain,
-                permissions,
-                limits,
-                logoImageUrl,
-                roomBackgroundImageUrl,
-                roomBackgroundThumbnailUrl,
-                roomKnockPageBackgroundImageUrl,
-                roomKnockPageBackgroundThumbnailUrl,
-                preferences,
-                onboardingSurvey,
-                type,
-            };
-            const organization = new Organization(properties);
+        it(
+            "should instantiate an Account object if account information is provided",
+            () => {
+                const permissions = {
+                    rooms: {
+                        changeTypeToPersonal: { isAllowed: true, isSupported: true },
+                        changeTypeToPersonalXl: { isAllowed: true, isSupported: true },
+                        customize: { isAllowed: true, isSupported: true },
+                        customizeSelf: { isAllowed: true, isSupported: true },
+                        list: { isAllowed: true, isSupported: true },
+                        lock: { isAllowed: true, isSupported: true },
+                        unclaim: { isAllowed: true, isSupported: true },
+                        unclaimSelf: { isAllowed: true, isSupported: true },
+                    },
+                    subscriptions: {
+                        add: { isAllowed: true, isSupported: true },
+                        list: { isAllowed: true, isSupported: true },
+                        payLatestInvoice: { isAllowed: true, isSupported: true },
+                        updatePlan: { isAllowed: true, isSupported: true },
+                    },
+                    browserExtension: {
+                        install: { isAllowed: true, isSupported: true },
+                    },
+                };
+                const properties = {
+                    account: {
+                        basePlanId: "some-base-plan-id",
+                        isDeactivated: false,
+                        onTrialUntil: null,
+                        isOnTrial: false,
+                        trialStatus: "some-status",
+                        embeddedFreeTierStatus: null,
+                    },
+                    organizationId,
+                    organizationName,
+                    subdomain,
+                    permissions,
+                    limits,
+                    logoImageUrl,
+                    roomBackgroundImageUrl,
+                    roomBackgroundThumbnailUrl,
+                    roomKnockPageBackgroundImageUrl,
+                    roomKnockPageBackgroundThumbnailUrl,
+                    preferences,
+                    onboardingSurvey,
+                    type,
+                };
+                const organization = new Organization(properties);
 
-            expect(organization.account).to.be.instanceOf(Account);
-        });
+                expect(organization.account).toBeInstanceOf(Account);
+            }
+        );
     });
 
     describe("GLOBAL_ORGANIZATION_ID", () => {
         it("should be 1", () => {
-            expect(Organization.GLOBAL_ORGANIZATION_ID).to.equal("1");
+            expect(Organization.GLOBAL_ORGANIZATION_ID).toBe("1");
         });
     });
 
     describe("hasValue", () => {
         it("should return true when value is 0", () => {
-            expect(hasValue(0)).to.equal(true);
+            expect(hasValue(0)).toBe(true);
         });
 
         it(`should return true when value is "0"`, () => {
-            expect(hasValue("0")).to.equal(true);
+            expect(hasValue("0")).toBe(true);
         });
 
         it("should return false when value is undefined", () => {
-            expect(hasValue(undefined)).to.equal(false);
+            expect(hasValue(undefined)).toBe(false);
         });
 
         it("should return false when value is null", () => {
-            expect(hasValue(null)).to.equal(false);
+            expect(hasValue(null)).toBe(false);
         });
     });
 });

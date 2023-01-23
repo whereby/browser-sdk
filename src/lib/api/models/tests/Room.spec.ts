@@ -28,7 +28,7 @@ describe("Room", () => {
     it("should return the default room if no room is passed in", () => {
         const room = new Room();
 
-        expect(room).deep.equal(defaultRoom);
+        expect(room).toEqual(defaultRoom);
     });
 
     it("should return a correctly extended room object", () => {
@@ -39,30 +39,36 @@ describe("Room", () => {
         const room = new Room(extendedObj);
         const expectedObj = Object.assign({}, defaultRoom, extendedObj);
 
-        expect(room).deep.equal(expectedObj);
+        expect(room).toEqual(expectedObj);
     });
 
-    it("should return a correctly extended room object without the invalid property", () => {
-        const room = new Room({
-            isClaimed: true,
-            someProperty: "someValue",
-        });
-        const expectedObj = Object.assign({}, defaultRoom, { isClaimed: true });
+    it(
+        "should return a correctly extended room object without the invalid property",
+        () => {
+            const room = new Room({
+                isClaimed: true,
+                someProperty: "someValue",
+            });
+            const expectedObj = Object.assign({}, defaultRoom, { isClaimed: true });
 
-        expect(room).deep.equal(expectedObj);
-    });
+            expect(room).toEqual(expectedObj);
+        }
+    );
 
-    it("should return the room with the meeting if the meeting is passed in", () => {
-        const meeting = new Meeting({
-            meetingId: "123",
-            startDate: new Date(),
-            endDate: new Date(),
-            roomName: "/some-room-name",
-            roomUrl: "some-room-url",
-        });
+    it(
+        "should return the room with the meeting if the meeting is passed in",
+        () => {
+            const meeting = new Meeting({
+                meetingId: "123",
+                startDate: new Date(),
+                endDate: new Date(),
+                roomName: "/some-room-name",
+                roomUrl: "some-room-url",
+            });
 
-        const room = new Room({ meeting });
+            const room = new Room({ meeting });
 
-        expect(room).deep.equal({ ...defaultRoom, meeting });
-    });
+            expect(room).toEqual({ ...defaultRoom, meeting });
+        }
+    );
 });

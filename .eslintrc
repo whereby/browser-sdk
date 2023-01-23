@@ -17,6 +17,7 @@
     "plugins": ["jest"],
     "rules": {
         "no-console": ["error", { "allow": ["warn", "error"] }],
+        "@typescript-eslint/ban-ts-comment": 0,
         "@typescript-eslint/no-namespace": "off"
     }
 }

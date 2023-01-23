@@ -1,5 +1,4 @@
 // @ts-nocheck
-import sinon from "sinon";
 import OrganizationApiClient from "../../OrganizationApiClient";
 import Response from "../../Response";
 import RoomService from "../index";
@@ -7,13 +6,15 @@ import Room from "../../models/Room";
 import Meeting from "../../models/Meeting";
 import { itShouldThrowIfInvalid, itShouldRejectIfApiClientRejects, toJson } from "../../test/helpers";
 
+jest.mock("../../OrganizationApiClient");
+
 describe("RoomService", () => {
     let organizationApiClient;
     let roomService;
     const defaultParams = { includeOnlyLegacyRoomType: "false" };
 
     beforeEach(() => {
-        organizationApiClient = sinon.createStubInstance(OrganizationApiClient);
+        organizationApiClient = new OrganizationApiClient();
         roomService = new RoomService({
             organizationApiClient,
         });
@@ -32,9 +33,12 @@ describe("RoomService", () => {
     describe("getRooms", () => {
         const url = "/room";
         const method = "GET";
+        const data = {
+            rooms: [{ roomName: "/first-room" }, { roomName: "/second-room" }],
+        };
 
         beforeEach(() => {
-            organizationApiClient.request.resolves();
+            organizationApiClient.request.mockResolvedValueOnce(new Response({ data }));
         });
 
         itShouldThrowIfInvalid("types", () => roomService.getRooms());
@@ -43,22 +47,18 @@ describe("RoomService", () => {
             it(`should call request with types = [${expectedTypes}]`, () => {
                 roomService.getRooms(args);
 
-                expect(organizationApiClient.request).to.have.been.calledWithExactly(url, {
+                expect(organizationApiClient.request).toBeCalledWith(url, {
                     method,
                     params: { types: expectedTypes, fields: "", ...defaultParams },
                 });
             });
 
             it("should transform data correctly", async () => {
-                const data = {
-                    rooms: [{ roomName: "/first-room" }, { roomName: "/second-room" }],
-                };
                 const expectedResult = [new Room({ roomName: "/first-room" }), new Room({ roomName: "/second-room" })];
-                organizationApiClient.request.resolves(new Response({ data }));
 
                 const result = await roomService.getRooms(args);
 
-                expect(result).to.eql(expectedResult);
+                expect(result).toEqual(expectedResult);
             });
         }
 
@@ -82,36 +82,34 @@ describe("RoomService", () => {
 
             expect(() => {
                 roomService.getRoom({ roomName: "room-should-begin-with-slash" });
-            }).to.throw(expectedException);
+            }).toThrowError(expectedException);
         });
 
-        it("should add the room name to the response body if response code is 2xx", () => {
+        it("should add the room name to the response body if response code is 2xx", async () => {
             const data = {
                 test: "data",
             };
             const expectedObj = new Room(Object.assign({}, data, { roomName }));
-            organizationApiClient.request
-                .withArgs(uri, { method, params: defaultParams })
-                .resolves(new Response({ data }));
+            organizationApiClient.request.mockResolvedValue(new Response({ data }));
 
-            return roomService.getRoom({ roomName }).then((result) => {
-                expect(result).to.eql(expectedObj);
-            });
+            const result = await roomService.getRoom({ roomName });
+
+            expect(result).toEqual(expectedObj);
         });
 
-        it("should call request with correct params when called with fields", () => {
+        it("should call request with correct params when called with fields", async () => {
             const fields = ["some-field"];
-            organizationApiClient.request.resolves({ data: {} });
+            organizationApiClient.request.mockResolvedValue({ data: {} });
 
-            return roomService.getRoom({ roomName, fields }).then(() => {
-                expect(organizationApiClient.request).to.have.been.calledWithExactly(uri, {
-                    method,
-                    params: { fields: fields[0], ...defaultParams },
-                });
+            await roomService.getRoom({ roomName, fields });
+
+            expect(organizationApiClient.request).toBeCalledWith(uri, {
+                method,
+                params: { fields: fields[0], ...defaultParams },
             });
         });
 
-        it("should set meeting if meeting is returned", () => {
+        it("should set meeting if meeting is returned", async () => {
             const mockMeeting = {
                 meetingId: "10",
                 roomName: "/some-room-name",
@@ -125,11 +123,11 @@ describe("RoomService", () => {
                 meeting: toJson(mockMeeting),
             };
             const expectedObj = new Room({ roomName, meeting: new Meeting(mockMeeting) });
-            organizationApiClient.request.resolves(new Response({ data }));
+            organizationApiClient.request.mockResolvedValue(new Response({ data }));
 
-            return roomService.getRoom({ roomName }).then((result) => {
-                expect(result).to.eql(expectedObj);
-            });
+            const result = await roomService.getRoom({ roomName });
+
+            expect(result).toEqual(expectedObj);
         });
 
         it("should set isBanned to true if response code is 400 with error Banned room", async () => {
@@ -137,30 +135,26 @@ describe("RoomService", () => {
                 roomName,
                 isBanned: true,
             });
-            organizationApiClient.request
-                .withArgs(uri, { method, params: { includeOnlyLegacyRoomType: "false" } })
-                .returns(
-                    Promise.reject(
-                        new Response({
-                            status: 400,
-                            data: {
-                                error: "Banned room",
-                            },
-                        })
-                    )
-                );
+            organizationApiClient.request.mockRejectedValue(
+                new Response({
+                    status: 400,
+                    data: {
+                        error: "Banned room",
+                    },
+                })
+            );
 
             const result = await roomService.getRoom({ roomName });
 
-            expect(result).to.eql(expectedObj);
+            expect(result).toEqual(expectedObj);
         });
 
         it("should return deduced room object if response code is 404", async () => {
-            organizationApiClient.request.rejects(new Response({ status: 404 }));
+            organizationApiClient.request.mockRejectedValue(new Response({ status: 404 }));
 
             const result = await roomService.getRoom({ roomName });
 
-            expect(result).to.eql(
+            expect(result).toEqual(
                 new Room({
                     roomName,
                     isClaimed: false,
@@ -174,22 +168,22 @@ describe("RoomService", () => {
             );
         });
 
-        it("should return error message if response code is not 2xx, 403 or 404 and data.error exists", () => {
+        it("should return error message if response code is not 2xx, 403 or 404 and data.error exists", async () => {
             const data = {
                 error: "Some error message",
             };
 
-            organizationApiClient.request.rejects(new Response({ status: 405, data }));
+            organizationApiClient.request.mockRejectedValue(new Response({ status: 405, data }));
 
-            return expect(roomService.getRoom({ roomName })).to.be.rejectedWith(Error, data.error);
+            await expect(roomService.getRoom({ roomName })).rejects.toThrow(data.error);
         });
 
-        it("should return error message if response code is not 2xx, 403 or 404 and data.error does not exist", () => {
+        it("should return error message if response code is not 2xx, 403 or 404 and data.error does not exist", async () => {
             const errorMessage = "Could not fetch room information";
 
-            organizationApiClient.request.rejects(new Response({ status: 505, data: null }));
+            organizationApiClient.request.mockRejectedValue(new Response({ status: 505, data: null }));
 
-            return expect(roomService.getRoom({ roomName })).to.be.rejectedWith(Error, errorMessage);
+            await expect(roomService.getRoom({ roomName })).rejects.toThrow(errorMessage);
         });
     });
 
@@ -200,15 +194,15 @@ describe("RoomService", () => {
         const roomName = "/some-random-name";
 
         beforeEach(() => {
-            organizationApiClient.request.resolves();
+            organizationApiClient.request.mockResolvedValue(new Response({}));
         });
 
         itShouldThrowIfInvalid("roomName", () => roomService.claimRoom({ type }));
         itShouldThrowIfInvalid("type", () => roomService.claimRoom({ roomName }));
 
-        it("should reject with error containing the error message if available", () => {
+        it("should reject with error containing the error message if available", async () => {
             const expectedError = "some error";
-            organizationApiClient.request.rejects(
+            organizationApiClient.request.mockRejectedValue(
                 new Response({
                     status: 500,
                     data: {
@@ -217,22 +211,18 @@ describe("RoomService", () => {
                 })
             );
 
-            const promise = roomService.claimRoom({ roomName, type });
-
-            return expect(promise).to.eventually.be.rejectedWith(Error, expectedError);
+            await expect(roomService.claimRoom({ roomName, type })).rejects.toThrow(expectedError);
         });
 
-        it("should reject with error 'Failed to claim room' if none is provided by the server", () => {
-            organizationApiClient.request.rejects(
+        it("should reject with error 'Failed to claim room' if none is provided by the server", async () => {
+            organizationApiClient.request.mockRejectedValue(
                 new Response({
                     status: 500,
                     data: {},
                 })
             );
 
-            const promise = roomService.claimRoom({ roomName, type });
-
-            return expect(promise).to.eventually.be.rejectedWith(Error, "Failed to claim room");
+            await expect(roomService.claimRoom({ roomName, type })).rejects.toThrow("Failed to claim room");
         });
 
         it("should call request with correct params if all arguments have been provided", () => {
@@ -240,7 +230,7 @@ describe("RoomService", () => {
 
             roomService.claimRoom({ roomName, type, isLocked });
 
-            expect(organizationApiClient.request).to.have.been.calledWithExactly(url, {
+            expect(organizationApiClient.request).toBeCalledWith(url, {
                 method,
                 data: { roomName, type, isLocked },
             });
@@ -249,7 +239,7 @@ describe("RoomService", () => {
         it("should call request with correct params if isLock is not provided", () => {
             roomService.claimRoom({ roomName, type });
 
-            expect(organizationApiClient.request).to.have.been.calledWithExactly(url, {
+            expect(organizationApiClient.request).toBeCalledWith(url, {
                 method,
                 data: { roomName, type },
             });
@@ -270,27 +260,22 @@ describe("RoomService", () => {
             }
         );
 
-        it("should call request the expected parameters", () => {
-            organizationApiClient.request.resolves(new Response({ status: 204 }));
+        it("should call request the expected parameters", async () => {
+            organizationApiClient.request.mockResolvedValue(new Response({ status: 204 }));
 
-            const promise = roomService.unclaimRoom(roomName);
+            await roomService.unclaimRoom(roomName);
 
-            return promise.then(() => {
-                expect(organizationApiClient.request).to.have.been.calledWithExactly(
-                    `/room/${encodeURIComponent(roomName.substring(1))}`,
-                    {
-                        method: "DELETE",
-                    }
-                );
+            expect(organizationApiClient.request).toBeCalledWith(`/room/${encodeURIComponent(roomName.substring(1))}`, {
+                method: "DELETE",
             });
         });
 
         it("should resolve with undefined on success", async () => {
-            organizationApiClient.request.resolves(new Response({ status: 204 }));
+            organizationApiClient.request.mockResolvedValue(new Response({ status: 204 }));
 
             const result = await roomService.unclaimRoom(roomName);
 
-            expect(result).to.eql(undefined);
+            expect(result).toBeUndefined();
         });
     });
 
@@ -301,20 +286,20 @@ describe("RoomService", () => {
         const newRoomName = "/bar";
         const data = { newRoomName };
 
-        it("should call apiClient.request with the expected parameters", () => {
-            organizationApiClient.request.resolves();
+        beforeEach(() => {
+            organizationApiClient.request.mockResolvedValue(new Response({}));
+        });
 
-            return roomService.renameRoom({ roomName, newRoomName }).then(() => {
-                expect(organizationApiClient.request).to.have.been.calledWithExactly(url, { method: "PUT", data });
-            });
+        it("should call apiClient.request with the expected parameters", async () => {
+            await roomService.renameRoom({ roomName, newRoomName });
+
+            expect(organizationApiClient.request).toBeCalledWith(url, { method: "PUT", data });
         });
 
         it("should be resolved if apiClient.request resolves", async () => {
-            organizationApiClient.request.resolves();
-
             const result = await roomService.renameRoom({ roomName, newRoomName });
 
-            expect(result).to.eql(undefined);
+            expect(result).toBeUndefined();
         });
 
         itShouldRejectIfApiClientRejects(
@@ -333,20 +318,20 @@ describe("RoomService", () => {
         const mode = "group";
         const data = { mode };
 
-        it("should call apiClient.request with the expected parameters", () => {
-            organizationApiClient.request.resolves();
+        beforeEach(() => {
+            organizationApiClient.request.mockResolvedValue(new Response({}));
+        });
 
-            return roomService.changeMode({ roomName, mode }).then(() => {
-                expect(organizationApiClient.request).to.have.been.calledWithExactly(url, { method, data });
-            });
+        it("should call apiClient.request with the expected parameters", async () => {
+            await roomService.changeMode({ roomName, mode });
+
+            expect(organizationApiClient.request).toBeCalledWith(url, { method, data });
         });
 
         it("should be resolved if apiClient.request resolves", async () => {
-            organizationApiClient.request.resolves();
-
             const result = await roomService.changeMode({ roomName, mode });
 
-            expect(result).to.eql(undefined);
+            expect(result).toBeUndefined();
         });
 
         itShouldRejectIfApiClientRejects(
@@ -381,28 +366,26 @@ describe("RoomService", () => {
         );
 
         describe("when roomKey is not provided", () => {
-            it("should call request the expected parameters", () => {
-                organizationApiClient.request.resolves(
+            it("should call request the expected parameters", async () => {
+                organizationApiClient.request.mockResolvedValue(
                     new Response({
                         status: 200,
                         data: roomPermissionsPayload,
                     })
                 );
 
-                const promise = roomService.getRoomPermissions(roomName);
+                await roomService.getRoomPermissions(roomName);
 
-                return promise.then(() => {
-                    expect(organizationApiClient.request).to.have.been.calledWithExactly(
-                        `/room/${encodeURIComponent(roomName.substring(1))}/permissions`,
-                        {
-                            method: "GET",
-                        }
-                    );
-                });
+                expect(organizationApiClient.request).toBeCalledWith(
+                    `/room/${encodeURIComponent(roomName.substring(1))}/permissions`,
+                    {
+                        method: "GET",
+                    }
+                );
             });
 
             it("should resolve with undefined on success", async () => {
-                organizationApiClient.request.resolves(
+                organizationApiClient.request.mockResolvedValue(
                     new Response({
                         status: 200,
                         data: roomPermissionsPayload,
@@ -411,7 +394,7 @@ describe("RoomService", () => {
 
                 const result = await roomService.getRoomPermissions(roomName);
 
-                expect(result).to.eql(roomPermissionsPayload);
+                expect(result).toEqual(roomPermissionsPayload);
             });
         });
 
@@ -422,31 +405,29 @@ describe("RoomService", () => {
                 roomKey = "some room key";
             });
 
-            it("should call request the expected parameters", () => {
-                organizationApiClient.request.resolves(
+            it("should call request the expected parameters", async () => {
+                organizationApiClient.request.mockResolvedValue(
                     new Response({
                         status: 200,
                         data: roomPermissionsPayload,
                     })
                 );
 
-                const promise = roomService.getRoomPermissions(roomName, { roomKey });
+                await roomService.getRoomPermissions(roomName, { roomKey });
 
-                return promise.then(() => {
-                    expect(organizationApiClient.request).to.have.been.calledWithExactly(
-                        `/room/${encodeURIComponent(roomName.substring(1))}/permissions`,
-                        {
-                            method: "GET",
-                            headers: {
-                                "X-Whereby-Room-Key": roomKey,
-                            },
-                        }
-                    );
-                });
+                expect(organizationApiClient.request).toBeCalledWith(
+                    `/room/${encodeURIComponent(roomName.substring(1))}/permissions`,
+                    {
+                        method: "GET",
+                        headers: {
+                            "X-Whereby-Room-Key": roomKey,
+                        },
+                    }
+                );
             });
 
             it("should resolve with undefined on success", async () => {
-                organizationApiClient.request.resolves(
+                organizationApiClient.request.mockResolvedValue(
                     new Response({
                         status: 200,
                         data: roomPermissionsPayload,
@@ -455,7 +436,7 @@ describe("RoomService", () => {
 
                 const result = await roomService.getRoomPermissions(roomName, { roomKey });
 
-                expect(result).to.eql(roomPermissionsPayload);
+                expect(result).toEqual(roomPermissionsPayload);
             });
         });
     });
@@ -481,53 +462,49 @@ describe("RoomService", () => {
         );
 
         describe("when valid payload provided", () => {
-            it("should call request the expected parameters", () => {
-                organizationApiClient.request.resolves(
+            it("should call request the expected parameters", async () => {
+                organizationApiClient.request.mockResolvedValue(
                     new Response({
                         status: 200,
                         data: {},
                     })
                 );
 
-                const promise = roomService.getRoomMetrics(roomMetricsPayload);
+                await roomService.getRoomMetrics(roomMetricsPayload);
 
-                return promise.then(() => {
-                    expect(organizationApiClient.request).to.have.been.calledWithExactly(
-                        `/room/${encodeURIComponent(roomName.substring(1))}/metrics`,
-                        {
-                            method: "GET",
-                            params: { metrics, from: undefined, to: undefined },
-                        }
-                    );
-                });
+                expect(organizationApiClient.request).toBeCalledWith(
+                    `/room/${encodeURIComponent(roomName.substring(1))}/metrics`,
+                    {
+                        method: "GET",
+                        params: { metrics, from: undefined, to: undefined },
+                    }
+                );
             });
 
-            it("should call request the expected parameters when including from and to", () => {
-                organizationApiClient.request.resolves(
+            it("should call request the expected parameters when including from and to", async () => {
+                organizationApiClient.request.mockResolvedValue(
                     new Response({
                         status: 200,
                         data: {},
                     })
                 );
-
                 const from = new Date().toISOString();
                 const to = new Date().toISOString();
-                const promise = roomService.getRoomMetrics({ ...roomMetricsPayload, from, to });
 
-                return promise.then(() => {
-                    expect(organizationApiClient.request).to.have.been.calledWithExactly(
-                        `/room/${encodeURIComponent(roomName.substring(1))}/metrics`,
-                        {
-                            method: "GET",
-                            params: { metrics, from, to },
-                        }
-                    );
-                });
+                await roomService.getRoomMetrics({ ...roomMetricsPayload, from, to });
+
+                expect(organizationApiClient.request).toBeCalledWith(
+                    `/room/${encodeURIComponent(roomName.substring(1))}/metrics`,
+                    {
+                        method: "GET",
+                        params: { metrics, from, to },
+                    }
+                );
             });
 
             it("should resolve with response data on success", async () => {
                 const responseData = Symbol();
-                organizationApiClient.request.resolves(
+                organizationApiClient.request.mockResolvedValue(
                     new Response({
                         status: 200,
                         data: responseData,
@@ -536,7 +513,7 @@ describe("RoomService", () => {
 
                 const result = await roomService.getRoomMetrics(roomMetricsPayload);
 
-                expect(result).to.eql(responseData);
+                expect(result).toEqual(responseData);
             });
         });
     });
@@ -552,25 +529,25 @@ describe("RoomService", () => {
         itShouldThrowIfInvalid("roomName", () => roomService.updatePreferences({ preferences }));
         itShouldThrowIfInvalid("preferences", () => roomService.updatePreferences({ roomName }));
 
-        it("should call apiClient.request with the expected parameters", () => {
+        it("should call apiClient.request with the expected parameters", async () => {
             const encodedDisplayName = encodeURIComponent(roomName.substring(1));
             const url = `/room/${encodedDisplayName}/preferences`;
-            organizationApiClient.request.resolves();
+            organizationApiClient.request.mockResolvedValue();
 
-            return roomService.updatePreferences({ roomName, preferences }).then(() => {
-                expect(organizationApiClient.request).to.have.been.calledWithExactly(url, {
-                    method: "PATCH",
-                    data: preferences,
-                });
+            await roomService.updatePreferences({ roomName, preferences });
+
+            expect(organizationApiClient.request).toBeCalledWith(url, {
+                method: "PATCH",
+                data: preferences,
             });
         });
 
         it("should be resolved if apiClient.request resolves", async () => {
-            organizationApiClient.request.resolves();
+            organizationApiClient.request.mockResolvedValue();
 
             const result = await roomService.updatePreferences({ roomName, preferences });
 
-            expect(result).to.eql(undefined);
+            expect(result).toBeUndefined();
         });
 
         itShouldRejectIfApiClientRejects(
@@ -592,25 +569,25 @@ describe("RoomService", () => {
         itShouldThrowIfInvalid("roomName", () => roomService.updateProtectedPreferences({ preferences }));
         itShouldThrowIfInvalid("preferences", () => roomService.updateProtectedPreferences({ roomName }));
 
-        it("should call apiClient.request with the expected parameters", () => {
+        it("should call apiClient.request with the expected parameters", async () => {
             const encodedDisplayName = encodeURIComponent(roomName.substring(1));
             const url = `/room/${encodedDisplayName}/protected-preferences`;
-            organizationApiClient.request.resolves();
+            organizationApiClient.request.mockResolvedValue();
 
-            return roomService.updateProtectedPreferences({ roomName, preferences }).then(() => {
-                expect(organizationApiClient.request).to.have.been.calledWithExactly(url, {
-                    method: "PATCH",
-                    data: preferences,
-                });
+            await roomService.updateProtectedPreferences({ roomName, preferences });
+
+            expect(organizationApiClient.request).toBeCalledWith(url, {
+                method: "PATCH",
+                data: preferences,
             });
         });
 
         it("should be resolved if apiClient.request resolves", async () => {
-            organizationApiClient.request.resolves();
+            organizationApiClient.request.mockResolvedValue();
 
             const result = await roomService.updateProtectedPreferences({ roomName, preferences });
 
-            expect(result).to.eql(undefined);
+            expect(result).toBeUndefined();
         });
 
         itShouldRejectIfApiClientRejects(
@@ -629,20 +606,20 @@ describe("RoomService", () => {
         const type = "personal";
         const data = { type };
 
-        it("should call apiClient.request with the expected parameters", () => {
-            organizationApiClient.request.resolves();
+        it("should call apiClient.request with the expected parameters", async () => {
+            organizationApiClient.request.mockResolvedValue();
 
-            return roomService.changeType({ roomName, type }).then(() => {
-                expect(organizationApiClient.request).to.have.been.calledWithExactly(url, { method, data });
-            });
+            await roomService.changeType({ roomName, type });
+
+            expect(organizationApiClient.request).toBeCalledWith(url, { method, data });
         });
 
         it("should be resolved if apiClient.request resolves", async () => {
-            organizationApiClient.request.resolves();
+            organizationApiClient.request.mockResolvedValue();
 
             const result = await roomService.changeType({ roomName, type });
 
-            expect(result).to.eql(undefined);
+            expect(result).toBeUndefined();
         });
 
         itShouldRejectIfApiClientRejects(
@@ -661,24 +638,24 @@ describe("RoomService", () => {
         itShouldThrowIfInvalid("roomName", () => roomService.getForestSocialImage({ count }));
         itShouldThrowIfInvalid("count", () => roomService.getForestSocialImage({ roomName }));
 
-        it("should call apiClient.request with the expected parameters", () => {
+        it("should call apiClient.request with the expected parameters", async () => {
             const encodedDisplayName = encodeURIComponent(roomName.substring(1));
             const url = `/room/${encodedDisplayName}/forest-social-image/${count}`;
-            organizationApiClient.request.resolves({ data: { imageUrl } });
+            organizationApiClient.request.mockResolvedValue({ data: { imageUrl } });
 
-            return roomService.getForestSocialImage({ roomName, count }).then(() => {
-                expect(organizationApiClient.request).to.have.been.calledWithExactly(url, {
-                    method: "GET",
-                });
+            await roomService.getForestSocialImage({ roomName, count });
+
+            expect(organizationApiClient.request).toBeCalledWith(url, {
+                method: "GET",
             });
         });
 
         it("should resolve with imageUrl if apiClient.request resolves", async () => {
-            organizationApiClient.request.resolves({ data: { imageUrl } });
+            organizationApiClient.request.mockResolvedValue({ data: { imageUrl } });
 
             const result = await roomService.getForestSocialImage({ roomName, count });
 
-            expect(result).to.eql(imageUrl);
+            expect(result).toEqual(imageUrl);
         });
 
         itShouldRejectIfApiClientRejects(
