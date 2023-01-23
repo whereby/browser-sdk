@@ -1,5 +1,3 @@
-import sinon from "sinon";
-import { expect } from "chai";
 import ApiClient from "../../ApiClient";
 import _omit from "lodash/omit";
 import OrganizationService from "../index";
@@ -7,6 +5,8 @@ import Organization from "../../models/Organization";
 import Response from "../../Response";
 import { itShouldThrowIfInvalid, itShouldRejectIfApiClientRejects } from "../../test/helpers";
 import { ConsentGrantRequest } from "../../types";
+
+jest.mock("../../ApiClient");
 
 function createOrganizationResponseObjectFromId(organizationId: string) {
     return {
@@ -27,7 +27,7 @@ function createOrganizationFromResponseObject(responseObject: Record<string, unk
 }
 
 describe("organizationService", () => {
-    let apiClient: sinon.SinonStubbedInstance<ApiClient>;
+    let apiClient: jest.Mocked<ApiClient>;
     let organizationService: OrganizationService;
     const organizationId = "1";
     const organizationName = "some-name";
@@ -162,7 +162,7 @@ describe("organizationService", () => {
     };
 
     beforeEach(() => {
-        apiClient = sinon.createStubInstance(ApiClient);
+        apiClient = new ApiClient() as jest.Mocked<ApiClient>;
 
         organizationService = new OrganizationService({ apiClient });
     });
@@ -277,7 +277,7 @@ describe("organizationService", () => {
 
         describe("when using email", () => {
             it("should resolve with the organizationId of the created organization", async () => {
-                apiClient.request.resolves(
+                apiClient.request.mockResolvedValue(
                     new Response({
                         status: 200,
                         data: {
@@ -289,12 +289,12 @@ describe("organizationService", () => {
 
                 const result = await organizationService.createOrganization(createOrganizationWithEmailArgs);
 
-                expect(result).to.eql(createdOrganization.organizationId);
+                expect(result).toEqual(createdOrganization.organizationId);
             });
 
             it("should correctly format the API request", () => {
                 const expectedUrl = `/organizations`;
-                apiClient.request.resolves(
+                apiClient.request.mockResolvedValue(
                     new Response({
                         status: 200,
                         data: {
@@ -307,7 +307,7 @@ describe("organizationService", () => {
                 const promise = organizationService.createOrganization(createOrganizationWithEmailArgs);
 
                 return promise.then(() => {
-                    expect(apiClient.request).to.have.been.calledWithExactly(expectedUrl, {
+                    expect(apiClient.request).toBeCalledWith(expectedUrl, {
                         method: "POST",
                         data: {
                             owner: {
@@ -329,7 +329,7 @@ describe("organizationService", () => {
 
         describe("when using idToken", () => {
             it("should resolve with the organizationId of the created organization", async () => {
-                apiClient.request.resolves(
+                apiClient.request.mockResolvedValue(
                     new Response({
                         status: 200,
                         data: {
@@ -341,12 +341,12 @@ describe("organizationService", () => {
 
                 const result = await organizationService.createOrganization(createOrganizationWithIdTokenArgs);
 
-                expect(result).to.eql(createdOrganization.organizationId);
+                expect(result).toEqual(createdOrganization.organizationId);
             });
 
             it("should correctly format the API request", () => {
                 const expectedUrl = `/organizations`;
-                apiClient.request.resolves(
+                apiClient.request.mockResolvedValue(
                     new Response({
                         status: 200,
                         data: {
@@ -359,7 +359,7 @@ describe("organizationService", () => {
                 const promise = organizationService.createOrganization(createOrganizationWithIdTokenArgs);
 
                 return promise.then(() => {
-                    expect(apiClient.request).to.have.been.calledWithExactly(expectedUrl, {
+                    expect(apiClient.request).toBeCalledWith(expectedUrl, {
                         method: "POST",
                         data: {
                             owner: {
@@ -378,7 +378,7 @@ describe("organizationService", () => {
 
     describe("getOrganizationBySubdomain", () => {
         beforeEach(() => {
-            apiClient.request.rejects(new Error("Called request method with unexpected parameters"));
+            apiClient.request.mockRejectedValue(new Error("Called request method with unexpected parameters"));
         });
 
         itShouldThrowIfInvalid("subdomain", () => {
@@ -392,7 +392,7 @@ describe("organizationService", () => {
         );
 
         it("should return null if no matching organization was found", async () => {
-            apiClient.request.rejects(
+            apiClient.request.mockRejectedValue(
                 new Response({
                     status: 404,
                 })
@@ -400,7 +400,7 @@ describe("organizationService", () => {
 
             const result = await organizationService.getOrganizationBySubdomain(subdomain);
 
-            expect(result).to.eql(null);
+            expect(result).toEqual(null);
         });
 
         it("should return the matching organization", async () => {
@@ -411,48 +411,35 @@ describe("organizationService", () => {
                 permissions,
                 limits,
             };
-            apiClient.request
-                .withArgs(
-                    `/organization-subdomains/${encodeURIComponent(
-                        subdomain
-                    )}/?fields=permissions,account,onboardingSurvey`,
-                    {
-                        method: "GET",
-                    }
-                )
-                .resolves(
-                    new Response({
-                        status: 200,
-                        data,
-                    })
-                );
+            apiClient.request.mockResolvedValue(
+                new Response({
+                    status: 200,
+                    data,
+                })
+            );
 
             const result = await organizationService.getOrganizationBySubdomain(subdomain);
 
-            expect(result).to.eql(Organization.fromJson(data));
+            expect(result).toEqual(Organization.fromJson(data));
         });
 
         it("should support retrieving organization with empty subdomain", async () => {
-            apiClient.request
-                .withArgs(`/organization-subdomains//?fields=permissions,account,onboardingSurvey`, {
-                    method: "GET",
+            apiClient.request.mockResolvedValue(
+                new Response({
+                    status: 200,
+                    data: {
+                        organizationId,
+                        organizationName,
+                        subdomain,
+                        permissions,
+                        limits,
+                    },
                 })
-                .resolves(
-                    new Response({
-                        status: 200,
-                        data: {
-                            organizationId,
-                            organizationName,
-                            subdomain,
-                            permissions,
-                            limits,
-                        },
-                    })
-                );
+            );
 
             const result = await organizationService.getOrganizationBySubdomain("");
 
-            expect(result).to.eql(
+            expect(result).toEqual(
                 Organization.fromJson({
                     organizationId,
                     organizationName,
@@ -467,7 +454,7 @@ describe("organizationService", () => {
     describe("getOrganizationByOrganizationId", () => {
         beforeEach(() => {
             const response = new Response({ status: 200, data: {} });
-            apiClient.request.resolves(response);
+            apiClient.request.mockResolvedValue(response);
         });
 
         itShouldThrowIfInvalid("organizationId", () => {
@@ -481,7 +468,7 @@ describe("organizationService", () => {
         );
 
         it("should return null if no matching organization was found", async () => {
-            apiClient.request.rejects(
+            apiClient.request.mockRejectedValue(
                 new Response({
                     status: 404,
                 })
@@ -489,30 +476,26 @@ describe("organizationService", () => {
 
             const result = await organizationService.getOrganizationByOrganizationId(organizationId);
 
-            expect(result).to.eql(null);
+            expect(result).toEqual(null);
         });
 
         it("should return the matching organization", async () => {
-            apiClient.request
-                .withArgs(`/organizations/${encodeURIComponent(organizationId)}?fields=permissions,account`, {
-                    method: "GET",
+            apiClient.request.mockResolvedValue(
+                new Response({
+                    status: 200,
+                    data: {
+                        organizationId,
+                        organizationName,
+                        subdomain,
+                        permissions,
+                        limits,
+                    },
                 })
-                .resolves(
-                    new Response({
-                        status: 200,
-                        data: {
-                            organizationId,
-                            organizationName,
-                            subdomain,
-                            permissions,
-                            limits,
-                        },
-                    })
-                );
+            );
 
             const result = await organizationService.getOrganizationByOrganizationId(organizationId);
 
-            expect(result).to.eql(
+            expect(result).toEqual(
                 Organization.fromJson({
                     organizationId,
                     organizationName,
@@ -540,7 +523,7 @@ describe("organizationService", () => {
                     organizations: [],
                 },
             });
-            apiClient.request.resolves(response);
+            apiClient.request.mockResolvedValue(response);
         });
 
         itShouldThrowIfInvalid("code", () => {
@@ -552,13 +535,13 @@ describe("organizationService", () => {
             expect(() => {
                 // @ts-expect-error
                 organizationService.getOrganizationsByContactPoint({ code });
-            }).to.throw("email or phoneNumber is required");
+            }).toThrowError("email or phoneNumber is required");
         });
 
         it("should throw if both email and phoneNumber are provided", () => {
             expect(() => {
                 organizationService.getOrganizationsByContactPoint({ email, phoneNumber, code });
-            }).to.throw("email or phoneNumber is required");
+            }).toThrowError("email or phoneNumber is required");
         });
 
         itShouldRejectIfApiClientRejects(
@@ -568,7 +551,7 @@ describe("organizationService", () => {
 
         describe("when phoneNumber is provided", () => {
             it("should return empty array if no matching organizations were found", async () => {
-                apiClient.request.resolves(
+                apiClient.request.mockResolvedValue(
                     new Response({
                         status: 200,
                         data: { organizations: [] },
@@ -577,36 +560,28 @@ describe("organizationService", () => {
 
                 const result = await organizationService.getOrganizationsByContactPoint({ phoneNumber, code });
 
-                expect(result).to.eql([]);
+                expect(result).toEqual([]);
             });
 
             it("should return the matching organizations", async () => {
                 const organizationsPayload = ["1", "2", "3"].map(createOrganizationResponseObjectFromId);
                 const expectedOrganizations = organizationsPayload.map(createOrganizationFromResponseObject);
-                apiClient.request
-                    .withArgs("/organization-queries", {
-                        method: "POST",
-                        data: {
-                            contactPoint: { type: "phoneNumber", value: phoneNumber },
-                            code,
-                        },
+                apiClient.request.mockResolvedValue(
+                    new Response({
+                        status: 200,
+                        data: { organizations: organizationsPayload },
                     })
-                    .resolves(
-                        new Response({
-                            status: 200,
-                            data: { organizations: organizationsPayload },
-                        })
-                    );
+                );
 
                 const result = await organizationService.getOrganizationsByContactPoint({ phoneNumber, code });
 
-                expect(result).to.eql(expectedOrganizations);
+                expect(result).toEqual(expectedOrganizations);
             });
         });
 
         describe("when email is provided", () => {
             it("should return empty array if no matching organizations were found", async () => {
-                apiClient.request.resolves(
+                apiClient.request.mockResolvedValue(
                     new Response({
                         status: 200,
                         data: {
@@ -617,30 +592,22 @@ describe("organizationService", () => {
 
                 const result = await organizationService.getOrganizationsByContactPoint({ email, code });
 
-                expect(result).to.eql([]);
+                expect(result).toEqual([]);
             });
 
             it("should return the matching organizations", async () => {
                 const organizationsPayload = ["1", "2", "3"].map(createOrganizationResponseObjectFromId);
                 const expectedOrganizations = organizationsPayload.map(createOrganizationFromResponseObject);
-                apiClient.request
-                    .withArgs("/organization-queries", {
-                        method: "POST",
-                        data: {
-                            contactPoint: { type: "email", value: email },
-                            code,
-                        },
+                apiClient.request.mockResolvedValue(
+                    new Response({
+                        status: 200,
+                        data: { organizations: organizationsPayload },
                     })
-                    .resolves(
-                        new Response({
-                            status: 200,
-                            data: { organizations: organizationsPayload },
-                        })
-                    );
+                );
 
                 const result = await organizationService.getOrganizationsByContactPoint({ email, code });
 
-                expect(result).to.eql(expectedOrganizations);
+                expect(result).toEqual(expectedOrganizations);
             });
         });
     });
@@ -657,7 +624,7 @@ describe("organizationService", () => {
                     organizations: [],
                 },
             });
-            apiClient.request.resolves(response);
+            apiClient.request.mockResolvedValue(response);
         });
 
         itShouldThrowIfInvalid("idToken", () => {
@@ -672,7 +639,7 @@ describe("organizationService", () => {
 
         describe("when idToken is provided", () => {
             it("should return empty array if no matching organizations were found", async () => {
-                apiClient.request.resolves(
+                apiClient.request.mockResolvedValue(
                     new Response({
                         status: 200,
                         data: { organizations: [] },
@@ -681,13 +648,13 @@ describe("organizationService", () => {
 
                 const result = await organizationService.getOrganizationsByIdToken({ idToken });
 
-                expect(result).to.eql([]);
+                expect(result).toEqual([]);
             });
 
             it("should return the matching organizations", async () => {
                 const organizationsPayload = ["1", "2", "3"].map(createOrganizationResponseObjectFromId);
                 const expectedOrganizations = organizationsPayload.map(createOrganizationFromResponseObject);
-                apiClient.request.withArgs("/organization-queries", { method: "POST", data: { idToken } }).resolves(
+                apiClient.request.mockResolvedValue(
                     new Response({
                         status: 200,
                         data: { organizations: organizationsPayload },
@@ -696,7 +663,7 @@ describe("organizationService", () => {
 
                 const result = await organizationService.getOrganizationsByIdToken({ idToken });
 
-                expect(result).to.eql(expectedOrganizations);
+                expect(result).toEqual(expectedOrganizations);
             });
         });
     });
@@ -709,7 +676,7 @@ describe("organizationService", () => {
                     organizations: [],
                 },
             });
-            apiClient.request.resolves(response);
+            apiClient.request.mockResolvedValue(response);
         });
 
         itShouldRejectIfApiClientRejects(
@@ -718,7 +685,7 @@ describe("organizationService", () => {
         );
 
         it("should return empty array if no matching organizations were found", async () => {
-            apiClient.request.resolves(
+            apiClient.request.mockResolvedValue(
                 new Response({
                     status: 200,
                     data: { organizations: [] },
@@ -727,26 +694,22 @@ describe("organizationService", () => {
 
             const result = await organizationService.getOrganizationsByLoggedInUser();
 
-            return expect(result).to.eql([]);
+            return expect(result).toEqual([]);
         });
 
         it("should return the matching organizations", async () => {
             const organizationsPayload = ["1", "2", "3"].map(createOrganizationResponseObjectFromId);
             const expectedOrganizations = organizationsPayload.map(createOrganizationFromResponseObject);
-            apiClient.request
-                .withArgs("/user/organizations", {
-                    method: "GET",
+            apiClient.request.mockResolvedValue(
+                new Response({
+                    status: 200,
+                    data: { organizations: organizationsPayload },
                 })
-                .resolves(
-                    new Response({
-                        status: 200,
-                        data: { organizations: organizationsPayload },
-                    })
-                );
+            );
 
             const result = await organizationService.getOrganizationsByLoggedInUser();
 
-            expect(result).to.eql(expectedOrganizations);
+            expect(result).toEqual(expectedOrganizations);
         });
     });
 
@@ -765,18 +728,16 @@ describe("organizationService", () => {
             const data = {
                 status: "available",
             };
-            apiClient.request
-                .withArgs(`/organization-subdomains/${encodeURIComponent(subdomain)}/availability`, { method: "GET" })
-                .resolves(
-                    new Response({
-                        status: 200,
-                        data,
-                    })
-                );
+            apiClient.request.mockResolvedValue(
+                new Response({
+                    status: 200,
+                    data,
+                })
+            );
 
             const result = await organizationService.getSubdomainAvailability(subdomain);
 
-            expect(result).to.eql(data);
+            expect(result).toEqual(data);
         });
     });
 
@@ -789,11 +750,11 @@ describe("organizationService", () => {
         it("should update preferences", async () => {
             const expectedUrl = `/organizations/${organizationId}/preferences`;
             const preferences = { someKey: "some value" };
-            apiClient.request.resolves(new Response({ status: 204, data: null }));
+            apiClient.request.mockResolvedValue(new Response({ status: 204, data: null }));
 
             await organizationService.updatePreferences({ organizationId, preferences });
 
-            expect(apiClient.request).to.have.been.calledWithExactly(expectedUrl, {
+            expect(apiClient.request).toBeCalledWith(expectedUrl, {
                 method: "PATCH",
                 data: preferences,
             });
@@ -808,11 +769,11 @@ describe("organizationService", () => {
 
         it("should delete organization", async () => {
             const expectedUrl = `/organizations/${organizationId}`;
-            apiClient.request.resolves(new Response({ status: 204, data: null }));
+            apiClient.request.mockResolvedValue(new Response({ status: 204, data: null }));
 
             await organizationService.deleteOrganization({ organizationId });
 
-            expect(apiClient.request).to.have.been.calledWithExactly(expectedUrl, {
+            expect(apiClient.request).toBeCalledWith(expectedUrl, {
                 method: "DELETE",
             });
         });

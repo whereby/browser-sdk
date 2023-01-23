@@ -1,9 +1,11 @@
 import assert from "assert";
 import axios, { AxiosError, AxiosRequestConfig, AxiosResponse } from "axios";
-import Response from "./Response";
+import Response, { ErrorResponseObject } from "./Response";
 import { assertString } from "./parameterAssertUtils";
 
-export type HttpClientRequestConfig = AxiosRequestConfig;
+export type HttpClientRequestConfig =
+    | AxiosRequestConfig
+    | { [key: string]: any };
 
 export interface IHttpClient {
     request(url: string, options: HttpClientRequestConfig): Promise<Response>;
@@ -75,7 +77,7 @@ export default class HttpClient implements IHttpClient {
                     throw new Error("Could not make the request.");
                 }
 
-                const { data, headers, status, statusText, config } = responseObject;
+                const { data, headers, status, statusText, config } = responseObject as ErrorResponseObject;
                 const requestUrl =
                     config && config.url ? _getAbsoluteUrl({ baseUrl: config.baseURL, url: config.url }) : null;
 
