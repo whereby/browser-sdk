@@ -12,7 +12,8 @@ import {
     OrganizationService,
     OrganizationServiceCache,
     RoomService,
-} from "@whereby/jslib-api";
+} from "./api";
+
 import { LocalParticipant, RemoteParticipant, StreamState } from "./RoomParticipant";
 
 import ServerSocket, {
