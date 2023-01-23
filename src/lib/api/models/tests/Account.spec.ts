@@ -1,5 +1,3 @@
-import { expect } from "chai";
-
 import Account from "../Account";
 import EmbeddedFreeTierStatus from "../account/EmbeddedFreeTierStatus";
 
@@ -18,6 +16,15 @@ describe("Account", () => {
                     totalMinutesLimit: 1000,
                     totalMinutesUsed: 700,
                 };
+                const embeddedFreeTierStatusFromJson = EmbeddedFreeTierStatus.fromJson(embeddedFreeTierStatus);
+                const expectedAccount = new Account({
+                    basePlanId,
+                    isDeactivated,
+                    isOnTrial,
+                    onTrialUntil: new Date(onTrialUntil),
+                    trialStatus,
+                    embeddedFreeTierStatus: embeddedFreeTierStatusFromJson,
+                });
 
                 const result = Account.fromJson({
                     basePlanId,
@@ -28,19 +35,15 @@ describe("Account", () => {
                     embeddedFreeTierStatus,
                 });
 
-                // @ts-ignore
-                expect(result)
-                    .to.be.an.instanceOf(Account)
-                    .and.to.deep.equal(
-                        new Account({
-                            basePlanId,
-                            isDeactivated,
-                            isOnTrial,
-                            onTrialUntil: new Date(onTrialUntil),
-                            trialStatus,
-                            embeddedFreeTierStatus: EmbeddedFreeTierStatus.fromJson(embeddedFreeTierStatus),
-                        })
-                    );
+                expect(result).toBeInstanceOf(Account);
+                expect(result.basePlanId).toEqual(expectedAccount.basePlanId);
+                expect(result.isDeactivated).toEqual(expectedAccount.isDeactivated);
+                expect(result.isOnTrial).toEqual(expectedAccount.isOnTrial);
+                expect(result.onTrialUntil).toEqual(expectedAccount.onTrialUntil);
+                expect(result.trialStatus).toEqual(expectedAccount.trialStatus);
+                expect(JSON.stringify(result.embeddedFreeTierStatus)).toEqual(
+                    JSON.stringify(embeddedFreeTierStatusFromJson)
+                );
             });
         });
 
@@ -51,6 +54,14 @@ describe("Account", () => {
                 const isOnTrial = true;
                 const onTrialUntil = "09-02-2022";
                 const trialStatus = "some-status";
+                const expectedAccount = new Account({
+                    basePlanId,
+                    isDeactivated,
+                    isOnTrial,
+                    onTrialUntil: new Date(onTrialUntil),
+                    trialStatus,
+                    embeddedFreeTierStatus: null,
+                });
 
                 const result = Account.fromJson({
                     basePlanId,
@@ -61,18 +72,13 @@ describe("Account", () => {
                 });
 
                 // @ts-ignore
-                expect(result)
-                    .to.be.an.instanceOf(Account)
-                    .and.to.deep.equal(
-                        new Account({
-                            basePlanId,
-                            isDeactivated,
-                            isOnTrial,
-                            onTrialUntil: new Date(onTrialUntil),
-                            trialStatus,
-                            embeddedFreeTierStatus: null,
-                        })
-                    );
+                expect(result).toBeInstanceOf(Account);
+                expect(result.basePlanId).toEqual(expectedAccount.basePlanId);
+                expect(result.isDeactivated).toEqual(expectedAccount.isDeactivated);
+                expect(result.isOnTrial).toEqual(expectedAccount.isOnTrial);
+                expect(result.onTrialUntil).toEqual(expectedAccount.onTrialUntil);
+                expect(result.trialStatus).toEqual(expectedAccount.trialStatus);
+                expect(result.embeddedFreeTierStatus).toEqual(null);
             });
         });
 
@@ -88,6 +94,15 @@ describe("Account", () => {
                     totalMinutesLimit: 1000,
                     totalMinutesUsed: 700,
                 };
+                const embeddedFreeTierStatusFromJson = EmbeddedFreeTierStatus.fromJson(embeddedFreeTierStatus);
+                const expectedAccount = new Account({
+                    basePlanId: null,
+                    isDeactivated,
+                    isOnTrial,
+                    onTrialUntil: new Date(onTrialUntil),
+                    trialStatus,
+                    embeddedFreeTierStatus: embeddedFreeTierStatusFromJson,
+                });
 
                 const result = Account.fromJson({
                     embeddedFreeTierStatus,
@@ -98,18 +113,15 @@ describe("Account", () => {
                 });
 
                 // @ts-ignore
-                expect(result)
-                    .to.be.an.instanceOf(Account)
-                    .and.to.deep.equal(
-                        new Account({
-                            basePlanId: null,
-                            isDeactivated,
-                            isOnTrial,
-                            onTrialUntil: new Date(onTrialUntil),
-                            trialStatus,
-                            embeddedFreeTierStatus: EmbeddedFreeTierStatus.fromJson(embeddedFreeTierStatus),
-                        })
-                    );
+                expect(result).toBeInstanceOf(Account);
+                expect(result.basePlanId).toEqual(expectedAccount.basePlanId);
+                expect(result.isDeactivated).toEqual(expectedAccount.isDeactivated);
+                expect(result.isOnTrial).toEqual(expectedAccount.isOnTrial);
+                expect(result.onTrialUntil).toEqual(expectedAccount.onTrialUntil);
+                expect(result.trialStatus).toEqual(expectedAccount.trialStatus);
+                expect(JSON.stringify(result.embeddedFreeTierStatus)).toEqual(
+                    JSON.stringify(embeddedFreeTierStatusFromJson)
+                );
             });
         });
     });

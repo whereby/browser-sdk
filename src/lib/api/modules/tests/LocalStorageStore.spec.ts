@@ -1,42 +1,21 @@
-import sinon from "sinon";
 import LocalStorageStore from "../LocalStorageStore";
 import { itShouldThrowIfInvalid } from "../../test/helpers";
-import { expect } from "chai";
+import DummyStore from "./__mocks__/storage";
 
-class DummyStore implements Storage {
-    [name: string]: unknown;
-    length: number;
-
-    constructor() {
-        this.length = 0;
-    }
-    clear(): void {
-        throw new Error("Method not implemented.");
-    }
-    // eslint-disable-next-line @typescript-eslint/no-unused-vars
-    getItem(_key: string): string | null {
-        return "{}";
-    }
-    key(): string | null {
-        throw new Error("Method not implemented.");
-    }
-    removeItem(): void {
-        throw new Error("Method not implemented.");
-    }
-    setItem(): void {
-        // NOP
-    }
-}
+jest.mock("./__mocks__/storage");
 
 describe("LocalStorageStore", () => {
     const storeName = "myStore";
     let credentialsStore: LocalStorageStore;
-    let localStorage: sinon.SinonStubbedInstance<DummyStore>;
+    let localStorage: jest.Mocked<DummyStore>;
 
     beforeEach(() => {
-        localStorage = sinon.createStubInstance(DummyStore);
-
+        localStorage = new DummyStore() as jest.Mocked<DummyStore>;
         credentialsStore = new LocalStorageStore(storeName, localStorage);
+    });
+
+    afterEach(() => {
+        jest.clearAllMocks();
     });
 
     describe("constructor", () => {
@@ -49,29 +28,39 @@ describe("LocalStorageStore", () => {
     describe("loadOrDefault", () => {
         it("should resolve with the stored object if available", async () => {
             const savedValue = { mrT: "I pitty the fool" };
-            localStorage.getItem.withArgs(storeName).returns(JSON.stringify(savedValue));
+            localStorage.getItem.mockImplementation((key: string) => {
+                if (key === storeName) {
+                    return JSON.stringify(savedValue);
+                } else {
+                    return null;
+                }
+            });
 
             const result = await credentialsStore.loadOrDefault({});
 
-            expect(result).to.eql(savedValue);
+            expect(result).toEqual(savedValue);
         });
 
         it("should resolve with the default value if the stored object cannot be retrieved", async () => {
             const defaultValue = { mrT: "I pitty the fool" };
-            localStorage.getItem.withArgs(storeName).returns("This is not valid json");
+            localStorage.getItem.mockImplementation((key: string) => {
+                if (key === storeName) {
+                    return "This is not valid json";
+                } else {
+                    return null;
+                }
+            });
 
             const result = await credentialsStore.loadOrDefault(defaultValue);
 
-            expect(result).to.eql(defaultValue);
+            expect(result).toEqual(defaultValue);
         });
 
         it("should resolve with the default value if no object has been stored", async () => {
             const defaultValue = { mrT: "I pitty the fool" };
-            localStorage.getItem.returns(null);
-
+            localStorage.getItem.mockReturnValue(null);
             const result = await credentialsStore.loadOrDefault(defaultValue);
-
-            expect(result).to.eql(defaultValue);
+            expect(result).toEqual(defaultValue);
         });
     });
 
@@ -83,7 +72,7 @@ describe("LocalStorageStore", () => {
             const promise = credentialsStore.save(savedValue);
 
             return promise.then(() => {
-                expect(localStorage.setItem).to.have.be.calledWithExactly(storeName, expectedValue);
+                expect(localStorage.setItem).toBeCalledWith(storeName, expectedValue);
             });
         });
     });

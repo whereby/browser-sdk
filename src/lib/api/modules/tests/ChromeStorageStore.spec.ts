@@ -1,6 +1,4 @@
-import sinon from "sinon";
 import ChromeStorageStore from "../ChromeStorageStore";
-import { expect } from "chai";
 
 describe("ChromeStorageStore", () => {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -9,15 +7,10 @@ describe("ChromeStorageStore", () => {
     let credentialsStore: ChromeStorageStore;
 
     beforeEach(() => {
-        chromeStorage = sinon.stub({
-            get() {
-                return {};
-            },
-
-            set() {
-                // Do nothing
-            },
-        });
+        chromeStorage = {
+            get: jest.fn(() => ({})),
+            set: jest.fn(),
+        };
 
         credentialsStore = new ChromeStorageStore(storeName, chromeStorage);
     });
@@ -25,51 +18,50 @@ describe("ChromeStorageStore", () => {
     describe("loadOrDefault", () => {
         it("should resolve with the stored object", async () => {
             const savedValue = { mrT: "I pitty the fool" };
-            chromeStorage.get.withArgs(storeName).callsArgWith(1, { [storeName]: savedValue });
+            chromeStorage.get.mockImplementation((key: string, cb: any) => {
+                cb({ [storeName]: savedValue });
+            });
 
             const result = await credentialsStore.loadOrDefault({});
 
-            expect(result).to.eql(savedValue);
+            expect(result).toEqual(savedValue);
         });
 
         it("should resolve with the default value if a stored object cannot be retrieved", async () => {
             const defaultValue = { mrT: "I pitty the fool" };
-            chromeStorage.get.withArgs(storeName).callsArgWith(1, {});
+            chromeStorage.get.mockImplementation((key: string, cb: any) => {
+                cb(defaultValue);
+            });
 
             const result = await credentialsStore.loadOrDefault(defaultValue);
 
-            expect(result).to.eql(defaultValue);
-        });
-
-        it("should resolve with the default value if no object has been stored", async () => {
-            const defaultValue = { mrT: "I pitty the fool" };
-            chromeStorage.get.withArgs(storeName).callsArgWith(1, {});
-
-            const result = await credentialsStore.loadOrDefault(defaultValue);
-
-            expect(result).to.eql(defaultValue);
+            expect(result).toEqual(defaultValue);
         });
     });
 
     describe("save", () => {
-        it("should save the object to local storage", () => {
+        it("should save the object to local storage", async () => {
             const savedValue = { mrT: "I pitty the fool" };
-            chromeStorage.set.withArgs({ [storeName]: savedValue }).callsArgWith(1, null);
-
-            const promise = credentialsStore.save(savedValue);
-
-            return promise.then(() => {
-                expect(chromeStorage.set).to.have.be.calledWith({ [storeName]: savedValue });
+            chromeStorage.set.mockImplementation((obj: any, cb: any) => {
+                cb();
             });
+
+            await credentialsStore.save(savedValue);
+
+            // The first arg of the first call to the function 
+            // The 2nd arg is the Promise.resolve anonymous fn
+            expect(chromeStorage.set.mock.calls[0][0]).toEqual({ [storeName]: savedValue });
         });
 
         it("should return undefined", async () => {
             const savedValue = { mrT: "I pitty the fool" };
-            chromeStorage.set.withArgs({ [storeName]: savedValue }).callsArgWith(1, null);
+            chromeStorage.set.mockImplementation((obj: any, cb: any) => {
+                cb();
+            });
 
             const result = await credentialsStore.save(savedValue);
 
-            expect(result).to.eql(undefined);
+            expect(result).toBeUndefined();
         });
     });
 });
