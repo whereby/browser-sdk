@@ -22,6 +22,7 @@
     "test": "yarn test:lint && yarn test:unit",
     "test:lint": "eslint src/",
     "test:unit": "node --experimental-vm-modules node_modules/jest/bin/jest.js",
+    "test:unit:watch": "node --experimental-vm-modules node_modules/jest/bin/jest.js --watch",
     "storybook": "start-storybook -p 6006",
     "build-storybook": "build-storybook"
   },
@@ -39,6 +40,7 @@
     "@storybook/manager-webpack5": "^6.5.14",
     "@storybook/react": "^6.5.14",
     "@types/btoa": "^1.2.3",
+    "@types/chrome": "^0.0.210",
     "@types/jest": "^29.2.4",
     "@types/react": "^18.0.26",
     "@typescript-eslint/eslint-plugin": "^5.46.1",

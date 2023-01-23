@@ -1,6 +1,14 @@
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
 export type Json = string | number | boolean | null | Array<Json> | { [key: string]: Json };
 
+export type ErrorResponseObject = {
+    data?: Json;
+    headers?: Record<string, any>;
+    status?: number;
+    statusText?: string;
+    config?: { url?: string; baseURL?: string } | null;
+};
+
 interface ResponseOptions {
     data?: Json;
     headers?: Record<string, any>;
