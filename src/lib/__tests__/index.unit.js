@@ -37,6 +37,7 @@ describe("@whereby/browser-sdk", () => {
                         "avatarurl",
                         "audio",
                         "background",
+                        "cameraAccess",
                         "chat",
                         "people",
                         "embed",
