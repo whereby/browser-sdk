@@ -1,12 +1,25 @@
 import React, { useState } from "react";
 import { useLocalMedia, useRoomConnection, VideoElement } from "../lib/react";
+import "./styles.css";
 
 export default {
     title: "Examples/Custom UI",
+    argTypes: {
+        displayName: { control: "text" },
+    },
 };
 
-const VideoExperience = ({ roomName, localStream }: { roomName: string; localStream?: MediaStream }) => {
+const VideoExperience = ({
+    displayName,
+    roomName,
+    localStream,
+}: {
+    displayName?: string;
+    roomName: string;
+    localStream?: MediaStream;
+}) => {
     const [state, actions, components] = useRoomConnection(roomName, {
+        displayName,
         localMediaConstraints: {
             audio: true,
             video: true,
@@ -20,52 +33,57 @@ const VideoExperience = ({ roomName, localStream }: { roomName: string; localStr
     const { VideoView } = components;
 
     return (
-        <div style={{ minHeight: 400, backgroundColor: "pink" }}>
-            {[localParticipant, ...remoteParticipants].map((participant, i) => (
-                <div key={participant?.id || i}>
-                    {participant ? (
-                        <div
-                            className="bouncingball"
-                            style={{
-                                animationDelay: `${Math.random() * 1000}ms`,
-                                left: i * 145,
-                                ...(participant.isAudioEnabled
-                                    ? {
-                                          border: "2px solid grey",
-                                      }
-                                    : null),
-                                ...(!participant.isVideoEnabled
-                                    ? {
-                                          backgroundColor: "green",
-                                      }
-                                    : null),
-                            }}
-                        >
-                            {participant.stream && participant.isVideoEnabled && (
-                                <VideoView
-                                    stream={participant.stream}
-                                    style={{ width: "100%", height: "100%", objectFit: "cover" }}
-                                />
-                            )}
-                        </div>
-                    ) : null}
-                </div>
-            ))}
-
-            <button onClick={() => toggleCamera()}>Toggle camera</button>
-            <button onClick={() => toggleMicrophone()}>Toggle microphone</button>
+        <div>
+            <div className="container">
+                {[localParticipant, ...remoteParticipants].map((participant, i) => (
+                    <div className="participantWrapper" key={participant?.id || i}>
+                        {participant ? (
+                            <>
+                                <div
+                                    className="bouncingball"
+                                    style={{
+                                        animationDelay: `${Math.random() * 1000}ms`,
+                                        ...(participant.isAudioEnabled
+                                            ? {
+                                                  border: "2px solid grey",
+                                              }
+                                            : null),
+                                        ...(!participant.isVideoEnabled
+                                            ? {
+                                                  backgroundColor: "green",
+                                              }
+                                            : null),
+                                    }}
+                                >
+                                    {participant.stream && participant.isVideoEnabled && (
+                                        <VideoView
+                                            stream={participant.stream}
+                                            style={{ width: "100%", height: "100%", objectFit: "cover" }}
+                                        />
+                                    )}
+                                </div>
+                                <div className="displayName">{participant.displayName}</div>
+                            </>
+                        ) : null}
+                    </div>
+                ))}
+            </div>
+            <div className="controls">
+                <button onClick={() => toggleCamera()}>Toggle camera</button>
+                <button onClick={() => toggleMicrophone()}>Toggle microphone</button>
+            </div>
         </div>
     );
 };
 
-export const Simplistic = () => {
+export const Simplistic = ({ displayName }: { displayName?: string }) => {
     const [isConnected, setIsConnected] = useState(false);
     const [roomName, setRoomName] = useState(process.env.STORYBOOK_ROOM);
 
     return (
         <div>
             {roomName && isConnected ? (
-                <VideoExperience roomName={roomName} />
+                <VideoExperience displayName={displayName} roomName={roomName} />
             ) : (
                 <div>
                     <label>Room name</label>
@@ -75,6 +93,10 @@ export const Simplistic = () => {
             )}
         </div>
     );
+};
+
+Simplistic.args = {
+    displayName: undefined,
 };
 
 export const WithPreCall = () => {
