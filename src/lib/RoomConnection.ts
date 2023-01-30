@@ -132,8 +132,9 @@ export default class RoomConnection extends TypedEventTarget {
     private roomConnectionState: "" | "connecting" | "connected" | "disconnected" = "";
     private logger: Logger;
     private localStream?: MediaStream;
+    private displayName?: string;
 
-    constructor(roomUrl: string, { localMediaConstraints, localStream, logger }: RoomConnectionOptions) {
+    constructor(roomUrl: string, { displayName, localMediaConstraints, localStream, logger }: RoomConnectionOptions) {
         super();
         this.roomUrl = new URL(roomUrl); // Throw if invalid Whereby room url
         this.logger = logger || {
@@ -142,6 +143,7 @@ export default class RoomConnection extends TypedEventTarget {
             log: noop,
             warn: noop,
         };
+        this.displayName = displayName;
         this.localStream = localStream;
         this.localMediaConstraints = localMediaConstraints;
 
@@ -407,7 +409,7 @@ export default class RoomConnection extends TypedEventTarget {
                     isVideoEnabled: !!this.localStream?.getVideoTracks().find((t) => t.enabled),
                 },
                 deviceCapabilities: { canScreenshare: true },
-                displayName: "SDK",
+                displayName: this.displayName,
                 isCoLocated: false,
                 isDevicePermissionDenied: false,
                 kickFromOtherRooms: false,
