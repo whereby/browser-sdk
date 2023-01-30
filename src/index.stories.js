@@ -7,6 +7,7 @@ export default {
         audio: { control: "boolean" },
         avatarUrl: { control: "text", description: "Image url to use for avatar" },
         background: { control: "boolean" },
+        cameraAccess: { control: "boolean" },
         chat: { control: "boolean" },
         displayName: { control: "text", description: "The name to use for the local participant" },
         embed: { control: "boolean" },
@@ -33,6 +34,7 @@ const WherebyEmbed = ({
     audio,
     avatarUrl,
     background,
+    cameraAccess,
     chat,
     displayName,
     emptyRoomInvitation,
@@ -52,6 +54,7 @@ const WherebyEmbed = ({
         audio=${offOn(audio)}
         avatarUrl=${avatarUrl}
         background=${offOn(background)}
+        cameraAccess=${offOn(cameraAccess)}
         chat=${offOn(chat)}
         displayName=${displayName}
         emptyRoomInvitation=${emptyRoomInvitation}
@@ -77,6 +80,7 @@ Primary.args = {
     audio: true,
     avatarUrl: "",
     background: true,
+    cameraAccess: true,
     chat: true,
     displayName: "Your name",
     emptyRoomInvitation: true,

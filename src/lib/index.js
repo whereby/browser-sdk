@@ -3,6 +3,7 @@ import { define, ref } from "heresy";
 const boolAttrs = [
     "audio",
     "background",
+    "cameraAccess",
     "chat",
     "people",
     "embed",

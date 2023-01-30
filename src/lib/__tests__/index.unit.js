@@ -22,6 +22,7 @@ describe("@whereby/browser-sdk", () => {
 
         it("should expose attributes", async () => {
             await import("..");
+
             expect(define).toBeCalledWith(
                 expect.any(String),
                 expect.objectContaining({
@@ -37,6 +38,7 @@ describe("@whereby/browser-sdk", () => {
                         "avatarurl",
                         "audio",
                         "background",
+                        "cameraaccess",
                         "chat",
                         "people",
                         "embed",
