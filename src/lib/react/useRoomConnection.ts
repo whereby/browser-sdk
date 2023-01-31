@@ -6,6 +6,7 @@ import VideoElement from "./VideoElement";
 interface RoomConnectionActions {
     toggleCamera(enabled?: boolean): void;
     toggleMicrophone(enabled?: boolean): void;
+    setDisplayName(displayName: string): void;
 }
 
 interface RoomConnectionComponents {
@@ -73,6 +74,10 @@ export default function useRoomConnection(
             },
             toggleMicrophone: (enabled) => {
                 roomConnection?.toggleMicrophone(enabled);
+            },
+            setDisplayName: (displayName) => {
+                roomConnection?.setDisplayName(displayName);
+                dispatch({ type: "LOCAL_CLIENT_DISPLAY_NAME_CHANGED", payload: { displayName } });
             },
         },
         {

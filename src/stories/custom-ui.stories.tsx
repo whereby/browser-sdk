@@ -9,6 +9,30 @@ export default {
     },
 };
 
+const DisplayNameForm = ({
+    initialDisplayName,
+    onSetDisplayName,
+}: {
+    initialDisplayName?: string;
+    onSetDisplayName: (displayName: string) => void;
+}) => {
+    const [displayName, setDisplayName] = useState(initialDisplayName || "");
+
+    return (
+        <div>
+            <label htmlFor="displayName">Display name: </label>
+            <input
+                type="text"
+                name="displayName"
+                id="displayName"
+                value={displayName}
+                onChange={(e) => setDisplayName(e.target.value)}
+            />
+            <button onClick={() => onSetDisplayName(displayName || "")}>Save</button>
+        </div>
+    );
+};
+
 const VideoExperience = ({
     displayName,
     roomName,
@@ -29,7 +53,7 @@ const VideoExperience = ({
     });
 
     const { localParticipant, remoteParticipants } = state;
-    const { toggleCamera, toggleMicrophone } = actions;
+    const { setDisplayName, toggleCamera, toggleMicrophone } = actions;
     const { VideoView } = components;
 
     return (
@@ -62,7 +86,7 @@ const VideoExperience = ({
                                         />
                                     )}
                                 </div>
-                                <div className="displayName">{participant.displayName}</div>
+                                <div className="displayName">{participant.displayName || "Guest"}</div>
                             </>
                         ) : null}
                     </div>
@@ -71,6 +95,7 @@ const VideoExperience = ({
             <div className="controls">
                 <button onClick={() => toggleCamera()}>Toggle camera</button>
                 <button onClick={() => toggleMicrophone()}>Toggle microphone</button>
+                <DisplayNameForm initialDisplayName={displayName} onSetDisplayName={setDisplayName} />
             </div>
         </div>
     );
