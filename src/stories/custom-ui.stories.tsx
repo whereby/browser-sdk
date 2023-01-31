@@ -5,7 +5,8 @@ import "./styles.css";
 export default {
     title: "Examples/Custom UI",
     argTypes: {
-        displayName: { control: "text" },
+        displayName: { control: "text", defaultValue: "SDK" },
+        roomUrl: { control: "text", defaultValue: process.env.STORYBOOK_ROOM, type: { required: true } },
     },
 };
 
@@ -101,38 +102,28 @@ const VideoExperience = ({
     );
 };
 
-export const Simplistic = ({ displayName }: { displayName?: string }) => {
-    const [isConnected, setIsConnected] = useState(false);
-    const [roomName, setRoomName] = useState(process.env.STORYBOOK_ROOM);
+const roomRegEx = new RegExp(/^https:\/\/.*\/.*/);
 
-    return (
-        <div>
-            {roomName && isConnected ? (
-                <VideoExperience displayName={displayName} roomName={roomName} />
-            ) : (
-                <div>
-                    <label>Room name</label>
-                    <input type="text" value={roomName} onChange={(e) => setRoomName(e.target.value)} />
-                    <button onClick={() => setIsConnected(true)}>Connect</button>
-                </div>
-            )}
-        </div>
-    );
+export const Simplistic = ({ roomUrl, displayName }: { roomUrl: string; displayName?: string }) => {
+    if (!roomUrl || !roomUrl.match(roomRegEx)) {
+        return <p>Set room url on the Controls panel</p>;
+    }
+
+    return <VideoExperience displayName={displayName} roomName={roomUrl} />;
 };
 
-Simplistic.args = {
-    displayName: undefined,
-};
-
-export const WithPreCall = () => {
+export const WithPreCall = ({ roomUrl, displayName }: { roomUrl: string; displayName?: string }) => {
     const [localStream] = useLocalMedia();
     const [shouldJoin, setShouldJoin] = useState(false);
-    const roomUrl = process.env.STORYBOOK_ROOM || "";
+
+    if (!roomUrl || !roomUrl.match(roomRegEx)) {
+        return <p>Set room url on the Controls panel</p>;
+    }
 
     return (
         <div>
             {shouldJoin ? (
-                <VideoExperience roomName={roomUrl} localStream={localStream} />
+                <VideoExperience displayName={displayName} roomName={roomUrl} localStream={localStream} />
             ) : (
                 <div>{localStream && <VideoElement stream={localStream} />}</div>
             )}
