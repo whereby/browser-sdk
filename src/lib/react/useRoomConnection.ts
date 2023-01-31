@@ -59,6 +59,11 @@ export default function useRoomConnection(
             dispatch({ type: "PARTICIPANT_VIDEO_ENABLED", payload: { participantId, isVideoEnabled } });
         });
 
+        roomConnection.addEventListener("participant_metadata_changed", (e) => {
+            const { participantId, displayName } = e.detail;
+            dispatch({ type: "PARTICIPANT_METADATA_CHANGED", payload: { participantId, displayName } });
+        });
+
         roomConnection.join();
 
         return () => {
