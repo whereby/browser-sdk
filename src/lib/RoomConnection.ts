@@ -18,6 +18,7 @@ import { LocalParticipant, RemoteParticipant, StreamState } from "./RoomParticip
 
 import ServerSocket, {
     ClientLeftEvent,
+    ClientMetadataReceivedEvent,
     NewClientEvent,
     RoomJoinedEvent as SignalRoomJoinedEvent,
     SignalClient,
@@ -61,10 +62,16 @@ type ParticipantVideoEnabledEvent = {
     isVideoEnabled: boolean;
 };
 
+type ParticipantMetadataChangedEvent = {
+    participantId: string;
+    displayName: string;
+};
+
 interface RoomEventsMap {
     participant_audio_enabled: CustomEvent<ParticipantAudioEnabledEvent>;
     participant_joined: CustomEvent<ParticipantJoinedEvent>;
     participant_left: CustomEvent<ParticipantLeftEvent>;
+    participant_metadata_changed: CustomEvent<ParticipantMetadataChangedEvent>;
     participant_stream_added: CustomEvent<ParticipantStreamAddedEvent>;
     participant_video_enabled: CustomEvent<ParticipantVideoEnabledEvent>;
     room_joined: CustomEvent<RoomJoinedEvent>;
@@ -175,6 +182,7 @@ export default class RoomConnection extends TypedEventTarget {
         this.signalSocket.on("client_left", this._handleClientLeft.bind(this));
         this.signalSocket.on("audio_enabled", this._handleClientAudioEnabled.bind(this));
         this.signalSocket.on("video_enabled", this._handleClientVideoEnabled.bind(this));
+        this.signalSocket.on("client_metadata_received", this._handleClientMetadataReceived.bind(this));
     }
 
     private _handleNewClient({ client }: NewClientEvent) {
@@ -216,6 +224,18 @@ export default class RoomConnection extends TypedEventTarget {
         this.dispatchEvent(
             new CustomEvent("participant_video_enabled", {
                 detail: { participantId: remoteParticipant.id, isVideoEnabled },
+            })
+        );
+    }
+
+    private _handleClientMetadataReceived({ payload: { clientId, displayName } }: ClientMetadataReceivedEvent) {
+        const remoteParticipant = this.remoteParticipants.find((p) => p.id === clientId);
+        if (!remoteParticipant) {
+            return;
+        }
+        this.dispatchEvent(
+            new CustomEvent("participant_metadata_changed", {
+                detail: { participantId: remoteParticipant.id, displayName },
             })
         );
     }
