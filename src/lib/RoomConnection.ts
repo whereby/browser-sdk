@@ -492,4 +492,13 @@ export default class RoomConnection extends TypedEventTarget {
         localAudioTrack.enabled = newValue;
         this.signalSocket.emit("enable_audio", { enabled: newValue });
     }
+
+    setDisplayName(displayName: string): void {
+        this.signalSocket.emit("send_client_metadata", {
+            type: "UserData",
+            payload: {
+                displayName,
+            },
+        });
+    }
 }

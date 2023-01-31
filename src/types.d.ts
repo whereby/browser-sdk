@@ -162,6 +162,7 @@ declare module "@whereby/jslib-commons/src/utils/ServerSocket" {
         identify_device: IdentifyDeviceRequest;
         join_room: JoinRoomRequest;
         leave_room: void;
+        send_client_metadata: { type: string; payload: { displayName?: string } };
     }
 
     export default class ServerSocket {
