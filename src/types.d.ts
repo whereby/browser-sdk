@@ -134,9 +134,15 @@ declare module "@whereby/jslib-commons/src/utils/ServerSocket" {
         isVideoEnabled: boolean;
     }
 
+    interface ClientMetadataReceivedEvent {
+        type: string;
+        payload: { clientId: string; displayName: string };
+    }
+
     interface SignalEvents {
         audio_enabled: AudioEnabledEvent;
         client_left: ClientLeftEvent;
+        client_metadata_received: ClientMetadataReceivedEvent;
         connect: void;
         device_identified: void;
         new_client: NewClientEvent;

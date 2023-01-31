@@ -50,6 +50,13 @@ type Action =
           };
       }
     | {
+          type: "PARTICIPANT_METADATA_CHANGED";
+          payload: {
+              participantId: string;
+              displayName: string;
+          };
+      }
+    | {
           type: "LOCAL_CLIENT_DISPLAY_NAME_CHANGED";
           payload: {
               displayName: string;
@@ -113,6 +120,15 @@ export default function reducer(state: RoomState, action: Action): RoomState {
                 remoteParticipants: updateParticipant(state.remoteParticipants, action.payload.participantId, {
                     isVideoEnabled: action.payload.isVideoEnabled,
                 }),
+            };
+        case "PARTICIPANT_METADATA_CHANGED":
+            return {
+                ...state,
+                remoteParticipants: [
+                    ...state.remoteParticipants.map((p) =>
+                        p.id === action.payload.participantId ? { ...p, displayName: action.payload.displayName } : p
+                    ),
+                ],
             };
         case "LOCAL_CLIENT_DISPLAY_NAME_CHANGED":
             if (!state.localParticipant) return state;
