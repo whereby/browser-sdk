@@ -97,12 +97,17 @@ declare module "@whereby/jslib-commons/src/utils/ServerSocket" {
         timeout?: number;
     }
 
+    interface ClientRole {
+        roleName: string;
+    }
+
     interface SignalClient {
         displayName: string;
         id: string;
         streams: string[];
         isAudioEnabled: boolean;
         isVideoEnabled: boolean;
+        role: ClientRole;
     }
 
     interface AudioEnabledEvent {

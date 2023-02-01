@@ -20,6 +20,7 @@ import ServerSocket, {
     ClientLeftEvent,
     NewClientEvent,
     RoomJoinedEvent as SignalRoomJoinedEvent,
+    SignalClient,
 } from "@whereby/jslib-commons/src/utils/ServerSocket";
 
 type Logger = Pick<Console, "debug" | "error" | "log" | "warn">;
@@ -71,6 +72,8 @@ interface RoomEventsMap {
 
 const API_BASE_URL = "https://ip-127-0-0-1.hereby.dev:4090";
 const SIGNAL_BASE_URL = "wss://ip-127-0-0-1.hereby.dev:4070";
+
+const NON_PERSON_ROLES = ["recorder", "streamer"];
 
 function createSocket() {
     const parsedUrl = new URL(SIGNAL_BASE_URL);
@@ -173,6 +176,9 @@ export default class RoomConnection extends TypedEventTarget {
     }
 
     private _handleNewClient({ client }: NewClientEvent) {
+        if (NON_PERSON_ROLES.includes(client.role.roleName)) {
+            return;
+        }
         const remoteParticipant = new RemoteParticipant({ ...client, newJoiner: true });
         this.remoteParticipants = [...this.remoteParticipants, remoteParticipant];
         this._handleAcceptStreams([remoteParticipant]);
