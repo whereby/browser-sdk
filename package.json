@@ -63,7 +63,6 @@
   },
   "dependencies": {
     "@swc/helpers": "^0.3.13",
-    "@whereby/jslib-api": "^77.17.0",
     "@whereby/jslib-media": "github:whereby/jslib-media",
     "axios": "^1.2.3",
     "btoa": "^1.2.1",
