@@ -2,9 +2,9 @@ import RtcManagerDispatcher, {
     RtcEvents,
     RtcManagerCreatedPayload,
     RtcStreamAddedPayload,
-} from "@whereby/jslib-commons/src/webrtc/RtcManagerDispatcher";
-import RtcManager from "@whereby/jslib-commons/src/webrtc/RtcManager";
-import { fromLocation } from "@whereby/jslib-commons/src/utils/urls";
+} from "@whereby/jslib-media/src/webrtc/RtcManagerDispatcher";
+import RtcManager from "@whereby/jslib-media/src/webrtc/RtcManager";
+import { fromLocation } from "@whereby/jslib-media/src/utils/urls";
 import {
     ApiClient,
     CredentialsService,
@@ -22,7 +22,7 @@ import ServerSocket, {
     NewClientEvent,
     RoomJoinedEvent as SignalRoomJoinedEvent,
     SignalClient,
-} from "@whereby/jslib-commons/src/utils/ServerSocket";
+} from "@whereby/jslib-media/src/utils/ServerSocket";
 
 type Logger = Pick<Console, "debug" | "error" | "log" | "warn">;
 
@@ -394,21 +394,13 @@ export default class RoomConnection extends TypedEventTarget {
             serverSocket: this.signalSocket,
             webrtcProvider,
             features: {
-                deferDrySfuSubscriptions: true,
-                deprioritizeH264OnSafari: false,
-                enforceTurnTls: false,
-                floodProtectionOn: true,
                 lowDataModeEnabled: false,
-                nativeREMB: true,
-                opusDtx: false,
-                reconnectFix: true,
-                simplifiedVegaClientOn: false,
                 sfuServerOverrideHost: undefined,
                 turnServerOverrideHost: undefined,
                 useOnlyTURN: undefined,
                 vp9On: false,
-                clientObserverOn: true,
-                observerStagingOn: false,
+                h264On: false,
+                simulcastScreenshareOn: false,
             },
         });
 

@@ -37,7 +37,7 @@ export default [
             format: "cjs",
         },
         external: ["heresy", ...peerDependencies],
-        plugins: [nodeResolve({ resolveOnly: [/jslib-commons/] }), replace(replaceValues), typescript()],
+        plugins: [nodeResolve({ resolveOnly: [/jslib-media/] }), replace(replaceValues), typescript()],
     },
     // Esm build of lib, to be used with bundlers
     {
@@ -48,7 +48,7 @@ export default [
             format: "esm",
         },
         external: ["heresy", ...peerDependencies],
-        plugins: [nodeResolve({ resolveOnly: [/jslib-commons/] }), replace(replaceValues), typescript()],
+        plugins: [nodeResolve({ resolveOnly: [/jslib-media/] }), replace(replaceValues), typescript()],
     },
     // Legacy build of lib in ESM format, bundling the dependencies
     {
