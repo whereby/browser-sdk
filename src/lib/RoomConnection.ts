@@ -18,6 +18,7 @@ import { LocalParticipant, RemoteParticipant, StreamState } from "./RoomParticip
 
 import ServerSocket, {
     ClientLeftEvent,
+    ClientMetadataReceivedEvent,
     NewClientEvent,
     RoomJoinedEvent as SignalRoomJoinedEvent,
     SignalClient,
@@ -61,10 +62,16 @@ type ParticipantVideoEnabledEvent = {
     isVideoEnabled: boolean;
 };
 
+type ParticipantMetadataChangedEvent = {
+    participantId: string;
+    displayName: string;
+};
+
 interface RoomEventsMap {
     participant_audio_enabled: CustomEvent<ParticipantAudioEnabledEvent>;
     participant_joined: CustomEvent<ParticipantJoinedEvent>;
     participant_left: CustomEvent<ParticipantLeftEvent>;
+    participant_metadata_changed: CustomEvent<ParticipantMetadataChangedEvent>;
     participant_stream_added: CustomEvent<ParticipantStreamAddedEvent>;
     participant_video_enabled: CustomEvent<ParticipantVideoEnabledEvent>;
     room_joined: CustomEvent<RoomJoinedEvent>;
@@ -132,8 +139,9 @@ export default class RoomConnection extends TypedEventTarget {
     private roomConnectionState: "" | "connecting" | "connected" | "disconnected" = "";
     private logger: Logger;
     private localStream?: MediaStream;
+    private displayName?: string;
 
-    constructor(roomUrl: string, { localMediaConstraints, localStream, logger }: RoomConnectionOptions) {
+    constructor(roomUrl: string, { displayName, localMediaConstraints, localStream, logger }: RoomConnectionOptions) {
         super();
         this.roomUrl = new URL(roomUrl); // Throw if invalid Whereby room url
         this.logger = logger || {
@@ -142,6 +150,7 @@ export default class RoomConnection extends TypedEventTarget {
             log: noop,
             warn: noop,
         };
+        this.displayName = displayName;
         this.localStream = localStream;
         this.localMediaConstraints = localMediaConstraints;
 
@@ -173,6 +182,7 @@ export default class RoomConnection extends TypedEventTarget {
         this.signalSocket.on("client_left", this._handleClientLeft.bind(this));
         this.signalSocket.on("audio_enabled", this._handleClientAudioEnabled.bind(this));
         this.signalSocket.on("video_enabled", this._handleClientVideoEnabled.bind(this));
+        this.signalSocket.on("client_metadata_received", this._handleClientMetadataReceived.bind(this));
     }
 
     private _handleNewClient({ client }: NewClientEvent) {
@@ -214,6 +224,18 @@ export default class RoomConnection extends TypedEventTarget {
         this.dispatchEvent(
             new CustomEvent("participant_video_enabled", {
                 detail: { participantId: remoteParticipant.id, isVideoEnabled },
+            })
+        );
+    }
+
+    private _handleClientMetadataReceived({ payload: { clientId, displayName } }: ClientMetadataReceivedEvent) {
+        const remoteParticipant = this.remoteParticipants.find((p) => p.id === clientId);
+        if (!remoteParticipant) {
+            return;
+        }
+        this.dispatchEvent(
+            new CustomEvent("participant_metadata_changed", {
+                detail: { participantId: remoteParticipant.id, displayName },
             })
         );
     }
@@ -407,7 +429,7 @@ export default class RoomConnection extends TypedEventTarget {
                     isVideoEnabled: !!this.localStream?.getVideoTracks().find((t) => t.enabled),
                 },
                 deviceCapabilities: { canScreenshare: true },
-                displayName: "SDK",
+                displayName: this.displayName,
                 isCoLocated: false,
                 isDevicePermissionDenied: false,
                 kickFromOtherRooms: false,
@@ -489,5 +511,14 @@ export default class RoomConnection extends TypedEventTarget {
         const newValue = enabled ?? !localAudioTrack.enabled;
         localAudioTrack.enabled = newValue;
         this.signalSocket.emit("enable_audio", { enabled: newValue });
+    }
+
+    setDisplayName(displayName: string): void {
+        this.signalSocket.emit("send_client_metadata", {
+            type: "UserData",
+            payload: {
+                displayName,
+            },
+        });
     }
 }
