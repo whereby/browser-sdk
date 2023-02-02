@@ -19,7 +19,7 @@ declare module "heresy" {
     export function ref(): boolean;
 }
 
-declare module "@whereby/jslib-commons/src/webrtc/RtcManagerDispatcher" {
+declare module "@whereby/jslib-media/src/webrtc/RtcManagerDispatcher" {
     enum RtcEventNames {
         rtc_manager_created = "rtc_manager_created",
         stream_added = "stream_added",
@@ -48,21 +48,13 @@ declare module "@whereby/jslib-commons/src/webrtc/RtcManagerDispatcher" {
             deferrable: (clientId: string) => boolean;
         };
         features: {
-            deferDrySfuSubscriptions: boolean;
-            deprioritizeH264OnSafari: boolean;
-            enforceTurnTls: boolean;
-            floodProtectionOn: boolean;
             lowDataModeEnabled: boolean;
-            nativeREMB: boolean;
-            opusDtx: boolean;
-            reconnectFix: boolean;
-            simplifiedVegaClientOn: boolean;
             sfuServerOverrideHost: undefined;
             turnServerOverrideHost: undefined;
             useOnlyTURN: undefined;
             vp9On: boolean;
-            clientObserverOn: boolean;
-            observerStagingOn: boolean;
+            h264On: boolean;
+            simulcastScreenshareOn: boolean;
         };
     }
     export default class RtcManagerDispatcher {
@@ -70,7 +62,7 @@ declare module "@whereby/jslib-commons/src/webrtc/RtcManagerDispatcher" {
     }
 }
 
-declare module "@whereby/jslib-commons/src/webrtc/RtcManager" {
+declare module "@whereby/jslib-media/src/webrtc/RtcManager" {
     export default interface RtcManager {
         acceptNewStream: ({
             activeBreakout: boolean,
@@ -84,11 +76,11 @@ declare module "@whereby/jslib-commons/src/webrtc/RtcManager" {
     }
 }
 
-declare module "@whereby/jslib-commons/src/utils/urls" {
+declare module "@whereby/jslib-media/src/utils/urls" {
     export function fromLocation({ host }: { host: string }): { subdomain: string };
 }
 
-declare module "@whereby/jslib-commons/src/utils/ServerSocket" {
+declare module "@whereby/jslib-media/src/utils/ServerSocket" {
     interface SocketConf {
         host?: string;
         path?: string;
