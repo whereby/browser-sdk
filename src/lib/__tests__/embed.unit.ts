@@ -9,20 +9,14 @@ jest.mock("heresy", () => ({
 }));
 
 describe("@whereby/browser-sdk", () => {
-    it("should export sdk version", async () => {
-        const whereby = await import("../");
-        expect(whereby.default.sdkVersion).toEqual(expect.any(String));
-    });
-
     describe("web component", () => {
         it("should define <whereby-embed />", async () => {
-            await import("../");
+            await import("../embed");
             expect(define).toBeCalledWith("WherebyEmbed", expect.any(Object));
         });
 
         it("should expose attributes", async () => {
-            await import("..");
-
+            await import("../embed");
             expect(define).toBeCalledWith(
                 expect.any(String),
                 expect.objectContaining({
@@ -68,7 +62,7 @@ describe("@whereby/browser-sdk", () => {
         });
 
         it("should expose commands", async () => {
-            await import("../");
+            await import("../embed");
 
             expect(define).toBeCalledWith(
                 expect.any(String),
