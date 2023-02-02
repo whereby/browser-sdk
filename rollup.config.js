@@ -13,6 +13,8 @@ const replaceValues = {
     },
 };
 
+const peerDependencies = [...Object.keys(pkg.peerDependencies || {})];
+
 function makeCdnFilename() {
     const major = pkg.version.split(".")[0];
     const preRelease = pkg.version.split("-")[1];
@@ -34,7 +36,7 @@ export default [
             file: "dist/lib.cjs.js",
             format: "cjs",
         },
-        external: ["heresy"],
+        external: ["heresy", ...peerDependencies],
         plugins: [nodeResolve({ resolveOnly: [/jslib-commons/] }), replace(replaceValues), typescript()],
     },
     // Esm build of lib, to be used with bundlers
@@ -45,7 +47,7 @@ export default [
             file: "dist/lib.esm.js",
             format: "esm",
         },
-        external: ["heresy"],
+        external: ["heresy", ...peerDependencies],
         plugins: [nodeResolve({ resolveOnly: [/jslib-commons/] }), replace(replaceValues), typescript()],
     },
     // Legacy build of lib in ESM format, bundling the dependencies
