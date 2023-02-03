@@ -33,7 +33,7 @@ export default [
     {
         input: "src/lib/index.ts",
         output: {
-            exports: "default",
+            exports: "named",
             file: "dist/lib.cjs.js",
             format: "cjs",
         },
@@ -44,7 +44,7 @@ export default [
     {
         input: "src/lib/index.ts",
         output: {
-            exports: "default",
+            exports: "named",
             file: "dist/lib.esm.js",
             format: "esm",
         },
@@ -55,7 +55,7 @@ export default [
     {
         input: "src/lib/index.ts",
         output: {
-            exports: "default",
+            exports: "named",
             file: `dist/${makeCdnFilename()}`,
             format: "esm",
         },
