@@ -1,4 +1,3 @@
-import { useRoomConnection } from "./react";
 import "./embed";
-
-export default { sdkVersion: "__SDK_VERSION__", useRoomConnection };
+export { useRoomConnection } from "./react";
+export const sdkVersion = "__SDK_VERSION__";
