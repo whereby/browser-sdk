@@ -4,6 +4,7 @@ interface WherebyEmbedAttributes {
     audio: string;
     avatarUrl: string;
     background: string;
+    cameraAccess: string;
     chat: string;
     displayName: string;
     emptyRoomInvitation: string;
