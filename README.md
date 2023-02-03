@@ -1,6 +1,6 @@
 # @whereby.com/browser-sdk
 
-Clientside library defining a web component to allow embedding Whereby video rooms in web applications. Only normal iframe under the hood, the web component adds syntactic sugar to make it easier to customize the Whereby experience and hook into powerful features such as listening to room events and sending commands to the room from the host application.
+Client-side library defining a web component that allows embedding Whereby video rooms inside of web applications. The web component, which is a normal iframe under the hood, adds syntactic sugar to make it easier to customize the Whereby experience and hook into powerful features such as listening to room events and sending commands to the room from the host application.
 
 ## Usage
 
