@@ -1,10 +1,6 @@
 {
   "name": "@whereby.com/browser-sdk",
-<<<<<<< HEAD
   "version": "2.0.0-alpha1",
-=======
-  "version": "2.0.0-alpha",
->>>>>>> 2e692ae (Use alpha version tag)
   "description": "Modules for integration Whereby video in web apps",
   "author": "Whereby AS",
   "license": "MIT",
@@ -18,6 +14,7 @@
   "module": "dist/lib.esm.js",
   "type": "module",
   "files": ["dist/**/*.js", "dist/*.d.ts"],
+  "types": "dist/types.d.ts",
   "scripts": {
     "prebuild": "rimraf dist",
     "build": "rollup -c",
@@ -60,6 +57,7 @@
     "react-dom": "^18.2.0",
     "rimraf": "^3.0.2",
     "rollup": "^2.75.6",
+    "rollup-plugin-dts": "^5.1.1",
     "rollup-plugin-terser": "^7.0.2",
     "rollup-plugin-typescript2": "^0.34.1",
     "ts-jest": "^29.0.3",

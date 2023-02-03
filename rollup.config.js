@@ -5,6 +5,7 @@ import replace from "@rollup/plugin-replace";
 import { terser } from "rollup-plugin-terser";
 import pkg from "./package.json";
 import typescript from "rollup-plugin-typescript2";
+import dts from "rollup-plugin-dts";
 
 const replaceValues = {
     preventAssignment: true,
@@ -59,5 +60,11 @@ export default [
             format: "esm",
         },
         plugins: [nodeResolve(), commonjs(), json(), terser(), replace(replaceValues), typescript()],
+    },
+    // Roll-up .d.ts definition files
+    {
+        input: "./dist/lib/index.d.ts",
+        output: [{ file: "dist/types.d.ts", format: "es" }],
+        plugins: [dts()],
     },
 ];
