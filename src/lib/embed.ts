@@ -31,6 +31,7 @@ declare global {
 const boolAttrs = [
     "audio",
     "background",
+    "cameraaccess",
     "chat",
     "people",
     "embed",
@@ -111,6 +112,9 @@ define("WherebyEmbed", {
     },
     toggleMicrophone(enabled: boolean) {
         this._postCommand("toggle_microphone", [enabled]);
+    },
+    toggleScreenshare(enabled: boolean) {
+        this._postCommand("toggle_screenshare", [enabled]);
     },
     onmessage({ origin, data }: { origin: string; data: { type: string; payload: string } }) {
         const url = new URL(this.room, `https://${this.subdomain}.whereby.com`);
