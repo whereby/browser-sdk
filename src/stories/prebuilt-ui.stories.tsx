@@ -1,6 +1,6 @@
 import { Story } from "@storybook/react";
 import React from "react";
-import "../lib";
+import "../lib/embed";
 
 interface WherebyEmbedAttributes {
     audio: boolean;
