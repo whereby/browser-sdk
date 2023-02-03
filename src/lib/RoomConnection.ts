@@ -77,8 +77,8 @@ interface RoomEventsMap {
     room_joined: CustomEvent<RoomJoinedEvent>;
 }
 
-const API_BASE_URL = "https://ip-127-0-0-1.hereby.dev:4090";
-const SIGNAL_BASE_URL = "wss://ip-127-0-0-1.hereby.dev:4070";
+const API_BASE_URL = "https://api.appearin.net";
+const SIGNAL_BASE_URL = "wss://signal.appearin.net";
 
 const NON_PERSON_ROLES = ["recorder", "streamer"];
 
