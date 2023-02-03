@@ -1,6 +1,10 @@
 {
   "name": "@whereby.com/browser-sdk",
+<<<<<<< HEAD
   "version": "2.0.0-alpha1",
+=======
+  "version": "2.0.0-alpha",
+>>>>>>> 2e692ae (Use alpha version tag)
   "description": "Modules for integration Whereby video in web apps",
   "author": "Whereby AS",
   "license": "MIT",
