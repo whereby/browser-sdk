@@ -1,6 +1,6 @@
 {
   "name": "@whereby.com/browser-sdk",
-  "version": "2.0.0-alpha1",
+  "version": "2.0.0-alpha2",
   "description": "Modules for integration Whereby video in web apps",
   "author": "Whereby AS",
   "license": "MIT",
@@ -13,7 +13,10 @@
   "main": "dist/lib.cjs.js",
   "module": "dist/lib.esm.js",
   "type": "module",
-  "files": ["dist/**/*.js", "dist/*.d.ts"],
+  "files": [
+    "dist/**/*.js",
+    "dist/*.d.ts"
+  ],
   "types": "dist/types.d.ts",
   "scripts": {
     "prebuild": "rimraf dist",
@@ -67,6 +70,7 @@
   "dependencies": {
     "@swc/helpers": "^0.3.13",
     "@whereby/jslib-media": "whereby/jslib-media.git",
+    "assert": "^2.0.0",
     "axios": "^1.2.3",
     "btoa": "^1.2.1",
     "heresy": "^1.0.4"
