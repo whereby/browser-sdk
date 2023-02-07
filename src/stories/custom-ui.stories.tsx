@@ -82,6 +82,7 @@ const VideoExperience = ({
                                 >
                                     {participant.stream && participant.isVideoEnabled && (
                                         <VideoView
+                                            muted={participant.isLocalParticipant}
                                             stream={participant.stream}
                                             style={{ width: "100%", height: "100%", objectFit: "cover" }}
                                         />
