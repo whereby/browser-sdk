@@ -1,7 +1,7 @@
 import { useEffect, useReducer, useState } from "react";
 import RoomConnection, { RoomConnectionOptions } from "../RoomConnection";
 import reducer, { RoomState } from "../reducer";
-import VideoElement from "./VideoElement";
+import VideoView from "./VideoView";
 
 interface RoomConnectionActions {
     toggleCamera(enabled?: boolean): void;
@@ -10,7 +10,7 @@ interface RoomConnectionActions {
 }
 
 interface RoomConnectionComponents {
-    VideoView: typeof VideoElement;
+    VideoView: typeof VideoView;
 }
 
 export default function useRoomConnection(
@@ -86,7 +86,7 @@ export default function useRoomConnection(
             },
         },
         {
-            VideoView: VideoElement,
+            VideoView,
         },
     ];
 }

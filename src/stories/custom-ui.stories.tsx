@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { useLocalMedia, useRoomConnection, VideoElement } from "../lib/react";
+import { useLocalMedia, useRoomConnection, VideoView } from "../lib/react";
 import "./styles.css";
 
 export default {
@@ -82,6 +82,7 @@ const VideoExperience = ({
                                 >
                                     {participant.stream && participant.isVideoEnabled && (
                                         <VideoView
+                                            muted={participant.isLocalParticipant}
                                             stream={participant.stream}
                                             style={{ width: "100%", height: "100%", objectFit: "cover" }}
                                         />
@@ -125,7 +126,7 @@ export const WithPreCall = ({ roomUrl, displayName }: { roomUrl: string; display
             {shouldJoin ? (
                 <VideoExperience displayName={displayName} roomName={roomUrl} localStream={localStream} />
             ) : (
-                <div>{localStream && <VideoElement stream={localStream} />}</div>
+                <div>{localStream && <VideoView stream={localStream} />}</div>
             )}
             <button onClick={() => setShouldJoin(!shouldJoin)}>{shouldJoin ? "Leave room" : "Join room"}</button>
         </div>
