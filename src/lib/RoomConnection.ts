@@ -23,6 +23,7 @@ import ServerSocket, {
     RoomJoinedEvent as SignalRoomJoinedEvent,
     SignalClient,
 } from "@whereby/jslib-media/src/utils/ServerSocket";
+import { sdkVersion } from "./index";
 
 type Logger = Pick<Console, "debug" | "error" | "log" | "warn">;
 
@@ -429,6 +430,7 @@ export default class RoomConnection extends TypedEventTarget {
                 roomKey: null,
                 roomName: this.roomUrl.pathname,
                 selfId: "",
+                userAgent: `browser-sdk:${sdkVersion || "unknown"}`
             });
         });
 
