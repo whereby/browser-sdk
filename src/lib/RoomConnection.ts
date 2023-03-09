@@ -21,18 +21,18 @@ import ServerSocket, {
     ClientMetadataReceivedEvent,
     NewClientEvent,
     RoomJoinedEvent as SignalRoomJoinedEvent,
-    SignalClient,
 } from "@whereby/jslib-media/src/utils/ServerSocket";
 import { sdkVersion } from "./index";
+import LocalMedia from "./LocalMedia";
 
 type Logger = Pick<Console, "debug" | "error" | "log" | "warn">;
 
 export interface RoomConnectionOptions {
     displayName?: string; // Might not be needed at all
-    localStream?: MediaStream;
     localMediaConstraints?: MediaStreamConstraints;
     roomKey?: string;
     logger?: Logger;
+    localMedia?: LocalMedia;
 }
 
 type RoomJoinedEvent = {
@@ -122,6 +122,7 @@ const noop = () => {
 
 const TypedEventTarget = EventTarget as { new (): RoomEventTarget };
 export default class RoomConnection extends TypedEventTarget {
+    public localMedia: LocalMedia;
     public localParticipant: LocalParticipant | null = null;
     public roomUrl: URL;
     public remoteParticipants: RemoteParticipant[] = [];
@@ -139,10 +140,10 @@ export default class RoomConnection extends TypedEventTarget {
     private rtcManager?: RtcManager;
     private roomConnectionState: "" | "connecting" | "connected" | "disconnected" = "";
     private logger: Logger;
-    private localStream?: MediaStream;
+    private _ownsLocalMedia = false;
     private displayName?: string;
 
-    constructor(roomUrl: string, { displayName, localMediaConstraints, localStream, logger }: RoomConnectionOptions) {
+    constructor(roomUrl: string, { displayName, localMediaConstraints, logger, localMedia }: RoomConnectionOptions) {
         super();
         this.roomUrl = new URL(roomUrl); // Throw if invalid Whereby room url
         this.logger = logger || {
@@ -152,12 +153,19 @@ export default class RoomConnection extends TypedEventTarget {
             warn: noop,
         };
         this.displayName = displayName;
-        this.localStream = localStream;
         this.localMediaConstraints = localMediaConstraints;
-
         const urls = fromLocation({ host: this.roomUrl.host });
 
-        // Initialize services
+        // Set up local media
+        if (localMedia) {
+            this.localMedia = localMedia;
+        } else if (localMediaConstraints) {
+            this.localMedia = new LocalMedia(localMediaConstraints);
+            this._ownsLocalMedia = true;
+        } else {
+            throw new Error("Missing constraints");
+        }
+
         this.credentialsService = CredentialsService.create({ baseUrl: API_BASE_URL });
         this.apiClient = new ApiClient({
             fetchDeviceCredentials: this.credentialsService.getCredentials.bind(this.credentialsService),
@@ -184,6 +192,16 @@ export default class RoomConnection extends TypedEventTarget {
         this.signalSocket.on("audio_enabled", this._handleClientAudioEnabled.bind(this));
         this.signalSocket.on("video_enabled", this._handleClientVideoEnabled.bind(this));
         this.signalSocket.on("client_metadata_received", this._handleClientMetadataReceived.bind(this));
+
+        // Set up local media listeners
+        this.localMedia.addEventListener("camera_enabled", (e) => {
+            const { enabled } = e.detail;
+            this.signalSocket.emit("enable_video", { enabled });
+        });
+        this.localMedia.addEventListener("microphone_enabled", (e) => {
+            const { enabled } = e.detail;
+            this.signalSocket.emit("enable_audio", { enabled });
+        });
     }
 
     private _handleNewClient({ client }: NewClientEvent) {
@@ -253,12 +271,14 @@ export default class RoomConnection extends TypedEventTarget {
 
     private _handleRtcManagerCreated({ rtcManager }: RtcManagerCreatedPayload) {
         this.rtcManager = rtcManager;
-        if (this.localStream) {
+        this.localMedia.addRtcManager(rtcManager);
+
+        if (this.localMedia.stream) {
             this.rtcManager?.addNewStream(
                 "0",
-                this.localStream,
-                !this.localStream?.getAudioTracks().find((t) => t.enabled),
-                !this.localStream?.getVideoTracks().find((t) => t.enabled)
+                this.localMedia.stream,
+                !this.localMedia.isMicrophoneEnabled(),
+                !this.localMedia.isCameraEnabled()
             );
         }
     }
@@ -283,7 +303,6 @@ export default class RoomConnection extends TypedEventTarget {
                 // Determine the new state of the client, equivalent of "reactAcceptStreams"
                 // TODO: Replace this with correct logic catering for breakouts etc
 
-                // #region reactAcceptStreams
                 const isInSameRoomOrGroupOrClientBroadcasting = true; // TODO: Remove once breakout is implemented
 
                 if (isInSameRoomOrGroupOrClientBroadcasting) {
@@ -304,9 +323,6 @@ export default class RoomConnection extends TypedEventTarget {
                     return;
                 }
 
-                // #endregion
-
-                // #region doAcceptStreams
                 if (
                     newState === "to_accept" ||
                     (newState === "new_accept" && shouldAcceptNewClients) ||
@@ -334,8 +350,6 @@ export default class RoomConnection extends TypedEventTarget {
 
                 // Update stream state
                 participant.updateStreamState(streamId, streamState.replace(/to_|new_|old_/, "done_") as StreamState);
-
-                // #endregion
             });
         });
     }
@@ -352,10 +366,6 @@ export default class RoomConnection extends TypedEventTarget {
         );
     }
 
-    /**
-     * Public API
-     */
-
     async join() {
         if (["connected", "connecting"].includes(this.roomConnectionState)) {
             console.warn(`Trying to join room state is ${this.roomConnectionState}`);
@@ -365,14 +375,8 @@ export default class RoomConnection extends TypedEventTarget {
         this.logger.log("Joining room");
         this.roomConnectionState = "connecting";
 
-        if (!this.localStream && this.localMediaConstraints) {
-            const localStream = await navigator.mediaDevices.getUserMedia(this.localMediaConstraints);
-            this.localStream = localStream;
-        }
-
-        const organization = await this.organizationServiceCache.fetchOrganization();
-        if (!organization) {
-            throw new Error("Invalid room url");
+        if (this._ownsLocalMedia) {
+            await this.localMedia.start();
         }
 
         // TODO: Get room permissions
@@ -380,8 +384,8 @@ export default class RoomConnection extends TypedEventTarget {
 
         const webrtcProvider = {
             getMediaConstraints: () => ({
-                audio: !!this.localStream?.getAudioTracks().find((t) => t.enabled),
-                video: !!this.localStream?.getVideoTracks().find((t) => t.enabled),
+                audio: this.localMedia.isMicrophoneEnabled(),
+                video: this.localMedia.isCameraEnabled(),
             }),
             deferrable(clientId: string) {
                 return !clientId;
@@ -405,6 +409,11 @@ export default class RoomConnection extends TypedEventTarget {
             },
         });
 
+        const organization = await this.organizationServiceCache.fetchOrganization();
+        if (!organization) {
+            throw new Error("Invalid room url");
+        }
+
         // Identify device on signal connection
         const deviceCredentials = await this.credentialsService.getCredentials();
 
@@ -418,8 +427,8 @@ export default class RoomConnection extends TypedEventTarget {
             this.signalSocket.emit("join_room", {
                 avatarUrl: null,
                 config: {
-                    isAudioEnabled: !!this.localStream?.getAudioTracks().find((t) => t.enabled),
-                    isVideoEnabled: !!this.localStream?.getVideoTracks().find((t) => t.enabled),
+                    isAudioEnabled: this.localMedia.isMicrophoneEnabled(),
+                    isVideoEnabled: this.localMedia.isCameraEnabled(),
                 },
                 deviceCapabilities: { canScreenshare: true },
                 displayName: this.displayName,
@@ -430,7 +439,7 @@ export default class RoomConnection extends TypedEventTarget {
                 roomKey: null,
                 roomName: this.roomUrl.pathname,
                 selfId: "",
-                userAgent: `browser-sdk:${sdkVersion || "unknown"}`
+                userAgent: `browser-sdk:${sdkVersion || "unknown"}`,
             });
         });
 
@@ -443,7 +452,10 @@ export default class RoomConnection extends TypedEventTarget {
             const localClient = clients.find((c) => c.id === selfId);
             if (!localClient) throw new Error("Missing local client");
 
-            this.localParticipant = new LocalParticipant({ ...localClient, stream: this.localStream });
+            this.localParticipant = new LocalParticipant({
+                ...localClient,
+                stream: this.localMedia.stream || undefined,
+            });
             this.remoteParticipants = clients
                 .filter((c) => c.id !== selfId)
                 .map((c) => new RemoteParticipant({ ...c, newJoiner: false }));
@@ -467,6 +479,16 @@ export default class RoomConnection extends TypedEventTarget {
 
     leave(): Promise<void> {
         return new Promise<void>((resolve) => {
+            if (this._ownsLocalMedia) {
+                this.localMedia.stop();
+            }
+
+            if (this.rtcManager) {
+                this.localMedia.removeRtcManager(this.rtcManager);
+                this.rtcManager.disconnectAll();
+                this.rtcManager = undefined;
+            }
+
             if (!this.signalSocket) {
                 return resolve();
             }
@@ -481,30 +503,6 @@ export default class RoomConnection extends TypedEventTarget {
                 resolve();
             });
         });
-    }
-
-    toggleCamera(enabled?: boolean): void {
-        const localVideoTrack = this.localStream?.getVideoTracks()[0];
-        if (!localVideoTrack) {
-            this.logger.log("Tried toggling non-existing video track");
-            return;
-        }
-        // TODO: Do stopOrResumeVideo
-        const newValue = enabled ?? !localVideoTrack.enabled;
-        localVideoTrack.enabled = newValue;
-        this.signalSocket.emit("enable_video", { enabled: newValue });
-    }
-
-    toggleMicrophone(enabled?: boolean): void {
-        const localAudioTrack = this.localStream?.getAudioTracks()[0];
-        if (!localAudioTrack) {
-            this.logger.log("Tried toggling non-existing audio track");
-            return;
-        }
-        // TODO: Do stopOrResumeAudio
-        const newValue = enabled ?? !localAudioTrack.enabled;
-        localAudioTrack.enabled = newValue;
-        this.signalSocket.emit("enable_audio", { enabled: newValue });
     }
 
     setDisplayName(displayName: string): void {

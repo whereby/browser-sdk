@@ -2,6 +2,7 @@ import { useEffect, useReducer, useState } from "react";
 import RoomConnection, { RoomConnectionOptions } from "../RoomConnection";
 import reducer, { RoomState } from "../reducer";
 import VideoView from "./VideoView";
+import { LocalMediaRef } from "./useLocalMedia";
 
 interface RoomConnectionActions {
     toggleCamera(enabled?: boolean): void;
@@ -13,15 +14,24 @@ interface RoomConnectionComponents {
     VideoView: typeof VideoView;
 }
 
+interface UseRoomConnectionOptions extends Omit<RoomConnectionOptions, "localMedia"> {
+    localMedia?: LocalMediaRef;
+}
+
 export default function useRoomConnection(
     roomUrl: string,
-    roomConnectionOptions: RoomConnectionOptions
+    roomConnectionOptions: UseRoomConnectionOptions
 ): [state: RoomState, actions: RoomConnectionActions, components: RoomConnectionComponents] {
     const [roomConnection, setRoomConnection] = useState<RoomConnection | null>(null);
     const [state, dispatch] = useReducer(reducer, { remoteParticipants: [] });
 
     useEffect(() => {
-        setRoomConnection(new RoomConnection(roomUrl, roomConnectionOptions));
+        setRoomConnection(
+            new RoomConnection(roomUrl, {
+                ...roomConnectionOptions,
+                localMedia: roomConnectionOptions?.localMedia?._ref || undefined,
+            })
+        );
     }, [roomUrl]);
 
     useEffect(() => {
@@ -75,10 +85,10 @@ export default function useRoomConnection(
         state,
         {
             toggleCamera: (enabled) => {
-                roomConnection?.toggleCamera(enabled);
+                roomConnection?.localMedia.toggleCameraEnabled(enabled);
             },
             toggleMicrophone: (enabled) => {
-                roomConnection?.toggleMicrophone(enabled);
+                roomConnection?.localMedia.toggleMichrophoneEnabled(enabled);
             },
             setDisplayName: (displayName) => {
                 roomConnection?.setDisplayName(displayName);
