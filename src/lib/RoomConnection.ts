@@ -379,9 +379,6 @@ export default class RoomConnection extends TypedEventTarget {
             await this.localMedia.start();
         }
 
-        // TODO: Get room permissions
-        // TODO: Get room features
-
         const webrtcProvider = {
             getMediaConstraints: () => ({
                 audio: this.localMedia.isMicrophoneEnabled(),

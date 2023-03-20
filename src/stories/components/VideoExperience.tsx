@@ -12,7 +12,7 @@ export default function VideoExperience({
     roomName: string;
     localMedia?: LocalMediaRef;
 }) {
-    const [state, actions, components] = useRoomConnection(roomName, {
+    const { state, actions, components } = useRoomConnection(roomName, {
         displayName,
         localMediaConstraints: {
             audio: true,
