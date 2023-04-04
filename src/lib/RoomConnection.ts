@@ -142,10 +142,16 @@ export default class RoomConnection extends TypedEventTarget {
     private logger: Logger;
     private _ownsLocalMedia = false;
     private displayName?: string;
+    private _roomKey: string | null;
 
-    constructor(roomUrl: string, { displayName, localMediaConstraints, logger, localMedia }: RoomConnectionOptions) {
+    constructor(
+        roomUrl: string,
+        { displayName, localMedia, localMediaConstraints, logger, roomKey }: RoomConnectionOptions
+    ) {
         super();
         this.roomUrl = new URL(roomUrl); // Throw if invalid Whereby room url
+        const searchParams = new URLSearchParams(this.roomUrl.search);
+        this._roomKey = roomKey || searchParams.get("roomKey");
         this.logger = logger || {
             debug: noop,
             error: noop,
@@ -202,6 +208,10 @@ export default class RoomConnection extends TypedEventTarget {
             const { enabled } = e.detail;
             this.signalSocket.emit("enable_audio", { enabled });
         });
+    }
+
+    public get roomKey(): string | null {
+        return this._roomKey;
     }
 
     private _handleNewClient({ client }: NewClientEvent) {
@@ -435,7 +445,7 @@ export default class RoomConnection extends TypedEventTarget {
                 isDevicePermissionDenied: false,
                 kickFromOtherRooms: false,
                 organizationId: organization.organizationId,
-                roomKey: null,
+                roomKey: this.roomKey,
                 roomName: this.roomUrl.pathname,
                 selfId: "",
                 userAgent: `browser-sdk:${sdkVersion || "unknown"}`,
