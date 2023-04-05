@@ -85,7 +85,7 @@ const NON_PERSON_ROLES = ["recorder", "streamer"];
 
 function createSocket() {
     const parsedUrl = new URL(SIGNAL_BASE_URL);
-    const path = `${parsedUrl.pathname.replace(/^\/$/, "")}/protocol/socket.io/v1`;
+    const path = `${parsedUrl.pathname.replace(/^\/$/, "")}/protocol/socket.io/v4`;
     const SOCKET_HOST = parsedUrl.origin;
 
     const socketConf = {
@@ -414,11 +414,13 @@ export default class RoomConnection extends TypedEventTarget {
         // Identify device on signal connection
         const deviceCredentials = await this.credentialsService.getCredentials();
 
+        this.signalSocket.connect();
+
         // TODO: Handle connection and failed connection properly
-        setTimeout(() => {
+        this.signalSocket.on("connect", () => {
             this.logger.log("Connected to signal socket");
             this.signalSocket.emit("identify_device", { deviceCredentials });
-        }, 2000);
+        });
 
         this.signalSocket.once("device_identified", () => {
             this.signalSocket.emit("join_room", {
