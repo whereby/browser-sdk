@@ -95,6 +95,15 @@ declare module "@whereby/jslib-media/src/utils/ServerSocket" {
         roleName: string;
     }
 
+    interface SignalKnocker {
+        clientId: string;
+        displayName: string | null;
+        imageUrl: string | null;
+        liveVideo: boolean;
+        userAvatarUrl: string | null;
+        userId: string | null;
+    }
+
     interface SignalClient {
         displayName: string;
         id: string;
@@ -127,11 +136,39 @@ declare module "@whereby/jslib-media/src/utils/ServerSocket" {
         client: SignalClient;
     }
 
+    interface KnockerLeftEvent {
+        clientId: string;
+    }
+
+    interface KnockAcceptedEvent {
+        clientId: string;
+        metadata: {
+            roomKey: string;
+            roomName: string;
+        };
+        resolution: "accepted";
+    }
+
+    interface KnockRejectedEvent {
+        clientId: string;
+        resolution: "rejected";
+    }
+
     interface RoomJoinedEvent {
-        room: {
+        error?: string;
+        isLocked: boolean;
+        room?: {
             clients: SignalClient[];
+            knockers: SignalKnocker[];
         };
         selfId: string;
+    }
+
+    interface RoomKnockedEvent {
+        clientId: string;
+        displayName: string | null;
+        imageUrl: string | null;
+        liveVideo: boolean;
     }
 
     interface VideoEnabledEvent {
@@ -151,8 +188,11 @@ declare module "@whereby/jslib-media/src/utils/ServerSocket" {
         chat_message: ChatMessage;
         connect: void;
         device_identified: void;
+        knock_handled: KnockAcceptedEvent | KnockRejectedEvent;
+        knocker_left: KnockerLeftEvent;
         new_client: NewClientEvent;
         room_joined: RoomJoinedEvent;
+        room_knocked: RoomKnockedEvent;
         room_left: void;
         video_enabled: VideoEnabledEvent;
     }
@@ -168,12 +208,24 @@ declare module "@whereby/jslib-media/src/utils/ServerSocket" {
         displayName?: string;
     }
 
+    interface KnockRoomRequest {
+        displayName: string;
+        imageUrl: string | null;
+        kickFromOtherRooms: boolean;
+        liveVideo: boolean;
+        organizationId: string;
+        roomKey: string | null;
+        roomName: string;
+    }
+
     interface SignalRequests {
         chat_message: { text: string };
         enable_audio: { enabled: boolean };
         enable_video: { enabled: boolean };
+        handle_knock: { action: "accept" | "reject"; clientId: string; response: unknown };
         identify_device: IdentifyDeviceRequest;
         join_room: JoinRoomRequest;
+        knock_room: KnockRoomRequest;
         leave_room: void;
         send_client_metadata: { type: string; payload: { displayName?: string } };
     }
