@@ -75,3 +75,8 @@ export class LocalParticipant extends RoomParticipant {
         super({ displayName, id, stream, isAudioEnabled, isVideoEnabled });
     }
 }
+
+export interface WaitingParticipant {
+    id: string;
+    displayName: string | null;
+}
