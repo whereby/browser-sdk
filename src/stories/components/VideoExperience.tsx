@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useState } from "react";
 import DisplayNameForm from "./DisplayNameForm";
 import { LocalMediaRef } from "../../lib/react/useLocalMedia";
 import useRoomConnection from "../../lib/react/useRoomConnection";
@@ -12,6 +12,7 @@ export default function VideoExperience({
     roomName: string;
     localMedia?: LocalMediaRef;
 }) {
+    const [chatMessage, setChatMessage] = useState("");
     const { state, actions, components } = useRoomConnection(roomName, {
         displayName,
         localMediaConstraints: {
@@ -22,12 +23,25 @@ export default function VideoExperience({
         logger: console,
     });
 
-    const { localParticipant, remoteParticipants } = state;
-    const { setDisplayName, toggleCamera, toggleMicrophone } = actions;
+    const { localParticipant, mostRecentChatMessage, remoteParticipants } = state;
+    const { sendChatMessage, setDisplayName, toggleCamera, toggleMicrophone } = actions;
     const { VideoView } = components;
 
     return (
         <div>
+            <div className="chat">
+                <div className="last_message">{mostRecentChatMessage?.text}</div>
+                <form
+                    onSubmit={(e) => {
+                        e.preventDefault();
+                        sendChatMessage(chatMessage);
+                        setChatMessage("");
+                    }}
+                >
+                    <input type="text" value={chatMessage} onChange={(e) => setChatMessage(e.target.value)} />
+                    <button type="submit">Send message</button>
+                </form>
+            </div>
             <div className="container">
                 {[localParticipant, ...remoteParticipants].map((participant, i) => (
                     <div className="participantWrapper" key={participant?.id || i}>

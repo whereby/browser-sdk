@@ -109,6 +109,17 @@ declare module "@whereby/jslib-media/src/utils/ServerSocket" {
         isAudioEnabled: boolean;
     }
 
+    interface ChatMessage {
+        id: string;
+        messageType: "text";
+        roomName: string;
+        senderId: string;
+        sig: string;
+        text: string;
+        timestamp: string;
+        userId: string;
+    }
+
     interface ClientLeftEvent {
         clientId: string;
     }
@@ -137,6 +148,7 @@ declare module "@whereby/jslib-media/src/utils/ServerSocket" {
         audio_enabled: AudioEnabledEvent;
         client_left: ClientLeftEvent;
         client_metadata_received: ClientMetadataReceivedEvent;
+        chat_message: ChatMessage;
         connect: void;
         device_identified: void;
         new_client: NewClientEvent;
@@ -157,6 +169,7 @@ declare module "@whereby/jslib-media/src/utils/ServerSocket" {
     }
 
     interface SignalRequests {
+        chat_message: { text: string };
         enable_audio: { enabled: boolean };
         enable_video: { enabled: boolean };
         identify_device: IdentifyDeviceRequest;
