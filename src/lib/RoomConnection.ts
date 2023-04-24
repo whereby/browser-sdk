@@ -98,6 +98,7 @@ function createSocket() {
         reconnectionDelay: 5000,
         reconnectionDelayMax: 30000,
         timeout: 10000,
+        withCredentials: true,
     };
 
     return new ServerSocket(SOCKET_HOST, socketConf);
@@ -433,15 +434,11 @@ export default class RoomConnection extends TypedEventTarget {
         // Identify device on signal connection
         const deviceCredentials = await this.credentialsService.getCredentials();
 
-        this.signalSocket.connect();
-
-        // TODO: Handle connection and failed connection properly
-        this.signalSocket.on("connect", () => {
-            this.logger.log("Connected to signal socket");
-            this.signalSocket.emit("identify_device", { deviceCredentials });
-        });
+        this.logger.log("Connecting to signal socket");
+        this.signalSocket.emit("identify_device", { deviceCredentials });
 
         this.signalSocket.once("device_identified", () => {
+            this.logger.log("Connected to signal socket");
             this.signalSocket.emit("join_room", {
                 avatarUrl: null,
                 config: {
