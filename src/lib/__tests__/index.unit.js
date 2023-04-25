@@ -72,6 +72,7 @@ describe("@whereby/browser-sdk", () => {
                 expect.any(String),
                 expect.objectContaining({
                     startRecording: expect.any(Function),
+                    startAudioRecording: expect.any(Function),
                     stopRecording: expect.any(Function),
                     toggleCamera: expect.any(Function),
                     toggleMicrophone: expect.any(Function),

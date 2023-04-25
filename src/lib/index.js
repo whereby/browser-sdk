@@ -75,6 +75,9 @@ define("WherebyEmbed", {
     startRecording() {
         this._postCommand("start_recording");
     },
+    startAudioRecording() {
+        this._postCommand("start_recording", [{ audioOnly: true }]);
+    },
     stopRecording() {
         this._postCommand("stop_recording");
     },
@@ -112,13 +115,14 @@ define("WherebyEmbed", {
         } = this;
         if (!room) return this.html`Whereby: Missing room attr.`;
         // Get subdomain from room URL, or use it specified
-        let m = /https:\/\/([^.]+)\.whereby.com\/.+/.exec(room);
-        const subdomain = (m && m[1]) || this.subdomain || process.env.STORYBOOK_SUBDOMAIN;
+        let m = /https:\/\/([^.]+)(\.whereby.com|-ip-\d+-\d+-\d+-\d+.hereby.dev:4443)\/.+/.exec(room);
+        const subdomain = (m && m[1]) || this.subdomain;
         if (!subdomain) return this.html`Whereby: Missing subdomain attr.`;
-        const baseURL = process.env.STORYBOOK_BASEURL || `.whereby.com`;
+        const baseURL = m[2] || `.whereby.com`;
         this.url = new URL(room, `https://${subdomain}${baseURL}`);
-        if (process.env.STORYBOOK_ROOMKEY) {
-            this.url.searchParams.append("roomKey", process.env.STORYBOOK_ROOMKEY);
+        const roomUrl = new URL(room);
+        if (roomUrl.searchParams.roomKey) {
+            this.url.searchParams.append("roomKey", roomUrl.searchParams.roomKey);
         }
 
         Object.entries({
