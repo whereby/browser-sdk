@@ -1,26 +1,34 @@
 import { useEffect, useReducer, useState } from "react";
 import VideoView from "./VideoView";
 import { LocalMediaRef } from "./useLocalMedia";
-import RoomConnection, { RoomConnectionOptions } from "../RoomConnection";
+import RoomConnection, { ChatMessage, RoomConnectionOptions } from "../RoomConnection";
 import { LocalParticipant, RemoteParticipant } from "../RoomParticipant";
 
 type RemoteParticipantState = Omit<RemoteParticipant, "updateStreamState">;
 
 export interface RoomConnectionState {
+    chatMessages: ChatMessage[];
     isJoining: boolean;
     joinError: unknown;
     localParticipant?: LocalParticipant;
+    mostRecentChatMessage: ChatMessage | null;
     roomConnectionStatus?: "connecting" | "connected" | "disconnected";
     remoteParticipants: RemoteParticipantState[];
 }
 
 const initialState: RoomConnectionState = {
+    chatMessages: [],
     isJoining: false,
     joinError: null,
+    mostRecentChatMessage: null,
     remoteParticipants: [],
 };
 
 type RoomConnectionEvents =
+    | {
+          type: "CHAT_MESSAGE";
+          payload: ChatMessage;
+      }
     | {
           type: "ROOM_JOINED";
           payload: {
@@ -95,6 +103,12 @@ function updateParticipant(
 
 function reducer(state: RoomConnectionState, action: RoomConnectionEvents): RoomConnectionState {
     switch (action.type) {
+        case "CHAT_MESSAGE":
+            return {
+                ...state,
+                chatMessages: [...state.chatMessages, action.payload],
+                mostRecentChatMessage: action.payload,
+            };
         case "ROOM_JOINED":
             return {
                 ...state,
@@ -158,9 +172,10 @@ interface UseRoomConnectionOptions extends Omit<RoomConnectionOptions, "localMed
 }
 
 interface RoomConnectionActions {
+    sendChatMessage(text: string): void;
+    setDisplayName(displayName: string): void;
     toggleCamera(enabled?: boolean): void;
     toggleMicrophone(enabled?: boolean): void;
-    setDisplayName(displayName: string): void;
 }
 
 interface RoomConnectionComponents {
@@ -188,6 +203,11 @@ export default function useRoomConnection(
     const [state, dispatch] = useReducer(reducer, initialState);
 
     useEffect(() => {
+        roomConnection.addEventListener("chat_message", (e) => {
+            const chatMessage = e.detail;
+            dispatch({ type: "CHAT_MESSAGE", payload: chatMessage });
+        });
+
         roomConnection.addEventListener("participant_audio_enabled", (e) => {
             const { participantId, isAudioEnabled } = e.detail;
             dispatch({ type: "PARTICIPANT_AUDIO_ENABLED", payload: { participantId, isAudioEnabled } });
@@ -233,15 +253,18 @@ export default function useRoomConnection(
     return {
         state,
         actions: {
+            sendChatMessage: (text) => {
+                roomConnection.sendChatMessage(text);
+            },
+            setDisplayName: (displayName) => {
+                roomConnection?.setDisplayName(displayName);
+                dispatch({ type: "LOCAL_CLIENT_DISPLAY_NAME_CHANGED", payload: { displayName } });
+            },
             toggleCamera: (enabled) => {
                 roomConnection?.localMedia.toggleCameraEnabled(enabled);
             },
             toggleMicrophone: (enabled) => {
                 roomConnection?.localMedia.toggleMichrophoneEnabled(enabled);
-            },
-            setDisplayName: (displayName) => {
-                roomConnection?.setDisplayName(displayName);
-                dispatch({ type: "LOCAL_CLIENT_DISPLAY_NAME_CHANGED", payload: { displayName } });
             },
         },
         components: {

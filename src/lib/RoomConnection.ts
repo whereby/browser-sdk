@@ -17,6 +17,7 @@ import {
 import { LocalParticipant, RemoteParticipant, StreamState } from "./RoomParticipant";
 
 import ServerSocket, {
+    ChatMessage as SignalChatMessage,
     ClientLeftEvent,
     ClientMetadataReceivedEvent,
     NewClientEvent,
@@ -34,6 +35,8 @@ export interface RoomConnectionOptions {
     logger?: Logger;
     localMedia?: LocalMedia;
 }
+
+export type ChatMessage = Pick<SignalChatMessage, "senderId" | "timestamp" | "text">;
 
 type RoomJoinedEvent = {
     localParticipant: LocalParticipant;
@@ -69,6 +72,7 @@ type ParticipantMetadataChangedEvent = {
 };
 
 interface RoomEventsMap {
+    chat_message: CustomEvent<ChatMessage>;
     participant_audio_enabled: CustomEvent<ParticipantAudioEnabledEvent>;
     participant_joined: CustomEvent<ParticipantJoinedEvent>;
     participant_left: CustomEvent<ParticipantLeftEvent>;
@@ -194,6 +198,7 @@ export default class RoomConnection extends TypedEventTarget {
         // Create signal socket and set up event listeners
         this.signalSocket = createSocket();
         this.signalSocket.on("new_client", this._handleNewClient.bind(this));
+        this.signalSocket.on("chat_message", this._handleNewChatMessage.bind(this));
         this.signalSocket.on("client_left", this._handleClientLeft.bind(this));
         this.signalSocket.on("audio_enabled", this._handleClientAudioEnabled.bind(this));
         this.signalSocket.on("video_enabled", this._handleClientVideoEnabled.bind(this));
@@ -212,6 +217,10 @@ export default class RoomConnection extends TypedEventTarget {
 
     public get roomKey(): string | null {
         return this._roomKey;
+    }
+
+    private _handleNewChatMessage(message: SignalChatMessage) {
+        this.dispatchEvent(new CustomEvent("chat_message", { detail: message }));
     }
 
     private _handleNewClient({ client }: NewClientEvent) {
@@ -511,6 +520,12 @@ export default class RoomConnection extends TypedEventTarget {
                 this.signalSocket.disconnect();
                 resolve();
             });
+        });
+    }
+
+    sendChatMessage(text: string): void {
+        this.signalSocket.emit("chat_message", {
+            text,
         });
     }
 
