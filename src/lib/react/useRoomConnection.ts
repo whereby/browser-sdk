@@ -1,8 +1,8 @@
 import { useEffect, useReducer, useState } from "react";
 import VideoView from "./VideoView";
 import { LocalMediaRef } from "./useLocalMedia";
-import RoomConnection, { ChatMessage, RoomConnectionOptions } from "../RoomConnection";
-import { LocalParticipant, RemoteParticipant } from "../RoomParticipant";
+import RoomConnection, { ChatMessage, RoomConnectionOptions, RoomConnectionStatus } from "../RoomConnection";
+import { LocalParticipant, RemoteParticipant, WaitingParticipant } from "../RoomParticipant";
 
 type RemoteParticipantState = Omit<RemoteParticipant, "updateStreamState">;
 
@@ -12,16 +12,19 @@ export interface RoomConnectionState {
     joinError: unknown;
     localParticipant?: LocalParticipant;
     mostRecentChatMessage: ChatMessage | null;
-    roomConnectionStatus?: "connecting" | "connected" | "disconnected";
+    roomConnectionStatus: RoomConnectionStatus;
     remoteParticipants: RemoteParticipantState[];
+    waitingParticipants: WaitingParticipant[];
 }
 
 const initialState: RoomConnectionState = {
     chatMessages: [],
+    roomConnectionStatus: "",
     isJoining: false,
     joinError: null,
     mostRecentChatMessage: null,
     remoteParticipants: [],
+    waitingParticipants: [],
 };
 
 type RoomConnectionEvents =
@@ -34,6 +37,13 @@ type RoomConnectionEvents =
           payload: {
               localParticipant: LocalParticipant;
               remoteParticipants: RemoteParticipantState[];
+              waitingParticipants: WaitingParticipant[];
+          };
+      }
+    | {
+          type: "ROOM_CONNECTION_STATUS_CHANGED";
+          payload: {
+              roomConnectionStatus: RoomConnectionStatus;
           };
       }
     | {
@@ -81,6 +91,19 @@ type RoomConnectionEvents =
           payload: {
               displayName: string;
           };
+      }
+    | {
+          type: "WAITING_PARTICIPANT_JOINED";
+          payload: {
+              participantId: string;
+              displayName: string | null;
+          };
+      }
+    | {
+          type: "WAITING_PARTICIPANT_LEFT";
+          payload: {
+              participantId: string;
+          };
       };
 
 function updateParticipant(
@@ -114,7 +137,13 @@ function reducer(state: RoomConnectionState, action: RoomConnectionEvents): Room
                 ...state,
                 localParticipant: action.payload.localParticipant,
                 remoteParticipants: action.payload.remoteParticipants,
+                waitingParticipants: action.payload.waitingParticipants,
                 roomConnectionStatus: "connected",
+            };
+        case "ROOM_CONNECTION_STATUS_CHANGED":
+            return {
+                ...state,
+                roomConnectionStatus: action.payload.roomConnectionStatus,
             };
         case "PARTICIPANT_AUDIO_ENABLED":
             return {
@@ -162,6 +191,19 @@ function reducer(state: RoomConnectionState, action: RoomConnectionEvents): Room
                 ...state,
                 localParticipant: { ...state.localParticipant, displayName: action.payload.displayName },
             };
+        case "WAITING_PARTICIPANT_JOINED":
+            return {
+                ...state,
+                waitingParticipants: [
+                    ...state.waitingParticipants,
+                    { id: action.payload.participantId, displayName: action.payload.displayName },
+                ],
+            };
+        case "WAITING_PARTICIPANT_LEFT":
+            return {
+                ...state,
+                waitingParticipants: state.waitingParticipants.filter((wp) => wp.id !== action.payload.participantId),
+            };
         default:
             throw state;
     }
@@ -173,9 +215,12 @@ interface UseRoomConnectionOptions extends Omit<RoomConnectionOptions, "localMed
 
 interface RoomConnectionActions {
     sendChatMessage(text: string): void;
+    knock(): void;
     setDisplayName(displayName: string): void;
     toggleCamera(enabled?: boolean): void;
     toggleMicrophone(enabled?: boolean): void;
+    acceptWaitingParticipant(participantId: string): void;
+    rejectWaitingParticipant(participantId: string): void;
 }
 
 interface RoomConnectionComponents {
@@ -228,9 +273,14 @@ export default function useRoomConnection(
             dispatch({ type: "PARTICIPANT_STREAM_ADDED", payload: { participantId, stream } });
         });
 
+        roomConnection.addEventListener("room_connection_status_changed", (e) => {
+            const { roomConnectionStatus } = e.detail;
+            dispatch({ type: "ROOM_CONNECTION_STATUS_CHANGED", payload: { roomConnectionStatus } });
+        });
+
         roomConnection.addEventListener("room_joined", (e) => {
-            const { localParticipant, remoteParticipants } = e.detail;
-            dispatch({ type: "ROOM_JOINED", payload: { localParticipant, remoteParticipants } });
+            const { localParticipant, remoteParticipants, waitingParticipants } = e.detail;
+            dispatch({ type: "ROOM_JOINED", payload: { localParticipant, remoteParticipants, waitingParticipants } });
         });
 
         roomConnection.addEventListener("participant_video_enabled", (e) => {
@@ -243,6 +293,16 @@ export default function useRoomConnection(
             dispatch({ type: "PARTICIPANT_METADATA_CHANGED", payload: { participantId, displayName } });
         });
 
+        roomConnection.addEventListener("waiting_participant_joined", (e) => {
+            const { participantId, displayName } = e.detail;
+            dispatch({ type: "WAITING_PARTICIPANT_JOINED", payload: { participantId, displayName } });
+        });
+
+        roomConnection.addEventListener("waiting_participant_left", (e) => {
+            const { participantId } = e.detail;
+            dispatch({ type: "WAITING_PARTICIPANT_LEFT", payload: { participantId } });
+        });
+
         roomConnection.join();
 
         return () => {
@@ -253,18 +313,27 @@ export default function useRoomConnection(
     return {
         state,
         actions: {
+            knock: () => {
+                roomConnection.knock();
+            },
             sendChatMessage: (text) => {
                 roomConnection.sendChatMessage(text);
             },
             setDisplayName: (displayName) => {
-                roomConnection?.setDisplayName(displayName);
+                roomConnection.setDisplayName(displayName);
                 dispatch({ type: "LOCAL_CLIENT_DISPLAY_NAME_CHANGED", payload: { displayName } });
             },
             toggleCamera: (enabled) => {
-                roomConnection?.localMedia.toggleCameraEnabled(enabled);
+                roomConnection.localMedia.toggleCameraEnabled(enabled);
             },
             toggleMicrophone: (enabled) => {
-                roomConnection?.localMedia.toggleMichrophoneEnabled(enabled);
+                roomConnection.localMedia.toggleMichrophoneEnabled(enabled);
+            },
+            acceptWaitingParticipant: (participantId) => {
+                roomConnection.acceptWaitingParticipant(participantId);
+            },
+            rejectWaitingParticipant: (participantId) => {
+                roomConnection.rejectWaitingParticipant(participantId);
             },
         },
         components: {

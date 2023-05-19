@@ -2,6 +2,8 @@
 import assert from "assert";
 
 export default class Room {
+    public readonly isLocked: boolean;
+
     constructor(properties = {}) {
         assert.ok(properties instanceof Object, "properties<object> must be empty or an object");
 

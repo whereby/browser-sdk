@@ -14,14 +14,18 @@ import {
     RoomService,
 } from "./api";
 
-import { LocalParticipant, RemoteParticipant, StreamState } from "./RoomParticipant";
+import { LocalParticipant, RemoteParticipant, StreamState, WaitingParticipant } from "./RoomParticipant";
 
 import ServerSocket, {
     ChatMessage as SignalChatMessage,
     ClientLeftEvent,
     ClientMetadataReceivedEvent,
+    KnockerLeftEvent,
+    KnockAcceptedEvent,
+    KnockRejectedEvent,
     NewClientEvent,
     RoomJoinedEvent as SignalRoomJoinedEvent,
+    RoomKnockedEvent as SignalRoomKnockedEvent,
 } from "@whereby/jslib-media/src/utils/ServerSocket";
 import { sdkVersion } from "./index";
 import LocalMedia from "./LocalMedia";
@@ -37,10 +41,24 @@ export interface RoomConnectionOptions {
 }
 
 export type ChatMessage = Pick<SignalChatMessage, "senderId" | "timestamp" | "text">;
+export type RoomConnectionStatus =
+    | ""
+    | "connecting"
+    | "connected"
+    | "room_locked"
+    | "knocking"
+    | "disconnected"
+    | "accepted"
+    | "rejected";
 
 type RoomJoinedEvent = {
     localParticipant: LocalParticipant;
     remoteParticipants: RemoteParticipant[];
+    waitingParticipants: WaitingParticipant[];
+};
+
+type RoomConnectionStatusChangedEvent = {
+    roomConnectionStatus: RoomConnectionStatus;
 };
 
 type ParticipantJoinedEvent = {
@@ -71,6 +89,15 @@ type ParticipantMetadataChangedEvent = {
     displayName: string;
 };
 
+type WaitingParticipantJoinedEvent = {
+    participantId: string;
+    displayName: string | null;
+};
+
+type WaitingParticipantLeftEvent = {
+    participantId: string;
+};
+
 interface RoomEventsMap {
     chat_message: CustomEvent<ChatMessage>;
     participant_audio_enabled: CustomEvent<ParticipantAudioEnabledEvent>;
@@ -79,10 +106,13 @@ interface RoomEventsMap {
     participant_metadata_changed: CustomEvent<ParticipantMetadataChangedEvent>;
     participant_stream_added: CustomEvent<ParticipantStreamAddedEvent>;
     participant_video_enabled: CustomEvent<ParticipantVideoEnabledEvent>;
+    room_connection_status_changed: CustomEvent<RoomConnectionStatusChangedEvent>;
     room_joined: CustomEvent<RoomJoinedEvent>;
+    waiting_participant_joined: CustomEvent<WaitingParticipantJoinedEvent>;
+    waiting_participant_left: CustomEvent<WaitingParticipantLeftEvent>;
 }
 
-const API_BASE_URL = "https://api.appearin.net";
+const API_BASE_URL = "https://api.whereby.dev";
 const SIGNAL_BASE_URL = "wss://signal.appearin.net";
 
 const NON_PERSON_ROLES = ["recorder", "streamer"];
@@ -132,6 +162,8 @@ export default class RoomConnection extends TypedEventTarget {
     public roomUrl: URL;
     public remoteParticipants: RemoteParticipant[] = [];
     public readonly localMediaConstraints?: MediaStreamConstraints;
+    public readonly roomName: string;
+    private organizationId: string;
 
     private credentialsService: CredentialsService;
     private apiClient: ApiClient;
@@ -143,7 +175,7 @@ export default class RoomConnection extends TypedEventTarget {
     private signalSocket: ServerSocket;
     private rtcManagerDispatcher?: RtcManagerDispatcher;
     private rtcManager?: RtcManager;
-    private roomConnectionState: "" | "connecting" | "connected" | "disconnected" = "";
+    private roomConnectionStatus: RoomConnectionStatus;
     private logger: Logger;
     private _ownsLocalMedia = false;
     private displayName?: string;
@@ -154,9 +186,12 @@ export default class RoomConnection extends TypedEventTarget {
         { displayName, localMedia, localMediaConstraints, logger, roomKey }: RoomConnectionOptions
     ) {
         super();
+        this.organizationId = "";
+        this.roomConnectionStatus = "";
         this.roomUrl = new URL(roomUrl); // Throw if invalid Whereby room url
         const searchParams = new URLSearchParams(this.roomUrl.search);
         this._roomKey = roomKey || searchParams.get("roomKey");
+        this.roomName = this.roomUrl.pathname;
         this.logger = logger || {
             debug: noop,
             error: noop,
@@ -177,6 +212,7 @@ export default class RoomConnection extends TypedEventTarget {
             throw new Error("Missing constraints");
         }
 
+        // Set up services
         this.credentialsService = CredentialsService.create({ baseUrl: API_BASE_URL });
         this.apiClient = new ApiClient({
             fetchDeviceCredentials: this.credentialsService.getCredentials.bind(this.credentialsService),
@@ -204,6 +240,10 @@ export default class RoomConnection extends TypedEventTarget {
         this.signalSocket.on("audio_enabled", this._handleClientAudioEnabled.bind(this));
         this.signalSocket.on("video_enabled", this._handleClientVideoEnabled.bind(this));
         this.signalSocket.on("client_metadata_received", this._handleClientMetadataReceived.bind(this));
+        this.signalSocket.on("knock_handled", this._handleKnockHandled.bind(this));
+        this.signalSocket.on("knocker_left", this._handleKnockerLeft.bind(this));
+        this.signalSocket.on("room_joined", this._handleRoomJoined.bind(this));
+        this.signalSocket.on("room_knocked", this._handleRoomKnocked.bind(this));
 
         // Set up local media listeners
         this.localMedia.addEventListener("camera_enabled", (e) => {
@@ -279,6 +319,92 @@ export default class RoomConnection extends TypedEventTarget {
         );
     }
 
+    private _handleKnockHandled(payload: KnockAcceptedEvent | KnockRejectedEvent) {
+        const { resolution } = payload;
+
+        if (resolution === "accepted") {
+            this.roomConnectionStatus = "accepted";
+            this._roomKey = payload.metadata.roomKey;
+            this._joinRoom();
+        } else if (resolution === "rejected") {
+            this.roomConnectionStatus = "rejected";
+
+            this.dispatchEvent(
+                new CustomEvent("room_connection_status_changed", {
+                    detail: {
+                        roomConnectionStatus: this.roomConnectionStatus,
+                    },
+                })
+            );
+        }
+    }
+
+    private _handleKnockerLeft(payload: KnockerLeftEvent) {
+        const { clientId } = payload;
+
+        this.dispatchEvent(
+            new CustomEvent("waiting_participant_left", {
+                detail: { participantId: clientId },
+            })
+        );
+    }
+
+    private _handleRoomJoined(event: SignalRoomJoinedEvent) {
+        const { error, isLocked, room, selfId } = event;
+        if (error === "room_locked" && isLocked) {
+            this.roomConnectionStatus = "room_locked";
+            this.dispatchEvent(
+                new CustomEvent("room_connection_status_changed", {
+                    detail: {
+                        roomConnectionStatus: this.roomConnectionStatus,
+                    },
+                })
+            );
+            return;
+        }
+        // Check if we have an error
+        // Check if it is a room joined error
+        // Set state to connect_failed_locked
+        // Set state to connect_failed_no_host
+        if (room) {
+            const { clients, knockers } = room;
+
+            const localClient = clients.find((c) => c.id === selfId);
+            if (!localClient) throw new Error("Missing local client");
+
+            this.localParticipant = new LocalParticipant({
+                ...localClient,
+                stream: this.localMedia.stream || undefined,
+            });
+            this.remoteParticipants = clients
+                .filter((c) => c.id !== selfId)
+                .map((c) => new RemoteParticipant({ ...c, newJoiner: false }));
+
+            this.roomConnectionStatus = "connected";
+            this.dispatchEvent(
+                new CustomEvent("room_joined", {
+                    detail: {
+                        localParticipant: this.localParticipant,
+                        remoteParticipants: this.remoteParticipants,
+                        waitingParticipants: knockers.map((knocker) => {
+                            return { id: knocker.clientId, displayName: knocker.displayName } as WaitingParticipant;
+                        }),
+                    },
+                })
+            );
+        }
+    }
+
+    private _handleRoomKnocked(event: SignalRoomKnockedEvent) {
+        const { clientId, displayName } = event;
+
+        this.dispatchEvent(
+            new CustomEvent("waiting_participant_joined", {
+                detail: { participantId: clientId, displayName },
+            })
+        );
+    }
+
     private _handleRtcEvent<K extends keyof RtcEvents>(eventName: K, data: RtcEvents[K]) {
         if (eventName === "rtc_manager_created") {
             return this._handleRtcManagerCreated(data as RtcManagerCreatedPayload);
@@ -300,6 +426,10 @@ export default class RoomConnection extends TypedEventTarget {
                 !this.localMedia.isMicrophoneEnabled(),
                 !this.localMedia.isCameraEnabled()
             );
+        }
+
+        if (this.remoteParticipants.length) {
+            this._handleAcceptStreams(this.remoteParticipants);
         }
     }
 
@@ -386,14 +516,47 @@ export default class RoomConnection extends TypedEventTarget {
         );
     }
 
-    async join() {
-        if (["connected", "connecting"].includes(this.roomConnectionState)) {
-            console.warn(`Trying to join room state is ${this.roomConnectionState}`);
+    private _joinRoom() {
+        this.signalSocket.emit("join_room", {
+            avatarUrl: null,
+            config: {
+                isAudioEnabled: this.localMedia.isMicrophoneEnabled(),
+                isVideoEnabled: this.localMedia.isCameraEnabled(),
+            },
+            deviceCapabilities: { canScreenshare: true },
+            displayName: this.displayName,
+            isCoLocated: false,
+            isDevicePermissionDenied: false,
+            kickFromOtherRooms: false,
+            organizationId: this.organizationId,
+            roomKey: this.roomKey,
+            roomName: this.roomName,
+            selfId: "",
+            userAgent: `browser-sdk:${sdkVersion || "unknown"}`,
+        });
+    }
+
+    public async join() {
+        if (["connected", "connecting"].includes(this.roomConnectionStatus)) {
+            console.warn(`Trying to join when room state is already ${this.roomConnectionStatus}`);
             return;
         }
 
         this.logger.log("Joining room");
-        this.roomConnectionState = "connecting";
+        this.roomConnectionStatus = "connecting";
+        this.dispatchEvent(
+            new CustomEvent("room_connection_status_changed", {
+                detail: {
+                    roomConnectionStatus: this.roomConnectionStatus,
+                },
+            })
+        );
+
+        const organization = await this.organizationServiceCache.fetchOrganization();
+        if (!organization) {
+            throw new Error("Invalid room url");
+        }
+        this.organizationId = organization.organizationId;
 
         if (this._ownsLocalMedia) {
             await this.localMedia.start();
@@ -426,73 +589,39 @@ export default class RoomConnection extends TypedEventTarget {
             },
         });
 
-        const organization = await this.organizationServiceCache.fetchOrganization();
-        if (!organization) {
-            throw new Error("Invalid room url");
-        }
-
         // Identify device on signal connection
         const deviceCredentials = await this.credentialsService.getCredentials();
 
-        this.logger.log("Connecting to signal socket");
+        this.logger.log("Connected to signal socket");
         this.signalSocket.emit("identify_device", { deviceCredentials });
 
         this.signalSocket.once("device_identified", () => {
-            this.logger.log("Connected to signal socket");
-            this.signalSocket.emit("join_room", {
-                avatarUrl: null,
-                config: {
-                    isAudioEnabled: this.localMedia.isMicrophoneEnabled(),
-                    isVideoEnabled: this.localMedia.isCameraEnabled(),
-                },
-                deviceCapabilities: { canScreenshare: true },
-                displayName: this.displayName,
-                isCoLocated: false,
-                isDevicePermissionDenied: false,
-                kickFromOtherRooms: false,
-                organizationId: organization.organizationId,
-                roomKey: this.roomKey,
-                roomName: this.roomUrl.pathname,
-                selfId: "",
-                userAgent: `browser-sdk:${sdkVersion || "unknown"}`,
-            });
-        });
-
-        this.signalSocket.once("room_joined", (res: SignalRoomJoinedEvent) => {
-            const {
-                selfId,
-                room: { clients },
-            } = res;
-
-            const localClient = clients.find((c) => c.id === selfId);
-            if (!localClient) throw new Error("Missing local client");
-
-            this.localParticipant = new LocalParticipant({
-                ...localClient,
-                stream: this.localMedia.stream || undefined,
-            });
-            this.remoteParticipants = clients
-                .filter((c) => c.id !== selfId)
-                .map((c) => new RemoteParticipant({ ...c, newJoiner: false }));
-
-            // Accept remote streams if RTC manager has been initialized
-            if (this.rtcManager) {
-                this._handleAcceptStreams(this.remoteParticipants);
-            }
-
-            this.roomConnectionState = "connected";
-            this.dispatchEvent(
-                new CustomEvent("room_joined", {
-                    detail: {
-                        localParticipant: this.localParticipant,
-                        remoteParticipants: this.remoteParticipants,
-                    },
-                })
-            );
+            this._joinRoom();
         });
     }
 
-    leave(): Promise<void> {
+    public knock() {
+        this.roomConnectionStatus = "knocking";
+        this.dispatchEvent(
+            new CustomEvent("room_connection_status_changed", {
+                detail: {
+                    roomConnectionStatus: this.roomConnectionStatus,
+                },
+            })
+        );
+
+        this.signalSocket.emit("knock_room", {
+            displayName: this.displayName,
+            imageUrl: null,
+            kickFromOtherRooms: true,
+            liveVideo: false,
+            organizationId: this.organizationId,
+            roomKey: this._roomKey,
+            roomName: this.roomName,
+        });
+    }
+
+    public leave(): Promise<void> {
         return new Promise<void>((resolve) => {
             if (this._ownsLocalMedia) {
                 this.localMedia.stop();
@@ -520,18 +649,34 @@ export default class RoomConnection extends TypedEventTarget {
         });
     }
 
-    sendChatMessage(text: string): void {
+    public sendChatMessage(text: string): void {
         this.signalSocket.emit("chat_message", {
             text,
         });
     }
 
-    setDisplayName(displayName: string): void {
+    public setDisplayName(displayName: string): void {
         this.signalSocket.emit("send_client_metadata", {
             type: "UserData",
             payload: {
                 displayName,
             },
+        });
+    }
+
+    public acceptWaitingParticipant(participantId: string) {
+        this.signalSocket.emit("handle_knock", {
+            action: "accept",
+            clientId: participantId,
+            response: {},
+        });
+    }
+
+    public rejectWaitingParticipant(participantId: string) {
+        this.signalSocket.emit("handle_knock", {
+            action: "reject",
+            clientId: participantId,
+            response: {},
         });
     }
 }
