@@ -9,8 +9,24 @@ interface PrecallExperienceProps extends LocalMediaRef {
 export default function PrecallExperience(props: PrecallExperienceProps) {
     const { state, actions, hideVideoPreview } = props;
 
-    const { currentCameraDeviceId, currentMicrophoneDeviceId, cameraDevices, localStream, microphoneDevices } = state;
-    const { setCameraDevice, setMicrophoneDevice, toggleCameraEnabled, toggleMicrophoneEnabled } = actions;
+    const {
+        currentCameraDeviceId,
+        currentMicrophoneDeviceId,
+        cameraDevices,
+        isStartingScreenshare,
+        localStream,
+        microphoneDevices,
+        screenshareStream,
+    } = state;
+
+    const {
+        setCameraDevice,
+        setMicrophoneDevice,
+        startScreenshare,
+        stopScreenshare,
+        toggleCameraEnabled,
+        toggleMicrophoneEnabled,
+    } = actions;
 
     return (
         <div>
@@ -52,8 +68,14 @@ export default function PrecallExperience(props: PrecallExperienceProps) {
             <div className="controls">
                 <button onClick={() => toggleCameraEnabled()}>Toggle camera</button>
                 <button onClick={() => toggleMicrophoneEnabled()}>Toggle microphone</button>
+                {screenshareStream && <button onClick={() => stopScreenshare()}>Stop screenshare</button>}
+                {!screenshareStream && isStartingScreenshare && <button disabled>Starting screenshare...</button>}
+                {!screenshareStream && !isStartingScreenshare && (
+                    <button onClick={() => startScreenshare()}>Start screenshare</button>
+                )}
             </div>
             {!hideVideoPreview && <div>{localStream && <VideoView muted stream={localStream} />}</div>}
+            {!hideVideoPreview && <div>{screenshareStream && <VideoView muted stream={screenshareStream} />}</div>}
         </div>
     );
 }

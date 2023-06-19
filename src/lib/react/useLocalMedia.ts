@@ -9,11 +9,14 @@ interface LocalMediaState {
     isSettingCameraDevice: boolean;
     isSettingMicrophoneDevice: boolean;
     isStarting: boolean;
+    isStartingScreenshare: boolean;
     localStream?: MediaStream;
     microphoneDeviceError: unknown;
     microphoneDevices: MediaDeviceInfo[];
+    screenshareStream?: MediaStream;
     speakerDevices: MediaDeviceInfo[];
     startError: unknown;
+    startScreenshareError: unknown;
 }
 
 const initialState: LocalMediaState = {
@@ -22,15 +25,19 @@ const initialState: LocalMediaState = {
     isSettingCameraDevice: false,
     isSettingMicrophoneDevice: false,
     isStarting: false,
+    isStartingScreenshare: false,
     microphoneDeviceError: null,
     microphoneDevices: [],
     speakerDevices: [],
     startError: null,
+    startScreenshareError: null,
 };
 
 interface LocalMediaActions {
     setCameraDevice: InstanceType<typeof LocalMedia>["setCameraDevice"];
     setMicrophoneDevice: InstanceType<typeof LocalMedia>["setMicrophoneDevice"];
+    startScreenshare: (...args: Parameters<InstanceType<typeof LocalMedia>["startScreenshare"]>) => void;
+    stopScreenshare: InstanceType<typeof LocalMedia>["stopScreenshare"];
     toggleCameraEnabled: InstanceType<typeof LocalMedia>["toggleCameraEnabled"];
     toggleMicrophoneEnabled: InstanceType<typeof LocalMedia>["toggleMichrophoneEnabled"];
 }
@@ -48,6 +55,10 @@ type LocalMediaEvents =
           type: "LOCAL_STREAM_UPDATED";
           payload: { stream: MediaStream; currentCameraDeviceId?: string; currentMicrophoneDeviceId?: string };
       }
+    | { type: "SCREENSHARE_START_ERROR"; payload: unknown }
+    | { type: "SCREENSHARE_STARTED"; payload: MediaStream }
+    | { type: "SCREENSHARE_STARTING" }
+    | { type: "SCREENSHARE_STOPPED" }
     | { type: "SET_CAMERA_DEVICE" }
     | { type: "SET_CAMERA_DEVICE_COMPLETE" }
     | { type: "SET_CAMERA_DEVICE_ERROR"; payload: unknown }
@@ -73,6 +84,28 @@ function reducer(state: LocalMediaState, action: LocalMediaEvents): LocalMediaSt
                 currentCameraDeviceId: action.payload.currentCameraDeviceId,
                 currentMicrophoneDeviceId: action.payload.currentMicrophoneDeviceId,
                 localStream: action.payload.stream,
+            };
+        case "SCREENSHARE_START_ERROR":
+            return {
+                ...state,
+                isStartingScreenshare: false,
+                startScreenshareError: action.payload,
+            };
+        case "SCREENSHARE_STARTED":
+            return {
+                ...state,
+                isStartingScreenshare: false,
+                screenshareStream: action.payload,
+            };
+        case "SCREENSHARE_STARTING":
+            return {
+                ...state,
+                isStartingScreenshare: true,
+            };
+        case "SCREENSHARE_STOPPED":
+            return {
+                ...state,
+                screenshareStream: undefined,
             };
         case "SET_CAMERA_DEVICE":
             return {
@@ -191,6 +224,20 @@ export default function useLocalMedia(
                 } catch (error) {
                     dispatch({ type: "SET_MICROPHONE_DEVICE_ERROR", payload: error });
                 }
+            },
+            startScreenshare: async () => {
+                dispatch({ type: "SCREENSHARE_STARTING" });
+
+                try {
+                    const screenshare = await localMedia.startScreenshare();
+                    dispatch({ type: "SCREENSHARE_STARTED", payload: screenshare });
+                } catch (error) {
+                    dispatch({ type: "SCREENSHARE_START_ERROR", payload: error });
+                }
+            },
+            stopScreenshare: () => {
+                localMedia.stopScreenshare();
+                dispatch({ type: "SCREENSHARE_STOPPED" });
             },
             toggleCameraEnabled: (...args) => {
                 return localMedia.toggleCameraEnabled(...args);

@@ -221,6 +221,7 @@ interface RoomConnectionActions {
     toggleMicrophone(enabled?: boolean): void;
     acceptWaitingParticipant(participantId: string): void;
     rejectWaitingParticipant(participantId: string): void;
+    startScreenshare(): void;
 }
 
 interface RoomConnectionComponents {
@@ -334,6 +335,9 @@ export default function useRoomConnection(
             },
             rejectWaitingParticipant: (participantId) => {
                 roomConnection.rejectWaitingParticipant(participantId);
+            },
+            startScreenshare: () => {
+                roomConnection.startScreenshare();
             },
         },
         components: {

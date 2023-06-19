@@ -682,4 +682,12 @@ export default class RoomConnection extends TypedEventTarget {
             response: {},
         });
     }
+
+    public async startScreenshare() {
+        if (!this.rtcManager) {
+            throw new Error("Cannot start screenshare without rtc manager");
+        }
+        const screenshareStream = this.localMedia.screenshareStream || (await this.localMedia.startScreenshare());
+        this.rtcManager.addNewStream(screenshareStream.id, screenshareStream);
+    }
 }

@@ -45,6 +45,7 @@ export default class LocalMedia extends TypedLocalMediaEventTarget {
     private _constraints: MediaStreamConstraints;
     public _rtcManagers: RtcManager[];
     public stream: MediaStream;
+    public screenshareStream?: MediaStream;
 
     constructor(constraints: MediaStreamConstraints) {
         super();
@@ -101,6 +102,16 @@ export default class LocalMedia extends TypedLocalMediaEventTarget {
         audioTrack.enabled = newValue;
 
         this.dispatchEvent(new CustomEvent("microphone_enabled", { detail: { enabled: newValue } }));
+    }
+
+    async startScreenshare() {
+        const screenshareStream = await navigator.mediaDevices.getDisplayMedia();
+        this.screenshareStream = screenshareStream;
+        return this.screenshareStream;
+    }
+
+    stopScreenshare() {
+        this.screenshareStream?.getTracks().forEach((track) => track.stop());
     }
 
     async setCameraDevice(deviceId: string) {

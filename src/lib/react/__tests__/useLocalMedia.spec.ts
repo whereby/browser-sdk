@@ -14,6 +14,7 @@ describe("useLocalMedia", () => {
 
     it("should assume audio and video by default", () => {
         renderHook(() => useLocalMedia());
+
         expect(MockedLocalMedia.mock.calls[0]).toEqual([{ audio: true, video: true }]);
     });
 
@@ -24,27 +25,32 @@ describe("useLocalMedia", () => {
         { audio: false, video: false },
     ])(`should use provided audio: $audio and video: $video values`, ({ audio, video }) => {
         renderHook(() => useLocalMedia({ audio, video }));
+
         expect(MockedLocalMedia.mock.calls[0]).toEqual([{ audio, video }]);
     });
 
     describe("on mount", () => {
         it("should start local media", () => {
             renderHook(() => useLocalMedia());
+
             expect(MockedLocalMedia.mock.instances[0].start).toHaveBeenCalled();
         });
 
         it("should update state", () => {
             const { result } = renderHook(() => useLocalMedia());
+
             expect(result.current.state.isStarting).toEqual(true);
         });
 
         describe("when start local media succeeds", () => {
             it("should update state", () => {
                 const { result } = renderHook(() => useLocalMedia());
-                MockedLocalMedia.mock.instances[0].start.mockResolvedValueOnce(new MockMediaStream());
+                const stream = new MockMediaStream();
+                MockedLocalMedia.mock.instances[0].start.mockResolvedValueOnce(stream);
 
                 waitFor(() => {
                     expect(result.current.state.isStarting).toEqual(false);
+                    expect(result.current.state.localStream).toEqual(stream);
                 });
             });
         });
@@ -189,6 +195,80 @@ describe("useLocalMedia", () => {
                     expect(result.current.state.isSettingMicrophoneDevice).toEqual(false);
                     expect(result.current.state.microphoneDeviceError).toEqual(error);
                 });
+            });
+        });
+
+        describe("startScreenshare", () => {
+            it("should update local state", () => {
+                const { result } = renderHook(() => useLocalMedia());
+
+                act(() => {
+                    result.current.actions.startScreenshare();
+                });
+
+                expect(result.current.state.isStartingScreenshare).toEqual(true);
+            });
+
+            it("should invoke startScreenshare of localMedia", () => {
+                const { result } = renderHook(() => useLocalMedia());
+
+                act(() => {
+                    result.current.actions.startScreenshare();
+                });
+
+                expect(MockedLocalMedia.mock.instances[0].startScreenshare).toHaveBeenCalledTimes(1);
+            });
+
+            describe("when starting screenshare succeeds", () => {
+                it("should update local state", async () => {
+                    const stream = new MockMediaStream();
+                    const { result } = renderHook(() => useLocalMedia());
+                    MockedLocalMedia.mock.instances[0].startScreenshare.mockResolvedValueOnce(stream);
+
+                    await act(async () => {
+                        await result.current.actions.startScreenshare();
+                    });
+
+                    expect(result.current.state.isStartingScreenshare).toEqual(false);
+                    expect(result.current.state.screenshareStream).toEqual(stream);
+                });
+            });
+
+            describe("when starting screenshare fails", () => {
+                it("should update local state", async () => {
+                    const error = new Error("Boom!");
+                    const { result } = renderHook(() => useLocalMedia());
+                    MockedLocalMedia.mock.instances[0].startScreenshare.mockRejectedValueOnce(error);
+
+                    await act(async () => {
+                        await result.current.actions.startScreenshare();
+                    });
+
+                    expect(result.current.state.isStartingScreenshare).toEqual(false);
+                    expect(result.current.state.startScreenshareError).toEqual(error);
+                });
+            });
+        });
+
+        describe("stopScreenshare", () => {
+            it("should invoke stopScreenshare of localMedia", () => {
+                const { result } = renderHook(() => useLocalMedia());
+
+                act(() => {
+                    result.current.actions.stopScreenshare();
+                });
+
+                expect(MockedLocalMedia.mock.instances[0].stopScreenshare).toHaveBeenCalledTimes(1);
+            });
+
+            it("should update local state", () => {
+                const { result } = renderHook(() => useLocalMedia());
+
+                act(() => {
+                    result.current.actions.stopScreenshare();
+                });
+
+                expect(result.current.state.screenshareStream).toEqual(undefined);
             });
         });
     });

@@ -33,6 +33,7 @@ export default function VideoExperience({
         toggleMicrophone,
         acceptWaitingParticipant,
         rejectWaitingParticipant,
+        startScreenshare,
     } = actions;
     const { VideoView } = components;
 
@@ -113,6 +114,7 @@ export default function VideoExperience({
                         <button onClick={() => toggleCamera()}>Toggle camera</button>
                         <button onClick={() => toggleMicrophone()}>Toggle microphone</button>
                         <DisplayNameForm initialDisplayName={displayName} onSetDisplayName={setDisplayName} />
+                        <button onClick={() => startScreenshare()}>Start screenshare</button>
                     </div>
                 </>
             )}
