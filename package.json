@@ -1,6 +1,6 @@
 {
   "name": "@whereby.com/browser-sdk",
-  "version": "2.0.0-alpha9",
+  "version": "2.0.0-alpha10",
   "description": "Modules for integration Whereby video in web apps",
   "author": "Whereby AS",
   "license": "MIT",
@@ -10,7 +10,7 @@
   },
   "browserslist": "> 0.5%, last 2 versions, not dead",
   "source": "src/index.js",
-  "main": "dist/lib.cjs.js",
+  "main": "dist/lib.cjs",
   "module": "dist/lib.esm.js",
   "type": "module",
   "files": [
