@@ -98,8 +98,7 @@ define("WherebyEmbed", {
     // Commands
     _postCommand(command: string, args = []) {
         if (this.iframe.current) {
-            const url = new URL(this.room, `https://${this.subdomain}.whereby.com`);
-            this.iframe.current.contentWindow.postMessage({ command, args }, url.origin);
+            this.iframe.current.contentWindow.postMessage({ command, args }, this.url.origin);
         }
     },
     startRecording() {
@@ -118,8 +117,7 @@ define("WherebyEmbed", {
         this._postCommand("toggle_screenshare", [enabled]);
     },
     onmessage({ origin, data }: { origin: string; data: { type: string; payload: string } }) {
-        const url = new URL(this.room, `https://${this.subdomain}.whereby.com`);
-        if (origin !== url.origin) return;
+        if (origin !== this.url.origin) return;
         const { type, payload: detail } = data;
         this.dispatchEvent(new CustomEvent(type, { detail }));
     },
@@ -136,10 +134,18 @@ define("WherebyEmbed", {
         } = this;
         if (!room) return this.html`Whereby: Missing room attribute.`;
         // Get subdomain from room URL, or use it specified
-        const m = /https:\/\/([^.]+)\.whereby.com\/.+/.exec(room);
+        const m = /https:\/\/([^.]+)(\.whereby.com|-ip-\d+-\d+-\d+-\d+.hereby.dev:4443)\/.+/.exec(room);
         const subdomain = (m && m[1]) || this.subdomain;
         if (!subdomain) return this.html`Whereby: Missing subdomain attr.`;
-        const url = new URL(room, `https://${subdomain}.whereby.com`);
+        if (!m) {
+            return this.html`could not parse URL.`;
+        }
+        const baseURL = m[2] || `.whereby.com`;
+        this.url = new URL(room, `https://${subdomain}${baseURL}`);
+        const roomUrl = new URL(room);
+        if (roomUrl.searchParams.get("roomKey")) {
+            this.url.searchParams.append("roomKey", roomUrl.searchParams.get("roomKey"));
+        }
         Object.entries({
             jsApi: true,
             we: "__SDK_VERSION__",
@@ -158,14 +164,14 @@ define("WherebyEmbed", {
                 {}
             ),
         }).forEach(([k, v]) => {
-            if (!url.searchParams.has(k) && typeof v === "string") {
-                url.searchParams.set(k, v);
+            if (!this.url.searchParams.has(k) && typeof v === "string") {
+                this.url.searchParams.set(k, v);
             }
         });
         return this.html`
         <iframe
             ref=${this.iframe}
-            src=${url}
+            src=${this.url}
             allow="autoplay; camera; microphone; fullscreen; speaker; display-capture" />
         `;
     },
