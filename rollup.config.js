@@ -34,7 +34,7 @@ export default [
         input: "src/lib/index.ts",
         output: {
             exports: "named",
-            file: "dist/lib.cjs.js",
+            file: "dist/lib.cjs",
             format: "cjs",
         },
         external: ["heresy", ...peerDependencies],
