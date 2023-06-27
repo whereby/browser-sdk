@@ -7,9 +7,6 @@ const replaceValues = {
     preventAssignment: true,
     values: {
         __SDK_VERSION__: pkg.version,
-        "process.env.STORYBOOK_SUBDOMAIN": null,
-        "process.env.STORYBOOK_ROOMKEY": null,
-        "process.env.STORYBOOK_BASEURL": null,
     },
 };
 
