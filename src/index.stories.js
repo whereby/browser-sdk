@@ -1,4 +1,6 @@
 import { html } from "lit-html";
+import { action } from "@storybook/addon-actions";
+
 import "./lib";
 
 export default {
@@ -47,30 +49,33 @@ const WherebyEmbed = ({
     recording,
     room,
     screenshare,
+    style,
     video,
     virtualBackgroundUrl,
 }) => {
-    return html`<whereby-embed
-        audio=${offOn(audio)}
-        avatarUrl=${avatarUrl}
-        background=${offOn(background)}
-        cameraAccess=${offOn(cameraAccess)}
-        chat=${offOn(chat)}
-        displayName=${displayName}
-        emptyRoomInvitation=${emptyRoomInvitation}
-        floatSelf=${offOn(floatSelf)}
-        help=${offOn(help)}
-        leaveButton=${offOn(leaveButton)}
-        logo=${offOn(logo)}
-        people=${offOn(people)}
-        precallReview=${offOn(precallReview)}
-        recording=${offOn(recording)}
-        screenshare=${offOn(screenshare)}
-        video=${offOn(video)}
-        virtualBackgroundUrl=${virtualBackgroundUrl}
-        room="${room}"
-        style="height: 100vh"
-    />`;
+    const el = document.createElement("whereby-embed");
+
+    el.setAttribute("audio", offOn(audio));
+    el.setAttribute("avatarUrl", avatarUrl);
+    el.setAttribute("background", offOn(background));
+    el.setAttribute("cameraAccess", offOn(cameraAccess));
+    el.setAttribute("chat", offOn(chat));
+    el.setAttribute("displayName", displayName);
+    el.setAttribute("emptyRoomInvitation", emptyRoomInvitation);
+    el.setAttribute("floatSelf", offOn(floatSelf));
+    el.setAttribute("help", offOn(help));
+    el.setAttribute("leaveButton", offOn(leaveButton));
+    el.setAttribute("logo", offOn(logo));
+    el.setAttribute("people", offOn(people));
+    el.setAttribute("precallReview", offOn(precallReview));
+    el.setAttribute("recording", recording);
+    el.setAttribute("screenshare", offOn(screenshare));
+    el.setAttribute("video", offOn(video));
+    el.setAttribute("virtualBackgroundUrl", virtualBackgroundUrl);
+    el.setAttribute("room", room);
+    el.setAttribute("style", style);
+
+    return el;
 };
 
 const Template = (args) => WherebyEmbed(args);
@@ -92,6 +97,7 @@ Primary.args = {
     precallReview: true,
     room: process.env.STORYBOOK_ROOM,
     screenshare: true,
+    style: "height: 100vh",
     video: true,
     virtualBackgroundUrl: "",
 };
@@ -102,4 +108,38 @@ Primary.parameters = {
             return (src || "").replace(/><iframe(.+)$/, " />");
         },
     },
+};
+
+export const Recording = (args) => {
+    const el = WherebyEmbed(args);
+    el.setAttribute("style", "height: 400px");
+
+    el.addEventListener("recording_status_change", (e) => {
+        action("recording_status_change")(e.detail);
+    });
+
+    return html`<div>
+        ${el}
+        <div>
+            <button
+                @click=${function a() {
+                    el.startRecording();
+                }}
+            >
+                Start recording
+            </button>
+            <button
+                @click=${function a() {
+                    el.stopRecording();
+                }}
+            >
+                Stop recording
+            </button>
+        </div>
+    </div>`;
+};
+
+Recording.args = {
+    ...Primary.args,
+    recording: "cloud",
 };
