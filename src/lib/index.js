@@ -1,4 +1,5 @@
 import { define, ref } from "heresy";
+import { parseRoomUrlAndSubdomain } from "./helpers/roomUrl";
 
 const boolAttrs = [
     "audio",
@@ -69,7 +70,7 @@ define("WherebyEmbed", {
     // Commands
     _postCommand(command, args = []) {
         if (this.iframe.current) {
-            this.iframe.current.contentWindow.postMessage({ command, args }, this.url.origin);
+            this.iframe.current.contentWindow.postMessage({ command, args }, this.roomUrl.origin);
         }
     },
     startRecording() {
@@ -95,7 +96,7 @@ define("WherebyEmbed", {
     },
 
     onmessage({ origin, data }) {
-        if (origin !== this.url.origin) return;
+        if (origin !== this.roomUrl.origin) return;
         const { type, payload: detail } = data;
         this.dispatchEvent(new CustomEvent(type, { detail }));
     },
@@ -110,16 +111,15 @@ define("WherebyEmbed", {
             groups,
             virtualbackgroundurl: virtualBackgroundUrl,
         } = this;
-        if (!room) return this.html`Whereby: Missing room attr.`;
-        // Get subdomain from room URL, or use it specified
-        let m = /https:\/\/([^.]+)\.whereby.com\/.+/.exec(room);
-        const subdomain = (m && m[1]) || this.subdomain || process.env.STORYBOOK_SUBDOMAIN;
-        if (!subdomain) return this.html`Whereby: Missing subdomain attr.`;
-        const baseURL = process.env.STORYBOOK_BASEURL || `.whereby.com`;
-        this.url = new URL(room, `https://${subdomain}${baseURL}`);
-        if (process.env.STORYBOOK_ROOMKEY) {
-            this.url.searchParams.append("roomKey", process.env.STORYBOOK_ROOMKEY);
+        let roomUrl, subdomain;
+
+        try {
+            ({ roomUrl, subdomain } = parseRoomUrlAndSubdomain(room, this.subdomain));
+        } catch (error) {
+            return this.html`Whereby: ${error.message}`;
         }
+
+        this.roomUrl = roomUrl;
 
         Object.entries({
             jsApi: true,
@@ -139,14 +139,14 @@ define("WherebyEmbed", {
                 {}
             ),
         }).forEach(([k, v]) => {
-            if (!this.url.searchParams.has(k)) {
-                this.url.searchParams.set(k, v);
+            if (!this.roomUrl.searchParams.has(k)) {
+                this.roomUrl.searchParams.set(k, v);
             }
         });
         this.html`
       <iframe
         ref=${this.iframe}
-        src=${this.url}
+        src=${this.roomUrl}
         allow="autoplay; camera; microphone; fullscreen; speaker; display-capture" />
       `;
     },
