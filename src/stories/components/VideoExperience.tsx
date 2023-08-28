@@ -5,15 +5,15 @@ import useRoomConnection from "../../lib/react/useRoomConnection";
 
 export default function VideoExperience({
     displayName,
-    roomName,
+    roomUrl,
     localMedia,
 }: {
     displayName?: string;
-    roomName: string;
+    roomUrl: string;
     localMedia?: LocalMediaRef;
 }) {
     const [chatMessage, setChatMessage] = useState("");
-    const { state, actions, components } = useRoomConnection(roomName, {
+    const { state, actions, components } = useRoomConnection(roomUrl, {
         displayName,
         localMediaConstraints: {
             audio: true,

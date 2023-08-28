@@ -1,16 +1,23 @@
 import React, { useState } from "react";
+import type { Meta, StoryObj } from "@storybook/react";
 import { useLocalMedia } from "../lib/react";
 import PrecallExperience from "./components/PrecallExperience";
 import VideoExperience from "./components/VideoExperience";
 import "./styles.css";
 
-export default {
+const meta: Meta<typeof VideoExperience> = {
     title: "Examples/Custom UI",
     argTypes: {
-        displayName: { control: "text", defaultValue: "SDK" },
-        roomUrl: { control: "text", defaultValue: process.env.STORYBOOK_ROOM, type: { required: true } },
+        displayName: { control: "text" },
+        roomUrl: { control: "text" },
+    },
+    args: {
+        displayName: "SDK",
+        roomUrl: process.env.STORYBOOK_ROOM,
     },
 };
+
+export default meta;
 
 const roomRegEx = new RegExp(/^https:\/\/.*\/.*/);
 
@@ -31,7 +38,7 @@ export const RoomConnectionWithLocalMedia = ({ roomUrl, displayName }: { roomUrl
             <PrecallExperience {...localMedia} hideVideoPreview={shouldJoin} />
             <button onClick={() => setShouldJoin(!shouldJoin)}>{shouldJoin ? "Leave room" : "Join room"}</button>
 
-            {shouldJoin && <VideoExperience displayName={displayName} roomName={roomUrl} localMedia={localMedia} />}
+            {shouldJoin && <VideoExperience displayName={displayName} roomUrl={roomUrl} localMedia={localMedia} />}
         </div>
     );
 };
@@ -46,10 +53,26 @@ export const LocalMediaOnly = () => {
     );
 };
 
-export const RoomConnectionOnly = ({ roomUrl, displayName }: { roomUrl: string; displayName?: string }) => {
-    if (!roomUrl || !roomUrl.match(roomRegEx)) {
-        return <p>Set room url on the Controls panel</p>;
-    }
+export const RoomConnectionOnly: StoryObj<typeof VideoExperience> = {
+    render: ({ roomUrl, displayName }) => {
+        if (!roomUrl || !roomUrl.match(roomRegEx)) {
+            return <p>Set room url on the Controls panel</p>;
+        }
 
-    return <VideoExperience displayName={displayName} roomName={roomUrl} />;
+        return (
+            <React.StrictMode>
+                <VideoExperience displayName={displayName} roomUrl={roomUrl} />
+            </React.StrictMode>
+        );
+    },
+};
+
+// Disable docs to make StrictMode work https://github.com/storybookjs/storybook/issues/11554
+
+RoomConnectionOnly.parameters = {
+    docs: {
+        source: {
+            code: "Disabled for this story, see https://github.com/storybookjs/storybook/issues/11554",
+        },
+    },
 };
