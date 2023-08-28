@@ -1,5 +1,4 @@
 import ApiClient from "../../ApiClient";
-import _omit from "lodash/omit";
 import OrganizationService from "../index";
 import Organization from "../../models/Organization";
 import Response from "../../Response";
@@ -7,6 +6,10 @@ import { itShouldThrowIfInvalid, itShouldRejectIfApiClientRejects } from "../../
 import { ConsentGrantRequest } from "../../types";
 
 jest.mock("../../ApiClient");
+
+function _omit(obj: object, property: string) {
+    return { ...obj, [property]: undefined };
+}
 
 function createOrganizationResponseObjectFromId(organizationId: string) {
     return {
