@@ -53,3 +53,23 @@ export const RoomConnectionOnly = ({ roomUrl, displayName }: { roomUrl: string; 
 
     return <VideoExperience displayName={displayName} roomName={roomUrl} />;
 };
+
+export const RoomConnectionStrictMode = ({ roomUrl, displayName }: { roomUrl: string; displayName?: string }) => {
+    if (!roomUrl || !roomUrl.match(roomRegEx)) {
+        return <p>Set room url on the Controls panel</p>;
+    }
+
+    return (
+        <React.StrictMode>
+            <VideoExperience displayName={displayName} roomName={roomUrl} />
+        </React.StrictMode>
+    );
+};
+
+RoomConnectionStrictMode.parameters = {
+    docs: {
+        source: {
+            code: "Disabled for this story, see https://github.com/storybookjs/storybook/issues/11554",
+        },
+    },
+};
