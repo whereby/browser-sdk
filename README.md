@@ -6,11 +6,13 @@ Whereby browser SDK is a library for seamless integration of Whereby (https://wh
 
 ## Installation
 
-```
+```shell
 npm install @whereby.com/browser-sdk
 ```
+
 or
-```
+
+```shell
 yarn add @whereby.com/browser-sdk
 ```
 
@@ -21,10 +23,11 @@ yarn add @whereby.com/browser-sdk
 ### React hooks
 
 #### useLocalMedia
+
 The `useLocalMedia` hook enables preview and selection of local devices (camera & microphone) prior to establishing a connection within a Whereby room. Use this hook to build rich pre-call
 experiences, allowing end users to confirm their device selection up-front. This hook works seamlessly with the `useRoomConnection` hook described below.
 
-```
+```js
 import { useLocalMedia, VideoView } from “@whereby.com/browser-sdk”;
 
 function MyPreCallUX() {
@@ -54,18 +57,18 @@ function MyPreCallUX() {
 
 ```
 
-
 #### useRoomConnection
+
 The `useRoomConnection` hook provides a way to connect participants in a given room, subscribe to state updates, and perform actions on the connection, like toggling camera or microphone.
 
-```
+```js
 import { useRoomConnection } from “@whereby.com/browser-sdk”;
 
 function MyCallUX( { roomUrl, localStream }) {
-    const [state, actions, components ] = useRoomConnection(
+    const { state, actions, components } = useRoomConnection(
         "<room_url>"
         {
-            localMedia: null, // Supply localMedia from `useLocalMedia` hook, or constraints below
+            localMedia: null, // Supply localMedia from `useLocalMedia` hook, or constraints
             localMediaConstraints: {
                 audio: true,
                 video: true,
@@ -91,23 +94,21 @@ function MyCallUX( { roomUrl, localStream }) {
 
 Use the `<whereby-embed />` web component to make use of Whereby's pre-built responsive UI. Refer to our [documentation](https://docs.whereby.com/embedding-rooms/in-a-web-page/using-the-whereby-embed-element) to learn which attributes are supported.
 
-
 #### React
 
-```
-import "@whereby.com/browser-sdk"
+```js
+import "@whereby.com/browser-sdk";
 
 const MyComponent = ({ roomUrl }) => {
-    return <whereby-embed chat="off" room={roomUrl} />
-}
+    return <whereby-embed chat="off" room={roomUrl} />;
+};
 
-export default MyComponent
-
+export default MyComponent;
 ```
 
 #### In plain HTML
 
-```
+```html
 <html>
     <head>
         <script src="...."></script>
