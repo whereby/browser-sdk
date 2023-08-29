@@ -255,6 +255,32 @@ export default class RoomConnection extends TypedEventTarget {
             const { enabled } = e.detail;
             this.signalSocket.emit("enable_audio", { enabled });
         });
+
+        const webrtcProvider = {
+            getMediaConstraints: () => ({
+                audio: this.localMedia.isMicrophoneEnabled(),
+                video: this.localMedia.isCameraEnabled(),
+            }),
+            deferrable(clientId: string) {
+                return !clientId;
+            },
+        };
+        this.rtcManagerDispatcher = new RtcManagerDispatcher({
+            emitter: {
+                emit: this._handleRtcEvent.bind(this),
+            },
+            serverSocket: this.signalSocket,
+            webrtcProvider,
+            features: {
+                lowDataModeEnabled: false,
+                sfuServerOverrideHost: undefined,
+                turnServerOverrideHost: undefined,
+                useOnlyTURN: undefined,
+                vp9On: false,
+                h264On: false,
+                simulcastScreenshareOn: false,
+            },
+        });
     }
 
     public get roomKey(): string | null {
@@ -563,33 +589,6 @@ export default class RoomConnection extends TypedEventTarget {
         if (this._ownsLocalMedia) {
             await this.localMedia.start();
         }
-
-        const webrtcProvider = {
-            getMediaConstraints: () => ({
-                audio: this.localMedia.isMicrophoneEnabled(),
-                video: this.localMedia.isCameraEnabled(),
-            }),
-            deferrable(clientId: string) {
-                return !clientId;
-            },
-        };
-
-        this.rtcManagerDispatcher = new RtcManagerDispatcher({
-            emitter: {
-                emit: this._handleRtcEvent.bind(this),
-            },
-            serverSocket: this.signalSocket,
-            webrtcProvider,
-            features: {
-                lowDataModeEnabled: false,
-                sfuServerOverrideHost: undefined,
-                turnServerOverrideHost: undefined,
-                useOnlyTURN: undefined,
-                vp9On: false,
-                h264On: false,
-                simulcastScreenshareOn: false,
-            },
-        });
 
         // Identify device on signal connection
         const deviceCredentials = await this.credentialsService.getCredentials();
