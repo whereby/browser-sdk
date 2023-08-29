@@ -123,6 +123,7 @@ function createSocket() {
     const SOCKET_HOST = parsedUrl.origin;
 
     const socketConf = {
+        autoConnect: false,
         host: SOCKET_HOST,
         path,
         reconnectionDelay: 5000,
@@ -543,6 +544,7 @@ export default class RoomConnection extends TypedEventTarget {
         }
 
         this.logger.log("Joining room");
+        this.signalSocket.connect();
         this.roomConnectionStatus = "connecting";
         this.dispatchEvent(
             new CustomEvent("room_connection_status_changed", {
