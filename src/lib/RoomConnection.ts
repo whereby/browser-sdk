@@ -47,6 +47,7 @@ export type RoomConnectionStatus =
     | "connected"
     | "room_locked"
     | "knocking"
+    | "disconnecting"
     | "disconnected"
     | "accepted"
     | "rejected";
@@ -622,32 +623,25 @@ export default class RoomConnection extends TypedEventTarget {
         });
     }
 
-    public leave(): Promise<void> {
-        return new Promise<void>((resolve) => {
-            if (this._ownsLocalMedia) {
-                this.localMedia.stop();
-            }
+    public leave() {
+        this.roomConnectionStatus = "disconnecting";
+        if (this._ownsLocalMedia) {
+            this.localMedia.stop();
+        }
 
-            if (this.rtcManager) {
-                this.localMedia.removeRtcManager(this.rtcManager);
-                this.rtcManager.disconnectAll();
-                this.rtcManager = undefined;
-            }
+        if (this.rtcManager) {
+            this.localMedia.removeRtcManager(this.rtcManager);
+            this.rtcManager.disconnectAll();
+            this.rtcManager = undefined;
+        }
 
-            if (!this.signalSocket) {
-                return resolve();
-            }
+        if (!this.signalSocket) {
+            return;
+        }
 
-            this.signalSocket.emit("leave_room");
-            const leaveTimeout = setTimeout(() => {
-                resolve();
-            }, 200);
-            this.signalSocket.once("room_left", () => {
-                clearTimeout(leaveTimeout);
-                this.signalSocket.disconnect();
-                resolve();
-            });
-        });
+        this.signalSocket.emit("leave_room");
+        this.signalSocket.disconnect();
+        this.roomConnectionStatus = "disconnected";
     }
 
     public sendChatMessage(text: string): void {
