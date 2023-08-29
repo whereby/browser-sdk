@@ -113,8 +113,8 @@ interface RoomEventsMap {
     waiting_participant_left: CustomEvent<WaitingParticipantLeftEvent>;
 }
 
-const API_BASE_URL = "https://api.whereby.dev";
-const SIGNAL_BASE_URL = "wss://signal.appearin.net";
+const API_BASE_URL = process.env["REACT_APP_API_BASE_URL"] || "https://api.whereby.dev";
+const SIGNAL_BASE_URL = process.env["REACT_APP_SIGNAL_BASE_URL"] || "wss://signal.appearin.net";
 
 const NON_PERSON_ROLES = ["recorder", "streamer"];
 
