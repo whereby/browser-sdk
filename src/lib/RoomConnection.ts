@@ -423,6 +423,7 @@ export default class RoomConnection extends TypedEventTarget {
             });
             this.remoteParticipants = clients
                 .filter((c) => c.id !== selfId)
+                .filter((c) => !NON_PERSON_ROLES.includes(c.role.roleName))
                 .map((c) => new RemoteParticipant({ ...c, newJoiner: false }));
 
             this.roomConnectionStatus = "connected";
