@@ -11,6 +11,10 @@ const replaceValues = {
     preventAssignment: true,
     values: {
         __SDK_VERSION__: pkg.version,
+        "process.env.NODE_DEBUG": JSON.stringify(process.env.NODE_DEBUG),
+        "process.env.AWF_BASE_URL": JSON.stringify(process.env.AWF_BASE_URL),
+        "process.env.AWF_API_BASE_URL": JSON.stringify(process.env.AWF_API_BASE_URL),
+        "process.env.AP_ROOM_BASE_URL": JSON.stringify(process.env.AP_ROOM_BASE_URL),
     },
 };
 
@@ -28,6 +32,13 @@ function makeCdnFilename() {
     return `v${major}${tag}.js`;
 }
 
+const plugins = [
+    replace(replaceValues),
+    nodeResolve({ preferBuiltins: false, resolveOnly: [/jslib-media|assert|util/] }),
+    commonjs(),
+    typescript(),
+];
+
 export default [
     // Commonjs build of lib, to be used with bundlers
     {
@@ -38,7 +49,7 @@ export default [
             format: "cjs",
         },
         external: ["heresy", ...peerDependencies],
-        plugins: [nodeResolve({ resolveOnly: [/jslib-media/] }), replace(replaceValues), typescript()],
+        plugins,
     },
     // Esm build of lib, to be used with bundlers
     {
@@ -49,7 +60,7 @@ export default [
             format: "esm",
         },
         external: ["heresy", ...peerDependencies],
-        plugins: [nodeResolve({ resolveOnly: [/jslib-media/] }), replace(replaceValues), typescript()],
+        plugins,
     },
     // Legacy build of lib in ESM format, bundling the dependencies
     {
