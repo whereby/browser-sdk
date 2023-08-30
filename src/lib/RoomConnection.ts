@@ -47,6 +47,7 @@ export type RoomConnectionStatus =
     | "connected"
     | "room_locked"
     | "knocking"
+    | "disconnecting"
     | "disconnected"
     | "accepted"
     | "rejected";
@@ -112,8 +113,8 @@ interface RoomEventsMap {
     waiting_participant_left: CustomEvent<WaitingParticipantLeftEvent>;
 }
 
-const API_BASE_URL = "https://api.whereby.dev";
-const SIGNAL_BASE_URL = "wss://signal.appearin.net";
+const API_BASE_URL = process.env["REACT_APP_API_BASE_URL"] || "https://api.whereby.dev";
+const SIGNAL_BASE_URL = process.env["REACT_APP_SIGNAL_BASE_URL"] || "wss://signal.appearin.net";
 
 const NON_PERSON_ROLES = ["recorder", "streamer"];
 
@@ -123,6 +124,7 @@ function createSocket() {
     const SOCKET_HOST = parsedUrl.origin;
 
     const socketConf = {
+        autoConnect: false,
         host: SOCKET_HOST,
         path,
         reconnectionDelay: 5000,
@@ -253,6 +255,32 @@ export default class RoomConnection extends TypedEventTarget {
         this.localMedia.addEventListener("microphone_enabled", (e) => {
             const { enabled } = e.detail;
             this.signalSocket.emit("enable_audio", { enabled });
+        });
+
+        const webrtcProvider = {
+            getMediaConstraints: () => ({
+                audio: this.localMedia.isMicrophoneEnabled(),
+                video: this.localMedia.isCameraEnabled(),
+            }),
+            deferrable(clientId: string) {
+                return !clientId;
+            },
+        };
+        this.rtcManagerDispatcher = new RtcManagerDispatcher({
+            emitter: {
+                emit: this._handleRtcEvent.bind(this),
+            },
+            serverSocket: this.signalSocket,
+            webrtcProvider,
+            features: {
+                lowDataModeEnabled: false,
+                sfuServerOverrideHost: undefined,
+                turnServerOverrideHost: undefined,
+                useOnlyTURN: undefined,
+                vp9On: false,
+                h264On: false,
+                simulcastScreenshareOn: false,
+            },
         });
     }
 
@@ -543,6 +571,7 @@ export default class RoomConnection extends TypedEventTarget {
         }
 
         this.logger.log("Joining room");
+        this.signalSocket.connect();
         this.roomConnectionStatus = "connecting";
         this.dispatchEvent(
             new CustomEvent("room_connection_status_changed", {
@@ -561,33 +590,6 @@ export default class RoomConnection extends TypedEventTarget {
         if (this._ownsLocalMedia) {
             await this.localMedia.start();
         }
-
-        const webrtcProvider = {
-            getMediaConstraints: () => ({
-                audio: this.localMedia.isMicrophoneEnabled(),
-                video: this.localMedia.isCameraEnabled(),
-            }),
-            deferrable(clientId: string) {
-                return !clientId;
-            },
-        };
-
-        this.rtcManagerDispatcher = new RtcManagerDispatcher({
-            emitter: {
-                emit: this._handleRtcEvent.bind(this),
-            },
-            serverSocket: this.signalSocket,
-            webrtcProvider,
-            features: {
-                lowDataModeEnabled: false,
-                sfuServerOverrideHost: undefined,
-                turnServerOverrideHost: undefined,
-                useOnlyTURN: undefined,
-                vp9On: false,
-                h264On: false,
-                simulcastScreenshareOn: false,
-            },
-        });
 
         // Identify device on signal connection
         const deviceCredentials = await this.credentialsService.getCredentials();
@@ -621,32 +623,25 @@ export default class RoomConnection extends TypedEventTarget {
         });
     }
 
-    public leave(): Promise<void> {
-        return new Promise<void>((resolve) => {
-            if (this._ownsLocalMedia) {
-                this.localMedia.stop();
-            }
+    public leave() {
+        this.roomConnectionStatus = "disconnecting";
+        if (this._ownsLocalMedia) {
+            this.localMedia.stop();
+        }
 
-            if (this.rtcManager) {
-                this.localMedia.removeRtcManager(this.rtcManager);
-                this.rtcManager.disconnectAll();
-                this.rtcManager = undefined;
-            }
+        if (this.rtcManager) {
+            this.localMedia.removeRtcManager(this.rtcManager);
+            this.rtcManager.disconnectAll();
+            this.rtcManager = undefined;
+        }
 
-            if (!this.signalSocket) {
-                return resolve();
-            }
+        if (!this.signalSocket) {
+            return;
+        }
 
-            this.signalSocket.emit("leave_room");
-            const leaveTimeout = setTimeout(() => {
-                resolve();
-            }, 200);
-            this.signalSocket.once("room_left", () => {
-                clearTimeout(leaveTimeout);
-                this.signalSocket.disconnect();
-                resolve();
-            });
-        });
+        this.signalSocket.emit("leave_room");
+        this.signalSocket.disconnect();
+        this.roomConnectionStatus = "disconnected";
     }
 
     public sendChatMessage(text: string): void {
