@@ -178,6 +178,7 @@ export default class RoomConnection extends TypedEventTarget {
     private rtcManagerDispatcher?: RtcManagerDispatcher;
     private rtcManager?: RtcManager;
     private roomConnectionStatus: RoomConnectionStatus;
+    private selfId: string | null;
     private logger: Logger;
     private _ownsLocalMedia = false;
     private displayName?: string;
@@ -190,6 +191,7 @@ export default class RoomConnection extends TypedEventTarget {
         super();
         this.organizationId = "";
         this.roomConnectionStatus = "";
+        this.selfId = null;
         this.roomUrl = new URL(roomUrl); // Throw if invalid Whereby room url
         const searchParams = new URLSearchParams(this.roomUrl.search);
         this._roomKey = roomKey || searchParams.get("roomKey");
@@ -348,7 +350,12 @@ export default class RoomConnection extends TypedEventTarget {
     }
 
     private _handleKnockHandled(payload: KnockAcceptedEvent | KnockRejectedEvent) {
-        const { resolution } = payload;
+        const { clientId, resolution } = payload;
+
+        // If the knocker is not the local participant, ignore the event
+        if (clientId !== this.selfId) {
+            return;
+        }
 
         if (resolution === "accepted") {
             this.roomConnectionStatus = "accepted";
@@ -379,6 +386,7 @@ export default class RoomConnection extends TypedEventTarget {
 
     private _handleRoomJoined(event: SignalRoomJoinedEvent) {
         const { error, isLocked, room, selfId } = event;
+        this.selfId = selfId;
         if (error === "room_locked" && isLocked) {
             this.roomConnectionStatus = "room_locked";
             this.dispatchEvent(
