@@ -27,6 +27,7 @@ import ServerSocket, {
     NewClientEvent,
     RoomJoinedEvent as SignalRoomJoinedEvent,
     RoomKnockedEvent as SignalRoomKnockedEvent,
+    SignalClient,
     SocketManager,
 } from "@whereby/jslib-media/src/utils/ServerSocket";
 import { sdkVersion } from "./index";
@@ -53,6 +54,11 @@ export type RoomConnectionStatus =
     | "disconnected"
     | "accepted"
     | "rejected";
+
+export type CloudRecordingState = {
+    status: "" | "recording";
+    startedAt: number | null;
+};
 
 type RoomJoinedEvent = {
     localParticipant: LocalParticipant;
@@ -103,6 +109,7 @@ type WaitingParticipantLeftEvent = {
 
 interface RoomEventsMap {
     chat_message: CustomEvent<ChatMessage>;
+    cloud_recording_started: CustomEvent<CloudRecordingState>;
     participant_audio_enabled: CustomEvent<ParticipantAudioEnabledEvent>;
     participant_joined: CustomEvent<ParticipantJoinedEvent>;
     participant_left: CustomEvent<ParticipantLeftEvent>;
@@ -252,6 +259,7 @@ export default class RoomConnection extends TypedEventTarget {
         this.signalSocket.on("knocker_left", this._handleKnockerLeft.bind(this));
         this.signalSocket.on("room_joined", this._handleRoomJoined.bind(this));
         this.signalSocket.on("room_knocked", this._handleRoomKnocked.bind(this));
+        this.signalSocket.on("cloud_recording_stopped", this._handleCloudRecordingStopped.bind(this));
         this.signalSocket.on("disconnect", this._handleDisconnect.bind(this));
         this.signalSocket.on("connect_error", this._handleDisconnect.bind(this));
 
@@ -303,7 +311,23 @@ export default class RoomConnection extends TypedEventTarget {
         this.dispatchEvent(new CustomEvent("chat_message", { detail: message }));
     }
 
+    private _handleCloudRecordingStarted({ client }: { client: SignalClient }) {
+        this.dispatchEvent(
+            new CustomEvent("cloud_recording_started", {
+                detail: {
+                    status: "recording",
+                    startedAt: client.startedCloudRecordingAt
+                        ? new Date(client.startedCloudRecordingAt).getTime()
+                        : new Date().getTime(),
+                },
+            })
+        );
+    }
+
     private _handleNewClient({ client }: NewClientEvent) {
+        if (client.role.roleName === "recorder") {
+            this._handleCloudRecordingStarted({ client });
+        }
         if (NON_PERSON_ROLES.includes(client.role.roleName)) {
             return;
         }
@@ -421,6 +445,12 @@ export default class RoomConnection extends TypedEventTarget {
                 ...localClient,
                 stream: this.localMedia.stream || undefined,
             });
+
+            const recorderClient = clients.find((c) => c.role.roleName === "recorder");
+            if (recorderClient) {
+                this._handleCloudRecordingStarted({ client: recorderClient });
+            }
+
             this.remoteParticipants = clients
                 .filter((c) => c.id !== selfId)
                 .filter((c) => !NON_PERSON_ROLES.includes(c.role.roleName))
@@ -469,6 +499,10 @@ export default class RoomConnection extends TypedEventTarget {
                 },
             })
         );
+    }
+
+    private _handleCloudRecordingStopped() {
+        this.dispatchEvent(new CustomEvent("cloud_recording_stopped"));
     }
 
     private _handleRtcEvent<K extends keyof RtcEvents>(eventName: K, data: RtcEvents[K]) {
