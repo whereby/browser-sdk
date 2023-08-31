@@ -37,6 +37,7 @@ declare module "@whereby/jslib-media/src/webrtc/RtcManagerDispatcher" {
 
     type RtcEvents = {
         rtc_manager_created: RtcManagerCreatedPayload;
+        rtc_manager_destroyed: void;
         stream_added: RtcStreamAddedPayload;
     };
 
@@ -89,6 +90,10 @@ declare module "@whereby/jslib-media/src/utils/ServerSocket" {
         reconnectionDelay?: number;
         reconnectoinDelayMax?: number;
         timeout?: number;
+    }
+
+    interface SocketManager {
+        on: (eventName: string, callback: (args: unknown) => void) => void;
     }
 
     interface ClientRole {
@@ -235,6 +240,7 @@ declare module "@whereby/jslib-media/src/utils/ServerSocket" {
 
         connect(): void;
         disconnect(): void;
+        getManager(): SocketManager;
         emit<K extends keyof SignalRequests>(eventName: K, payload?: SignalRequests[k]);
         on<K extends keyof SignalEvents>(eventName: K, callback: (args: SignalEvents[K]) => void);
         once<K extends keyof SignalEvents>(eventName: K, callback: (args: SignalEvents[K]) => void);
