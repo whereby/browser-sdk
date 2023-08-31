@@ -60,6 +60,11 @@ export type CloudRecordingState = {
     startedAt: number | null;
 };
 
+export type StreamingState = {
+    status: "" | "streaming";
+    startedAt: number | null;
+};
+
 type RoomJoinedEvent = {
     localParticipant: LocalParticipant;
     remoteParticipants: RemoteParticipant[];
@@ -118,6 +123,7 @@ interface RoomEventsMap {
     participant_video_enabled: CustomEvent<ParticipantVideoEnabledEvent>;
     room_connection_status_changed: CustomEvent<RoomConnectionStatusChangedEvent>;
     room_joined: CustomEvent<RoomJoinedEvent>;
+    streaming_started: CustomEvent<StreamingState>;
     waiting_participant_joined: CustomEvent<WaitingParticipantJoinedEvent>;
     waiting_participant_left: CustomEvent<WaitingParticipantLeftEvent>;
 }
@@ -260,6 +266,7 @@ export default class RoomConnection extends TypedEventTarget {
         this.signalSocket.on("room_joined", this._handleRoomJoined.bind(this));
         this.signalSocket.on("room_knocked", this._handleRoomKnocked.bind(this));
         this.signalSocket.on("cloud_recording_stopped", this._handleCloudRecordingStopped.bind(this));
+        this.signalSocket.on("streaming_stopped", this._handleStreamingStopped.bind(this));
         this.signalSocket.on("disconnect", this._handleDisconnect.bind(this));
         this.signalSocket.on("connect_error", this._handleDisconnect.bind(this));
 
@@ -324,9 +331,27 @@ export default class RoomConnection extends TypedEventTarget {
         );
     }
 
+    private _handleStreamingStarted() {
+        this.dispatchEvent(
+            new CustomEvent("streaming_started", {
+                detail: {
+                    status: "streaming",
+                    // We don't have the streaming start time stored on the
+                    // server, so we use the current time instead. This gives
+                    // an invalid timestamp for "Client B" if "Client A" has
+                    // been streaming for a while before "Client B" joins.
+                    startedAt: new Date().getTime(),
+                },
+            })
+        );
+    }
+
     private _handleNewClient({ client }: NewClientEvent) {
         if (client.role.roleName === "recorder") {
             this._handleCloudRecordingStarted({ client });
+        }
+        if (client.role.roleName === "streamer") {
+            this._handleStreamingStarted();
         }
         if (NON_PERSON_ROLES.includes(client.role.roleName)) {
             return;
@@ -451,6 +476,11 @@ export default class RoomConnection extends TypedEventTarget {
                 this._handleCloudRecordingStarted({ client: recorderClient });
             }
 
+            const streamerClient = clients.find((c) => c.role.roleName === "streamer");
+            if (streamerClient) {
+                this._handleStreamingStarted();
+            }
+
             this.remoteParticipants = clients
                 .filter((c) => c.id !== selfId)
                 .filter((c) => !NON_PERSON_ROLES.includes(c.role.roleName))
@@ -503,6 +533,10 @@ export default class RoomConnection extends TypedEventTarget {
 
     private _handleCloudRecordingStopped() {
         this.dispatchEvent(new CustomEvent("cloud_recording_stopped"));
+    }
+
+    private _handleStreamingStopped() {
+        this.dispatchEvent(new CustomEvent("streaming_stopped"));
     }
 
     private _handleRtcEvent<K extends keyof RtcEvents>(eventName: K, data: RtcEvents[K]) {

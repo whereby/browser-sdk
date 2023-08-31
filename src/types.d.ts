@@ -204,6 +204,7 @@ declare module "@whereby/jslib-media/src/utils/ServerSocket" {
         room_joined: RoomJoinedEvent;
         room_knocked: RoomKnockedEvent;
         room_left: void;
+        streaming_stopped: void;
         video_enabled: VideoEnabledEvent;
     }
 
