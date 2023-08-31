@@ -1,7 +1,13 @@
 import { useEffect, useReducer, useState } from "react";
 import VideoView from "./VideoView";
 import { LocalMediaRef } from "./useLocalMedia";
-import RoomConnection, { ChatMessage, CloudRecordingState, RoomConnectionOptions, RoomConnectionStatus } from "../RoomConnection";
+import RoomConnection, {
+    ChatMessage,
+    CloudRecordingState,
+    RoomConnectionOptions,
+    RoomConnectionStatus,
+    StreamingState,
+} from "../RoomConnection";
 import { LocalParticipant, RemoteParticipant, WaitingParticipant } from "../RoomParticipant";
 
 type RemoteParticipantState = Omit<RemoteParticipant, "updateStreamState">;
@@ -15,6 +21,7 @@ export interface RoomConnectionState {
     mostRecentChatMessage: ChatMessage | null;
     remoteParticipants: RemoteParticipantState[];
     roomConnectionStatus: RoomConnectionStatus;
+    streaming: StreamingState;
     waitingParticipants: WaitingParticipant[];
 }
 
@@ -29,6 +36,10 @@ const initialState: RoomConnectionState = {
     mostRecentChatMessage: null,
     remoteParticipants: [],
     roomConnectionStatus: "",
+    streaming: {
+        status: "",
+        startedAt: null,
+    },
     waitingParticipants: [],
 };
 
@@ -103,6 +114,13 @@ type RoomConnectionEvents =
           payload: {
               displayName: string;
           };
+      }
+    | {
+          type: "STREAMING_STARTED";
+          payload: StreamingState;
+      }
+    | {
+          type: "STREAMING_STOPPED";
       }
     | {
           type: "WAITING_PARTICIPANT_JOINED";
@@ -219,6 +237,22 @@ function reducer(state: RoomConnectionState, action: RoomConnectionEvents): Room
                 ...state,
                 localParticipant: { ...state.localParticipant, displayName: action.payload.displayName },
             };
+        case "STREAMING_STARTED":
+            return {
+                ...state,
+                streaming: {
+                    status: action.payload.status,
+                    startedAt: action.payload.startedAt,
+                },
+            };
+        case "STREAMING_STOPPED":
+            return {
+                ...state,
+                streaming: {
+                    status: "",
+                    startedAt: null,
+                },
+            };
         case "WAITING_PARTICIPANT_JOINED":
             return {
                 ...state,
@@ -328,6 +362,15 @@ export default function useRoomConnection(
         roomConnection.addEventListener("participant_metadata_changed", (e) => {
             const { participantId, displayName } = e.detail;
             dispatch({ type: "PARTICIPANT_METADATA_CHANGED", payload: { participantId, displayName } });
+        });
+
+        roomConnection.addEventListener("streaming_started", (e) => {
+            const { status, startedAt } = e.detail;
+            dispatch({ type: "STREAMING_STARTED", payload: { status, startedAt } });
+        });
+
+        roomConnection.addEventListener("streaming_stopped", () => {
+            dispatch({ type: "STREAMING_STOPPED" });
         });
 
         roomConnection.addEventListener("waiting_participant_joined", (e) => {
