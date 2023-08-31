@@ -28,14 +28,13 @@ The `useLocalMedia` hook enables preview and selection of local devices (camera 
 experiences, allowing end users to confirm their device selection up-front. This hook works seamlessly with the `useRoomConnection` hook described below.
 
 ```js
-import { useLocalMedia, VideoView } from “@whereby.com/browser-sdk”;
+import { useLocalMedia, VideoView } from "@whereby.com/browser-sdk";
 
 function MyPreCallUX() {
     const localMedia = useLocalMedia({ audio: false, video: true });
 
     const { currentCameraDeviceId, cameraDevices, localStream } = localMedia.state;
     const { setCameraDevice, toggleCameraEnabled } = localMedia.actions;
-    const { VideoView } = components;
 
     return <div className="preCallView">
         { /* Render any UI, making use of state */ }
@@ -62,7 +61,7 @@ function MyPreCallUX() {
 The `useRoomConnection` hook provides a way to connect participants in a given room, subscribe to state updates, and perform actions on the connection, like toggling camera or microphone.
 
 ```js
-import { useRoomConnection } from “@whereby.com/browser-sdk”;
+import { useRoomConnection } from "@whereby.com/browser-sdk";
 
 function MyCallUX( { roomUrl, localStream }) {
     const { state, actions, components } = useRoomConnection(
