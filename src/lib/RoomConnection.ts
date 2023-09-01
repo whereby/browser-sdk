@@ -252,6 +252,8 @@ export default class RoomConnection extends TypedEventTarget {
         this.signalSocket.on("knocker_left", this._handleKnockerLeft.bind(this));
         this.signalSocket.on("room_joined", this._handleRoomJoined.bind(this));
         this.signalSocket.on("room_knocked", this._handleRoomKnocked.bind(this));
+        this.signalSocket.on("disconnect", this._handleDisconnect.bind(this));
+        this.signalSocket.on("connect_error", this._handleDisconnect.bind(this));
 
         this.signalSocketManager = this.signalSocket.getManager();
         this.signalSocketManager.on("reconnect", this._handleReconnect.bind(this));
@@ -455,6 +457,17 @@ export default class RoomConnection extends TypedEventTarget {
         this.signalSocket.once("device_identified", () => {
             this._joinRoom();
         });
+    }
+
+    private _handleDisconnect() {
+        this.roomConnectionStatus = "disconnected";
+        this.dispatchEvent(
+            new CustomEvent("room_connection_status_changed", {
+                detail: {
+                    roomConnectionStatus: this.roomConnectionStatus,
+                },
+            })
+        );
     }
 
     private _handleRtcEvent<K extends keyof RtcEvents>(eventName: K, data: RtcEvents[K]) {

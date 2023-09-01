@@ -188,11 +188,13 @@ declare module "@whereby/jslib-media/src/utils/ServerSocket" {
 
     interface SignalEvents {
         audio_enabled: AudioEnabledEvent;
+        chat_message: ChatMessage;
         client_left: ClientLeftEvent;
         client_metadata_received: ClientMetadataReceivedEvent;
-        chat_message: ChatMessage;
         connect: void;
+        connect_error: void;
         device_identified: void;
+        disconnect: void;
         knock_handled: KnockAcceptedEvent | KnockRejectedEvent;
         knocker_left: KnockerLeftEvent;
         new_client: NewClientEvent;
