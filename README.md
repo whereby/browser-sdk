@@ -89,6 +89,26 @@ function MyCallUX( { roomUrl, localStream }) {
 
 ```
 
+##### Usage with Next.js
+If you are integrating these React hooks with Next.js, you need to ensure your custom video experience components are
+reneded client side, as the underlying APIs we use are only available in the browser context. Simply add `"use client";`
+to the top of component, like in the following example:
+
+```js
+"use client";
+
+import { VideoView, useLocalMedia } from "@whereby.com/browser-sdk";
+
+export default function MyNextVideoExperience() {
+  const { state, actions } = useLocalMedia({ audio: false, video: true });
+
+  return (
+    <p>{ state.localStream && <VideoView muted stream={state.localStream} /> }</p>
+  );
+}
+
+```
+
 ### Web component for embedding
 
 Use the `<whereby-embed />` web component to make use of Whereby's pre-built responsive UI. Refer to our [documentation](https://docs.whereby.com/embedding-rooms/in-a-web-page/using-the-whereby-embed-element) to learn which attributes are supported.
