@@ -1,29 +1,45 @@
 import { useEffect, useReducer, useState } from "react";
 import VideoView from "./VideoView";
 import { LocalMediaRef } from "./useLocalMedia";
-import RoomConnection, { ChatMessage, RoomConnectionOptions, RoomConnectionStatus } from "../RoomConnection";
+import RoomConnection, {
+    ChatMessage,
+    CloudRecordingState,
+    RoomConnectionOptions,
+    RoomConnectionStatus,
+    StreamingState,
+} from "../RoomConnection";
 import { LocalParticipant, RemoteParticipant, WaitingParticipant } from "../RoomParticipant";
 
 type RemoteParticipantState = Omit<RemoteParticipant, "updateStreamState">;
 
 export interface RoomConnectionState {
     chatMessages: ChatMessage[];
+    cloudRecording: CloudRecordingState;
     isJoining: boolean;
     joinError: unknown;
     localParticipant?: LocalParticipant;
     mostRecentChatMessage: ChatMessage | null;
-    roomConnectionStatus: RoomConnectionStatus;
     remoteParticipants: RemoteParticipantState[];
+    roomConnectionStatus: RoomConnectionStatus;
+    streaming: StreamingState;
     waitingParticipants: WaitingParticipant[];
 }
 
 const initialState: RoomConnectionState = {
     chatMessages: [],
-    roomConnectionStatus: "",
+    cloudRecording: {
+        status: "",
+        startedAt: null,
+    },
     isJoining: false,
     joinError: null,
     mostRecentChatMessage: null,
     remoteParticipants: [],
+    roomConnectionStatus: "",
+    streaming: {
+        status: "",
+        startedAt: null,
+    },
     waitingParticipants: [],
 };
 
@@ -31,6 +47,13 @@ type RoomConnectionEvents =
     | {
           type: "CHAT_MESSAGE";
           payload: ChatMessage;
+      }
+    | {
+          type: "CLOUD_RECORDING_STARTED";
+          payload: CloudRecordingState;
+      }
+    | {
+          type: "CLOUD_RECORDING_STOPPED";
       }
     | {
           type: "ROOM_JOINED";
@@ -93,6 +116,13 @@ type RoomConnectionEvents =
           };
       }
     | {
+          type: "STREAMING_STARTED";
+          payload: StreamingState;
+      }
+    | {
+          type: "STREAMING_STOPPED";
+      }
+    | {
           type: "WAITING_PARTICIPANT_JOINED";
           payload: {
               participantId: string;
@@ -131,6 +161,22 @@ function reducer(state: RoomConnectionState, action: RoomConnectionEvents): Room
                 ...state,
                 chatMessages: [...state.chatMessages, action.payload],
                 mostRecentChatMessage: action.payload,
+            };
+        case "CLOUD_RECORDING_STARTED":
+            return {
+                ...state,
+                cloudRecording: {
+                    status: action.payload.status,
+                    startedAt: action.payload.startedAt,
+                },
+            };
+        case "CLOUD_RECORDING_STOPPED":
+            return {
+                ...state,
+                cloudRecording: {
+                    status: "",
+                    startedAt: null,
+                },
             };
         case "ROOM_JOINED":
             return {
@@ -190,6 +236,22 @@ function reducer(state: RoomConnectionState, action: RoomConnectionEvents): Room
             return {
                 ...state,
                 localParticipant: { ...state.localParticipant, displayName: action.payload.displayName },
+            };
+        case "STREAMING_STARTED":
+            return {
+                ...state,
+                streaming: {
+                    status: action.payload.status,
+                    startedAt: action.payload.startedAt,
+                },
+            };
+        case "STREAMING_STOPPED":
+            return {
+                ...state,
+                streaming: {
+                    status: "",
+                    startedAt: null,
+                },
             };
         case "WAITING_PARTICIPANT_JOINED":
             return {
@@ -253,6 +315,15 @@ export default function useRoomConnection(
             dispatch({ type: "CHAT_MESSAGE", payload: chatMessage });
         });
 
+        roomConnection.addEventListener("cloud_recording_started", (e) => {
+            const { status, startedAt } = e.detail;
+            dispatch({ type: "CLOUD_RECORDING_STARTED", payload: { status, startedAt } });
+        });
+
+        roomConnection.addEventListener("cloud_recording_stopped", () => {
+            dispatch({ type: "CLOUD_RECORDING_STOPPED" });
+        });
+
         roomConnection.addEventListener("participant_audio_enabled", (e) => {
             const { participantId, isAudioEnabled } = e.detail;
             dispatch({ type: "PARTICIPANT_AUDIO_ENABLED", payload: { participantId, isAudioEnabled } });
@@ -291,6 +362,15 @@ export default function useRoomConnection(
         roomConnection.addEventListener("participant_metadata_changed", (e) => {
             const { participantId, displayName } = e.detail;
             dispatch({ type: "PARTICIPANT_METADATA_CHANGED", payload: { participantId, displayName } });
+        });
+
+        roomConnection.addEventListener("streaming_started", (e) => {
+            const { status, startedAt } = e.detail;
+            dispatch({ type: "STREAMING_STARTED", payload: { status, startedAt } });
+        });
+
+        roomConnection.addEventListener("streaming_stopped", () => {
+            dispatch({ type: "STREAMING_STOPPED" });
         });
 
         roomConnection.addEventListener("waiting_participant_joined", (e) => {

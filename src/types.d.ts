@@ -116,6 +116,7 @@ declare module "@whereby/jslib-media/src/utils/ServerSocket" {
         isAudioEnabled: boolean;
         isVideoEnabled: boolean;
         role: ClientRole;
+        startedCloudRecordingAt: string | null;
     }
 
     interface AudioEnabledEvent {
@@ -191,6 +192,8 @@ declare module "@whereby/jslib-media/src/utils/ServerSocket" {
         chat_message: ChatMessage;
         client_left: ClientLeftEvent;
         client_metadata_received: ClientMetadataReceivedEvent;
+        cloud_recording_stopped: void;
+        chat_message: ChatMessage;
         connect: void;
         connect_error: void;
         device_identified: void;
@@ -201,6 +204,7 @@ declare module "@whereby/jslib-media/src/utils/ServerSocket" {
         room_joined: RoomJoinedEvent;
         room_knocked: RoomKnockedEvent;
         room_left: void;
+        streaming_stopped: void;
         video_enabled: VideoEnabledEvent;
     }
 
