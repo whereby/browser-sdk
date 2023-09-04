@@ -7,6 +7,7 @@ import RtcManager from "@whereby/jslib-media/src/webrtc/RtcManager";
 import { fromLocation } from "@whereby/jslib-media/src/utils/urls";
 import {
     ApiClient,
+    Credentials,
     CredentialsService,
     OrganizationApiClient,
     OrganizationService,
@@ -26,6 +27,7 @@ import ServerSocket, {
     NewClientEvent,
     RoomJoinedEvent as SignalRoomJoinedEvent,
     RoomKnockedEvent as SignalRoomKnockedEvent,
+    SocketManager,
 } from "@whereby/jslib-media/src/utils/ServerSocket";
 import { sdkVersion } from "./index";
 import LocalMedia from "./LocalMedia";
@@ -174,7 +176,9 @@ export default class RoomConnection extends TypedEventTarget {
     private organizationApiClient: OrganizationApiClient;
     private roomService: RoomService;
 
+    private _deviceCredentials: Credentials | null = null;
     private signalSocket: ServerSocket;
+    private signalSocketManager: SocketManager;
     private rtcManagerDispatcher?: RtcManagerDispatcher;
     private rtcManager?: RtcManager;
     private roomConnectionStatus: RoomConnectionStatus;
@@ -248,6 +252,11 @@ export default class RoomConnection extends TypedEventTarget {
         this.signalSocket.on("knocker_left", this._handleKnockerLeft.bind(this));
         this.signalSocket.on("room_joined", this._handleRoomJoined.bind(this));
         this.signalSocket.on("room_knocked", this._handleRoomKnocked.bind(this));
+        this.signalSocket.on("disconnect", this._handleDisconnect.bind(this));
+        this.signalSocket.on("connect_error", this._handleDisconnect.bind(this));
+
+        this.signalSocketManager = this.signalSocket.getManager();
+        this.signalSocketManager.on("reconnect", this._handleReconnect.bind(this));
 
         // Set up local media listeners
         this.localMedia.addEventListener("camera_enabled", (e) => {
@@ -441,11 +450,33 @@ export default class RoomConnection extends TypedEventTarget {
         );
     }
 
+    private _handleReconnect() {
+        this.logger.log("Reconnected to signal socket");
+        this.signalSocket.emit("identify_device", { deviceCredentials: this._deviceCredentials });
+
+        this.signalSocket.once("device_identified", () => {
+            this._joinRoom();
+        });
+    }
+
+    private _handleDisconnect() {
+        this.roomConnectionStatus = "disconnected";
+        this.dispatchEvent(
+            new CustomEvent("room_connection_status_changed", {
+                detail: {
+                    roomConnectionStatus: this.roomConnectionStatus,
+                },
+            })
+        );
+    }
+
     private _handleRtcEvent<K extends keyof RtcEvents>(eventName: K, data: RtcEvents[K]) {
         if (eventName === "rtc_manager_created") {
             return this._handleRtcManagerCreated(data as RtcManagerCreatedPayload);
         } else if (eventName === "stream_added") {
             return this._handleStreamAdded(data as RtcStreamAddedPayload);
+        } else if (eventName === "rtc_manager_destroyed") {
+            return this._handleRtcManagerDestroyed();
         } else {
             this.logger.log(`Unhandled RTC event ${eventName}`);
         }
@@ -467,6 +498,10 @@ export default class RoomConnection extends TypedEventTarget {
         if (this.remoteParticipants.length) {
             this._handleAcceptStreams(this.remoteParticipants);
         }
+    }
+
+    private _handleRtcManagerDestroyed() {
+        this.rtcManager = undefined;
     }
 
     private _handleAcceptStreams(remoteParticipants: RemoteParticipant[]) {
@@ -600,10 +635,10 @@ export default class RoomConnection extends TypedEventTarget {
         }
 
         // Identify device on signal connection
-        const deviceCredentials = await this.credentialsService.getCredentials();
+        this._deviceCredentials = await this.credentialsService.getCredentials();
 
         this.logger.log("Connected to signal socket");
-        this.signalSocket.emit("identify_device", { deviceCredentials });
+        this.signalSocket.emit("identify_device", { deviceCredentials: this._deviceCredentials });
 
         this.signalSocket.once("device_identified", () => {
             this._joinRoom();

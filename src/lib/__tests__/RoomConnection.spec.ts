@@ -2,7 +2,18 @@ import { jest } from "@jest/globals";
 
 import RoomConnection from "../RoomConnection";
 
-jest.mock("@whereby/jslib-media/src/utils/ServerSocket");
+jest.mock("@whereby/jslib-media/src/utils/ServerSocket", () => {
+    return jest.fn().mockImplementation(() => {
+        return {
+            on: jest.fn(),
+            getManager: () => {
+                return {
+                    on: jest.fn(),
+                };
+            },
+        };
+    });
+});
 jest.mock("../LocalMedia");
 
 describe("RoomConnection", () => {
