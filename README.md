@@ -1,8 +1,11 @@
 # `@whereby.com/browser-sdk`
 
-> This is a pre-release of the v2 version of this library, adding support for more custom integration using React hooks and plain JavaScript classes in addition to the web component for embedding.
+> This is a pre-release of the v2 version of this library, adding support for
+> more custom integration using React hooks and plain JavaScript classes in
+> addition to the web component for embedding.
 
-Whereby browser SDK is a library for seamless integration of Whereby (https://whereby.com) video calls into your web application.
+Whereby browser SDK is a library for seamless integration of Whereby
+(https://whereby.com) video calls into your web application.
 
 ## Installation
 
@@ -18,14 +21,19 @@ yarn add @whereby.com/browser-sdk
 
 ## Usage
 
-> In order to make use of this functionality, you must have a Whereby account from which you can create room urls, either [manually or through our API](https://docs.whereby.com/creating-and-deleting-rooms).
+> In order to make use of this functionality, you must have a Whereby account
+> from which you can create room urls, either [manually or through our
+> API](https://docs.whereby.com/creating-and-deleting-rooms).
 
 ### React hooks
 
 #### useLocalMedia
 
-The `useLocalMedia` hook enables preview and selection of local devices (camera & microphone) prior to establishing a connection within a Whereby room. Use this hook to build rich pre-call
-experiences, allowing end users to confirm their device selection up-front. This hook works seamlessly with the `useRoomConnection` hook described below.
+The `useLocalMedia` hook enables preview and selection of local devices (camera
+& microphone) prior to establishing a connection within a Whereby room. Use
+this hook to build rich pre-call experiences, allowing end users to confirm
+their device selection up-front. This hook works seamlessly with the
+`useRoomConnection` hook described below.
 
 ```js
 import { useLocalMedia, VideoView } from "@whereby.com/browser-sdk";
@@ -58,7 +66,9 @@ function MyPreCallUX() {
 
 #### useRoomConnection
 
-The `useRoomConnection` hook provides a way to connect participants in a given room, subscribe to state updates, and perform actions on the connection, like toggling camera or microphone.
+The `useRoomConnection` hook provides a way to connect participants in a given
+room, subscribe to state updates, and perform actions on the connection, like
+toggling camera or microphone.
 
 ```js
 import { useRoomConnection } from "@whereby.com/browser-sdk";
@@ -89,10 +99,12 @@ function MyCallUX( { roomUrl, localStream }) {
 
 ```
 
-##### Usage with Next.js
-If you are integrating these React hooks with Next.js, you need to ensure your custom video experience components are
-reneded client side, as the underlying APIs we use are only available in the browser context. Simply add `"use client";`
-to the top of component, like in the following example:
+#### Usage with Next.js
+
+If you are integrating these React hooks with Next.js, you need to ensure your
+custom video experience components are rendered client side, as the underlying
+APIs we use are only available in the browser context. Simply add `"use
+client";` to the top of component, like in the following example:
 
 ```js
 "use client";
@@ -111,7 +123,10 @@ export default function MyNextVideoExperience() {
 
 ### Web component for embedding
 
-Use the `<whereby-embed />` web component to make use of Whereby's pre-built responsive UI. Refer to our [documentation](https://docs.whereby.com/embedding-rooms/in-a-web-page/using-the-whereby-embed-element) to learn which attributes are supported.
+Use the `<whereby-embed />` web component to make use of Whereby's pre-built
+responsive UI. Refer to our
+[documentation](https://docs.whereby.com/embedding-rooms/in-a-web-page/using-the-whereby-embed-element)
+to learn which attributes are supported.
 
 #### React
 
@@ -142,4 +157,6 @@ export default MyComponent;
 
 **Note**
 
-Although we have just higlighted two combinations of how to load and use the web component, it should be possible to use this library with all the major frontend frameworks.
+Although we have just higlighted two combinations of how to load and use the
+web component, it should be possible to use this library with all the major
+frontend frameworks.
