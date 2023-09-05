@@ -1,4 +1,4 @@
-import { useEffect, useReducer, useState } from "react";
+import React, { useEffect, useReducer, useState } from "react";
 import VideoView from "./VideoView";
 import { LocalMediaRef } from "./useLocalMedia";
 import RoomConnection, {
@@ -328,8 +328,10 @@ interface RoomConnectionActions {
     rejectWaitingParticipant(participantId: string): void;
 }
 
+type VideoViewComponentProps = Omit<React.ComponentProps<typeof VideoView>, "onResize">;
+
 interface RoomConnectionComponents {
-    VideoView: typeof VideoView;
+    VideoView: (props: VideoViewComponentProps) => ReturnType<typeof VideoView>;
 }
 
 export type RoomConnectionRef = {
@@ -471,7 +473,27 @@ export default function useRoomConnection(
             },
         },
         components: {
-            VideoView,
+            VideoView: (props: VideoViewComponentProps): JSX.Element =>
+                React.createElement(
+                    VideoView as React.ComponentType<VideoViewComponentProps>,
+                    Object.assign({}, props, {
+                        onResize: ({
+                            stream,
+                            width,
+                            height,
+                        }: {
+                            stream: MediaStream;
+                            width: number;
+                            height: number;
+                        }) => {
+                            roomConnection.updateStreamResolution({
+                                streamId: stream.id,
+                                width,
+                                height,
+                            });
+                        },
+                    })
+                ),
         },
         _ref: roomConnection,
     };
