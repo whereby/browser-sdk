@@ -77,6 +77,7 @@ declare module "@whereby/jslib-media/src/webrtc/RtcManager" {
         disconnectAll(): void;
         replaceTrack(oldTrack: MediaStreamTrack, newTrack: MediaStreamTrack): Promise<void>;
         shouldAcceptStreamsFromBothSides?: () => boolean;
+        updateStreamResolution(streamId: string, ignored: null, resolution: { width: number; height: number }): void;
     }
 }
 
