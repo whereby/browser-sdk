@@ -3686,9 +3686,9 @@
     "@webassemblyjs/wast-parser" "1.9.0"
     "@xtuc/long" "4.2.2"
 
-"@whereby/jslib-media@whereby/jslib-media.git#0.2.0":
-  version "0.2.0"
-  resolved "https://codeload.github.com/whereby/jslib-media/tar.gz/2e0354ca8c76810e710282f8051e08bde482090f"
+"@whereby/jslib-media@whereby/jslib-media.git#0.2.1":
+  version "0.2.1"
+  resolved "https://codeload.github.com/whereby/jslib-media/tar.gz/c728ca326eaeab8dc1b2aa4b67c0130f0a17bdb6"
   dependencies:
     assert "^2.0.0"
     mediasoup-client "^3.6.82"
