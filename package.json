@@ -1,6 +1,6 @@
 {
     "name": "@whereby.com/browser-sdk",
-    "version": "2.0.0-alpha16",
+    "version": "2.0.0-alpha17",
     "description": "Modules for integration Whereby video in web apps",
     "author": "Whereby AS",
     "license": "MIT",
@@ -70,7 +70,7 @@
     },
     "dependencies": {
         "@swc/helpers": "^0.3.13",
-        "@whereby/jslib-media": "whereby/jslib-media.git#0.2.1",
+        "@whereby/jslib-media": "whereby/jslib-media.git#0.2.2",
         "assert": "^2.0.0",
         "axios": "^1.2.3",
         "btoa": "^1.2.1",
