@@ -8,7 +8,7 @@ import RoomConnection, {
     RoomConnectionStatus,
     StreamingState,
 } from "../RoomConnection";
-import { LocalParticipant, RemoteParticipant, WaitingParticipant } from "../RoomParticipant";
+import { LocalParticipant, RemoteParticipant, Screenshare, WaitingParticipant } from "../RoomParticipant";
 
 type RemoteParticipantState = Omit<RemoteParticipant, "updateStreamState">;
 
@@ -20,6 +20,7 @@ export interface RoomConnectionState {
     localParticipant?: LocalParticipant;
     mostRecentChatMessage: ChatMessage | null;
     remoteParticipants: RemoteParticipantState[];
+    screenshares: Screenshare[];
     roomConnectionStatus: RoomConnectionStatus;
     streaming: StreamingState;
     waitingParticipants: WaitingParticipant[];
@@ -36,6 +37,7 @@ const initialState: RoomConnectionState = {
     mostRecentChatMessage: null,
     remoteParticipants: [],
     roomConnectionStatus: "",
+    screenshares: [],
     streaming: {
         status: "",
         startedAt: null,
@@ -116,6 +118,22 @@ type RoomConnectionEvents =
           };
       }
     | {
+          type: "SCREENSHARE_STARTED";
+          payload: {
+              participantId: string;
+              stream: MediaStream;
+              id: string;
+              hasAudioTrack: boolean;
+          };
+      }
+    | {
+          type: "SCREENSHARE_STOPPED";
+          payload: {
+              participantId: string;
+              id: string;
+          };
+      }
+    | {
           type: "STREAMING_STARTED";
           payload: StreamingState;
       }
@@ -152,6 +170,14 @@ function updateParticipant(
         { ...existingParticipant, ...updates },
         ...remoteParticipants.slice(index + 1),
     ];
+}
+
+function addScreenshare(screenshares: Screenshare[], screenshare: Screenshare): Screenshare[] {
+    const existingScreenshare = screenshares.find((ss) => ss.id === screenshare.id);
+    if (existingScreenshare) {
+        return screenshares;
+    }
+    return [...screenshares, screenshare];
 }
 
 function reducer(state: RoomConnectionState, action: RoomConnectionEvents): RoomConnectionState {
@@ -236,6 +262,23 @@ function reducer(state: RoomConnectionState, action: RoomConnectionEvents): Room
             return {
                 ...state,
                 localParticipant: { ...state.localParticipant, displayName: action.payload.displayName },
+            };
+        case "SCREENSHARE_STARTED":
+            return {
+                ...state,
+                screenshares: addScreenshare(state.screenshares, {
+                    participantId: action.payload.participantId,
+                    id: action.payload.id,
+                    hasAudioTrack: action.payload.hasAudioTrack,
+                    stream: action.payload.stream,
+                }),
+            };
+        case "SCREENSHARE_STOPPED":
+            return {
+                ...state,
+                screenshares: state.screenshares.filter(
+                    (ss) => ss.participantId !== action.payload.participantId || ss.id !== action.payload.id
+                ),
             };
         case "STREAMING_STARTED":
             return {
@@ -362,6 +405,17 @@ export default function useRoomConnection(
         roomConnection.addEventListener("participant_metadata_changed", (e) => {
             const { participantId, displayName } = e.detail;
             dispatch({ type: "PARTICIPANT_METADATA_CHANGED", payload: { participantId, displayName } });
+        });
+
+        roomConnection.addEventListener("screenshare_started", (e) => {
+            const { participantId, id, hasAudioTrack, stream } = e.detail;
+
+            dispatch({ type: "SCREENSHARE_STARTED", payload: { participantId, id, hasAudioTrack, stream } });
+        });
+
+        roomConnection.addEventListener("screenshare_stopped", (e) => {
+            const { participantId, id } = e.detail;
+            dispatch({ type: "SCREENSHARE_STOPPED", payload: { participantId, id } });
         });
 
         roomConnection.addEventListener("streaming_started", (e) => {
