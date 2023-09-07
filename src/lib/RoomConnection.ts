@@ -15,7 +15,7 @@ import {
     RoomService,
 } from "./api";
 
-import { LocalParticipant, RemoteParticipant, StreamState, WaitingParticipant } from "./RoomParticipant";
+import { LocalParticipant, RemoteParticipant, Screenshare, StreamState, WaitingParticipant } from "./RoomParticipant";
 
 import ServerSocket, {
     ChatMessage as SignalChatMessage,
@@ -29,6 +29,8 @@ import ServerSocket, {
     RoomKnockedEvent as SignalRoomKnockedEvent,
     SignalClient,
     SocketManager,
+    ScreenshareStartedEvent as SignalScreenshareStartedEvent,
+    ScreenshareStoppedEvent as SignalScreenshareStoppedEvent,
 } from "@whereby/jslib-media/src/utils/ServerSocket";
 import { sdkVersion } from "./index";
 import LocalMedia from "./LocalMedia";
@@ -103,6 +105,18 @@ type ParticipantMetadataChangedEvent = {
     displayName: string;
 };
 
+type ScreenshareStartedEvent = {
+    participantId: string;
+    id: string;
+    hasAudioTrack: boolean;
+    stream: MediaStream;
+};
+
+type ScreenshareStoppedEvent = {
+    participantId: string;
+    id: string;
+};
+
 type WaitingParticipantJoinedEvent = {
     participantId: string;
     displayName: string | null;
@@ -123,6 +137,8 @@ interface RoomEventsMap {
     participant_video_enabled: CustomEvent<ParticipantVideoEnabledEvent>;
     room_connection_status_changed: CustomEvent<RoomConnectionStatusChangedEvent>;
     room_joined: CustomEvent<RoomJoinedEvent>;
+    screenshare_started: CustomEvent<ScreenshareStartedEvent>;
+    screenshare_stopped: CustomEvent<ScreenshareStoppedEvent>;
     streaming_started: CustomEvent<StreamingState>;
     waiting_participant_joined: CustomEvent<WaitingParticipantJoinedEvent>;
     waiting_participant_left: CustomEvent<WaitingParticipantLeftEvent>;
@@ -178,6 +194,7 @@ export default class RoomConnection extends TypedEventTarget {
     public localParticipant: LocalParticipant | null = null;
     public roomUrl: URL;
     public remoteParticipants: RemoteParticipant[] = [];
+    public screenshares: Screenshare[] = [];
     public readonly localMediaConstraints?: MediaStreamConstraints;
     public readonly roomName: string;
     private organizationId: string;
@@ -266,6 +283,8 @@ export default class RoomConnection extends TypedEventTarget {
         this.signalSocket.on("room_joined", this._handleRoomJoined.bind(this));
         this.signalSocket.on("room_knocked", this._handleRoomKnocked.bind(this));
         this.signalSocket.on("cloud_recording_stopped", this._handleCloudRecordingStopped.bind(this));
+        this.signalSocket.on("screenshare_started", this._handleScreenshareStarted.bind(this));
+        this.signalSocket.on("screenshare_stopped", this._handleScreenshareStopped.bind(this));
         this.signalSocket.on("streaming_stopped", this._handleStreamingStopped.bind(this));
         this.signalSocket.on("disconnect", this._handleDisconnect.bind(this));
         this.signalSocket.on("connect_error", this._handleDisconnect.bind(this));
@@ -539,6 +558,41 @@ export default class RoomConnection extends TypedEventTarget {
         this.dispatchEvent(new CustomEvent("streaming_stopped"));
     }
 
+    private _handleScreenshareStarted(screenshare: SignalScreenshareStartedEvent) {
+        const { clientId: participantId, streamId: id, hasAudioTrack } = screenshare;
+        const remoteParticipant = this.remoteParticipants.find((p) => p.id === participantId);
+
+        if (!remoteParticipant) {
+            this.logger.log("WARN: Could not find participant for screenshare");
+            return;
+        }
+
+        const foundScreenshare = this.screenshares.find((s) => s.id === id);
+        if (foundScreenshare) {
+            this.logger.log("WARN: Screenshare already exists");
+            return;
+        }
+
+        remoteParticipant.addStream(id, "to_accept");
+        this._handleAcceptStreams([remoteParticipant]);
+
+        this.screenshares = [...this.screenshares, { participantId, id, hasAudioTrack, stream: undefined }];
+    }
+
+    private _handleScreenshareStopped(screenshare: SignalScreenshareStoppedEvent) {
+        const { clientId: participantId, streamId: id } = screenshare;
+        const remoteParticipant = this.remoteParticipants.find((p) => p.id === participantId);
+
+        if (!remoteParticipant) {
+            this.logger.log("WARN: Could not find participant for screenshare");
+            return;
+        }
+
+        remoteParticipant.removeStream(id);
+        this.screenshares = this.screenshares.filter((s) => !(s.participantId === participantId && s.id === id));
+        this.dispatchEvent(new CustomEvent("screenshare_stopped", { detail: { participantId, id } }));
+    }
+
     private _handleRtcEvent<K extends keyof RtcEvents>(eventName: K, data: RtcEvents[K]) {
         if (eventName === "rtc_manager_created") {
             return this._handleRtcManagerCreated(data as RtcManagerCreatedPayload);
@@ -644,15 +698,32 @@ export default class RoomConnection extends TypedEventTarget {
         });
     }
 
-    private _handleStreamAdded({ clientId, stream, streamId }: RtcStreamAddedPayload) {
+    private _handleStreamAdded({ clientId, stream, streamId, streamType }: RtcStreamAddedPayload) {
         const remoteParticipant = this.remoteParticipants.find((p) => p.id === clientId);
         if (!remoteParticipant) {
             this.logger.log("WARN: Could not find participant for incoming stream");
             return;
         }
 
+        const remoteParticipantStream = remoteParticipant.streams.find((s) => s.id === streamId);
+
+        if (
+            (remoteParticipant.stream && remoteParticipant.stream.id === streamId) ||
+            (!remoteParticipant.stream && streamType === "webcam") ||
+            (!remoteParticipant.stream &&
+                !streamType &&
+                remoteParticipantStream &&
+                remoteParticipant.streams.indexOf(remoteParticipantStream) < 1)
+        ) {
+            this.dispatchEvent(
+                new CustomEvent("participant_stream_added", { detail: { participantId: clientId, stream, streamId } })
+            );
+            return;
+        }
+
+        // screenshare
         this.dispatchEvent(
-            new CustomEvent("participant_stream_added", { detail: { participantId: clientId, stream, streamId } })
+            new CustomEvent("screenshare_started", { detail: { participantId: clientId, stream, id: streamId } })
         );
     }
 

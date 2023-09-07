@@ -60,6 +60,17 @@ export class RemoteParticipant extends RoomParticipant {
         this.streams = streams.map((streamId) => ({ id: streamId, state: newJoiner ? "new_accept" : "to_accept" }));
     }
 
+    addStream(streamId: string, state: StreamState) {
+        this.streams.push({ id: streamId, state });
+    }
+
+    removeStream(streamId: string) {
+        const index = this.streams.findIndex((s) => s.id === streamId);
+        if (index !== -1) {
+            this.streams.splice(index, 1);
+        }
+    }
+
     updateStreamState(streamId: string, state: StreamState) {
         const stream = this.streams.find((s) => s.id === streamId);
         if (stream) {
@@ -79,4 +90,18 @@ export class LocalParticipant extends RoomParticipant {
 export interface WaitingParticipant {
     id: string;
     displayName: string | null;
+}
+
+export class Screenshare {
+    public readonly participantId: string;
+    public readonly id: string;
+    public readonly hasAudioTrack: boolean;
+    public readonly stream?: MediaStream;
+
+    constructor({ participantId, id, hasAudioTrack, stream }: Screenshare) {
+        this.participantId = participantId;
+        this.id = id;
+        this.hasAudioTrack = hasAudioTrack;
+        this.stream = stream;
+    }
 }

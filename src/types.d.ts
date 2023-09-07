@@ -33,6 +33,7 @@ declare module "@whereby/jslib-media/src/webrtc/RtcManagerDispatcher" {
         clientId: string;
         stream: MediaStream;
         streamId: string;
+        streamType: "webcam" | "screenshare";
     }
 
     type RtcEvents = {
@@ -177,6 +178,17 @@ declare module "@whereby/jslib-media/src/utils/ServerSocket" {
         liveVideo: boolean;
     }
 
+    interface ScreenshareStartedEvent {
+        clientId: string;
+        streamId: string;
+        hasAudioTrack: boolean;
+    }
+
+    interface ScreenshareStoppedEvent {
+        clientId: string;
+        streamId: string;
+    }
+
     interface VideoEnabledEvent {
         clientId: string;
         isVideoEnabled: boolean;
@@ -204,6 +216,8 @@ declare module "@whereby/jslib-media/src/utils/ServerSocket" {
         room_joined: RoomJoinedEvent;
         room_knocked: RoomKnockedEvent;
         room_left: void;
+        screenshare_started: ScreenshareStartedEvent;
+        screenshare_stopped: ScreenshareStoppedEvent;
         streaming_stopped: void;
         video_enabled: VideoEnabledEvent;
     }
