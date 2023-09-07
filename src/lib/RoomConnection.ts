@@ -149,6 +149,9 @@ const SIGNAL_BASE_URL = process.env["REACT_APP_SIGNAL_BASE_URL"] || "wss://signa
 
 const NON_PERSON_ROLES = ["recorder", "streamer"];
 
+// cache last reported stream resolutions
+const reportedStreamResolutions = new Map<string, { width: number; height: number }>();
+
 function createSocket() {
     const parsedUrl = new URL(SIGNAL_BASE_URL);
     const path = `${parsedUrl.pathname.replace(/^\/$/, "")}/protocol/socket.io/v4`;
@@ -856,5 +859,22 @@ export default class RoomConnection extends TypedEventTarget {
             clientId: participantId,
             response: {},
         });
+    }
+
+    public updateStreamResolution({ streamId, width, height }: { streamId?: string; width: number; height: number }) {
+        if (!streamId || !this.rtcManager) {
+            return;
+        }
+
+        // no need to report resolution for local participant
+        if (this.localParticipant?.stream?.id === streamId) {
+            return;
+        }
+
+        const old = reportedStreamResolutions.get(streamId);
+        if (!old || old.width !== width || old.height !== height) {
+            this.rtcManager.updateStreamResolution(streamId, null, { width: width || 1, height: height || 1 });
+        }
+        reportedStreamResolutions.set(streamId, { width, height });
     }
 }
