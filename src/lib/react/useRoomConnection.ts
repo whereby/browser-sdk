@@ -17,7 +17,9 @@ export interface RoomConnectionState {
     chatMessages: ChatMessage[];
     cloudRecording: CloudRecordingState;
     isJoining: boolean;
+    isStartingScreenshare: boolean;
     joinError: unknown;
+    startScreenshareError: unknown;
     localParticipant?: LocalParticipant;
     mostRecentChatMessage: ChatMessage | null;
     remoteParticipants: RemoteParticipantState[];
@@ -34,7 +36,9 @@ const initialState: RoomConnectionState = {
         startedAt: null,
     },
     isJoining: false,
+    isStartingScreenshare: false,
     joinError: null,
+    startScreenshareError: null,
     mostRecentChatMessage: null,
     remoteParticipants: [],
     roomConnectionStatus: "",
@@ -125,6 +129,7 @@ type RoomConnectionEvents =
               stream: MediaStream;
               id: string;
               hasAudioTrack: boolean;
+              isLocal: boolean;
           };
       }
     | {
@@ -140,6 +145,16 @@ type RoomConnectionEvents =
       }
     | {
           type: "STREAMING_STOPPED";
+      }
+    | {
+          type: "LOCAL_SCREENSHARE_START_ERROR";
+          payload: unknown;
+      }
+    | {
+          type: "LOCAL_SCREENSHARE_STARTING";
+      }
+    | {
+          type: "LOCAL_SCREENSHARE_STOPPED";
       }
     | {
           type: "WAITING_PARTICIPANT_JOINED";
@@ -272,14 +287,29 @@ function reducer(state: RoomConnectionState, action: RoomConnectionEvents): Room
                     id: action.payload.id,
                     hasAudioTrack: action.payload.hasAudioTrack,
                     stream: action.payload.stream,
+                    isLocal: action.payload.isLocal,
                 }),
             };
         case "SCREENSHARE_STOPPED":
             return {
                 ...state,
-                screenshares: state.screenshares.filter(
-                    (ss) => ss.participantId !== action.payload.participantId || ss.id !== action.payload.id
-                ),
+                screenshares: state.screenshares.filter((ss) => ss.id !== action.payload.id),
+            };
+        case "LOCAL_SCREENSHARE_START_ERROR":
+            return {
+                ...state,
+                isStartingScreenshare: false,
+                startScreenshareError: action.payload,
+            };
+        case "LOCAL_SCREENSHARE_STARTING":
+            return {
+                ...state,
+                isStartingScreenshare: true,
+            };
+        case "LOCAL_SCREENSHARE_STOPPED":
+            return {
+                ...state,
+                screenshares: state.screenshares.filter((ss) => !ss.isLocal),
             };
         case "STREAMING_STARTED":
             return {
@@ -327,6 +357,8 @@ interface RoomConnectionActions {
     toggleMicrophone(enabled?: boolean): void;
     acceptWaitingParticipant(participantId: string): void;
     rejectWaitingParticipant(participantId: string): void;
+    startScreenshare(): void;
+    stopScreenshare(): void;
 }
 
 type VideoViewComponentProps = Omit<React.ComponentProps<typeof VideoView>, "onResize">;
@@ -424,10 +456,10 @@ export default function useRoomConnection(
                 });
             }),
             createEventListener("screenshare_started", (e) => {
-                const { participantId, stream, id, hasAudioTrack } = e.detail;
+                const { participantId, stream, id, hasAudioTrack, isLocal } = e.detail;
                 dispatch({
                     type: "SCREENSHARE_STARTED",
-                    payload: { participantId, stream, id, hasAudioTrack },
+                    payload: { participantId, stream, id, hasAudioTrack, isLocal },
                 });
             }),
             createEventListener("screenshare_stopped", (e) => {
@@ -494,6 +526,18 @@ export default function useRoomConnection(
             },
             rejectWaitingParticipant: (participantId) => {
                 roomConnection.rejectWaitingParticipant(participantId);
+            },
+            startScreenshare: () => {
+                dispatch({ type: "LOCAL_SCREENSHARE_STARTING" });
+
+                try {
+                    roomConnection.startScreenshare();
+                } catch (error) {
+                    dispatch({ type: "LOCAL_SCREENSHARE_START_ERROR", payload: error });
+                }
+            },
+            stopScreenshare: () => {
+                roomConnection.stopScreenshare();
             },
         },
         components: {

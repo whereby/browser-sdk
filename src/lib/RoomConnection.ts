@@ -110,6 +110,7 @@ export type ScreenshareStartedEvent = {
     id: string;
     hasAudioTrack: boolean;
     stream: MediaStream;
+    isLocal: boolean;
 };
 
 export type ScreenshareStoppedEvent = {
@@ -591,7 +592,10 @@ export default class RoomConnection extends TypedEventTarget {
         remoteParticipant.addStream(id, "to_accept");
         this._handleAcceptStreams([remoteParticipant]);
 
-        this.screenshares = [...this.screenshares, { participantId, id, hasAudioTrack, stream: undefined }];
+        this.screenshares = [
+            ...this.screenshares,
+            { participantId, id, hasAudioTrack, stream: undefined, isLocal: false },
+        ];
     }
 
     private _handleScreenshareStopped(screenshare: SignalScreenshareStoppedEvent) {
@@ -738,7 +742,9 @@ export default class RoomConnection extends TypedEventTarget {
 
         // screenshare
         this.dispatchEvent(
-            new CustomEvent("screenshare_started", { detail: { participantId: clientId, stream, id: streamId } })
+            new CustomEvent("screenshare_started", {
+                detail: { participantId: clientId, stream, id: streamId, isLocal: false },
+            })
         );
     }
 
@@ -877,7 +883,6 @@ export default class RoomConnection extends TypedEventTarget {
         if (!streamId || !this.rtcManager) {
             return;
         }
-
         // no need to report resolution for local participant
         if (this.localParticipant?.stream?.id === streamId) {
             return;
@@ -888,5 +893,42 @@ export default class RoomConnection extends TypedEventTarget {
             this.rtcManager.updateStreamResolution(streamId, null, { width: width || 1, height: height || 1 });
         }
         reportedStreamResolutions.set(streamId, { width, height });
+    }
+
+    public async startScreenshare() {
+        const screenshareStream = this.localMedia.screenshareStream || (await this.localMedia.startScreenshare());
+        this.rtcManager?.addNewStream(screenshareStream.id, screenshareStream, false, true);
+        this.screenshares = [
+            ...this.screenshares,
+            {
+                participantId: this.selfId || "",
+                id: screenshareStream.id,
+                hasAudioTrack: false,
+                stream: screenshareStream,
+                isLocal: true,
+            },
+        ];
+
+        this.dispatchEvent(
+            new CustomEvent("screenshare_started", {
+                detail: {
+                    participantId: this.selfId || "",
+                    id: screenshareStream.id,
+                    hasAudioTrack: false,
+                    stream: screenshareStream,
+                    isLocal: true,
+                },
+            })
+        );
+    }
+    public stopScreenshare() {
+        if (this.localMedia.screenshareStream) {
+            const { id } = this.localMedia.screenshareStream;
+
+            this.rtcManager?.removeStream(id, this.localMedia.screenshareStream, null);
+            this.screenshares = this.screenshares.filter((s) => s.id !== id);
+            this.dispatchEvent(new CustomEvent("screenshare_stopped", { detail: { participantId: this.selfId, id } }));
+            this.localMedia.stopScreenshare();
+        }
     }
 }

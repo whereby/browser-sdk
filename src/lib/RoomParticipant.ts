@@ -97,11 +97,13 @@ export class Screenshare {
     public readonly id: string;
     public readonly hasAudioTrack: boolean;
     public readonly stream?: MediaStream;
+    public readonly isLocal: boolean = false;
 
-    constructor({ participantId, id, hasAudioTrack, stream }: Screenshare) {
+    constructor({ participantId, id, hasAudioTrack, stream, isLocal }: Screenshare) {
         this.participantId = participantId;
         this.id = id;
         this.hasAudioTrack = hasAudioTrack;
         this.stream = stream;
+        this.isLocal = isLocal;
     }
 }
