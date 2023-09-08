@@ -4,9 +4,22 @@ import { LocalMediaRef } from "./useLocalMedia";
 import RoomConnection, {
     ChatMessage,
     CloudRecordingState,
+    ParticipantAudioEnabledEvent,
+    ParticipantJoinedEvent,
+    ParticipantLeftEvent,
+    ParticipantMetadataChangedEvent,
+    ParticipantStreamAddedEvent,
+    ParticipantVideoEnabledEvent,
     RoomConnectionOptions,
     RoomConnectionStatus,
+    RoomConnectionStatusChangedEvent,
+    RoomEventsMap,
+    RoomJoinedEvent,
+    ScreenshareStartedEvent,
+    ScreenshareStoppedEvent,
     StreamingState,
+    WaitingParticipantJoinedEvent,
+    WaitingParticipantLeftEvent,
 } from "../RoomConnection";
 import { LocalParticipant, RemoteParticipant, Screenshare, WaitingParticipant } from "../RoomParticipant";
 
@@ -341,6 +354,8 @@ export type RoomConnectionRef = {
     _ref: RoomConnection;
 };
 
+type RoomEventListener<T extends keyof RoomEventsMap> = (e: RoomEventsMap[T]) => void;
+
 export default function useRoomConnection(
     roomUrl: string,
     roomConnectionOptions: UseRoomConnectionOptions
@@ -354,89 +369,140 @@ export default function useRoomConnection(
     );
     const [state, dispatch] = useReducer(reducer, initialState);
 
+    const eventListeners = React.useMemo(
+        () =>
+            [
+                {
+                    eventName: "chat_message",
+                    listener: (e) => {
+                        const chatMessage = e.detail as ChatMessage;
+                        dispatch({ type: "CHAT_MESSAGE", payload: chatMessage });
+                    },
+                },
+                {
+                    eventName: "cloud_recording_started",
+                    listener: (e) => {
+                        const { status, startedAt } = e.detail as CloudRecordingState;
+                        dispatch({ type: "CLOUD_RECORDING_STARTED", payload: { status, startedAt } });
+                    },
+                },
+                {
+                    eventName: "cloud_recording_stopped",
+                    listener: () => {
+                        dispatch({ type: "CLOUD_RECORDING_STOPPED" });
+                    },
+                },
+                {
+                    eventName: "participant_audio_enabled",
+                    listener: (e) => {
+                        const { participantId, isAudioEnabled } = e.detail as ParticipantAudioEnabledEvent;
+                        dispatch({ type: "PARTICIPANT_AUDIO_ENABLED", payload: { participantId, isAudioEnabled } });
+                    },
+                },
+                {
+                    eventName: "participant_joined",
+                    listener: (e) => {
+                        const { remoteParticipant } = e.detail as ParticipantJoinedEvent;
+                        dispatch({ type: "PARTICIPANT_JOINED", payload: { paritipant: remoteParticipant } });
+                    },
+                },
+                {
+                    eventName: "participant_left",
+                    listener: (e) => {
+                        const { participantId } = e.detail as ParticipantLeftEvent;
+                        dispatch({ type: "PARTICIPANT_LEFT", payload: { participantId } });
+                    },
+                },
+                {
+                    eventName: "participant_metadata_changed",
+                    listener: (e) => {
+                        const { participantId, displayName } = e.detail as ParticipantMetadataChangedEvent;
+                        dispatch({ type: "PARTICIPANT_METADATA_CHANGED", payload: { participantId, displayName } });
+                    },
+                },
+                {
+                    eventName: "participant_stream_added",
+                    listener: (e) => {
+                        const { participantId, stream } = e.detail as ParticipantStreamAddedEvent;
+                        dispatch({ type: "PARTICIPANT_STREAM_ADDED", payload: { participantId, stream } });
+                    },
+                },
+                {
+                    eventName: "participant_video_enabled",
+                    listener: (e) => {
+                        const { participantId, isVideoEnabled } = e.detail as ParticipantVideoEnabledEvent;
+                        dispatch({ type: "PARTICIPANT_VIDEO_ENABLED", payload: { participantId, isVideoEnabled } });
+                    },
+                },
+                {
+                    eventName: "room_connection_status_changed",
+                    listener: (e) => {
+                        const { roomConnectionStatus } = e.detail as RoomConnectionStatusChangedEvent;
+                        dispatch({ type: "ROOM_CONNECTION_STATUS_CHANGED", payload: { roomConnectionStatus } });
+                    },
+                },
+                {
+                    eventName: "room_joined",
+                    listener: (e) => {
+                        const { localParticipant, remoteParticipants, waitingParticipants } =
+                            e.detail as RoomJoinedEvent;
+                        dispatch({
+                            type: "ROOM_JOINED",
+                            payload: { localParticipant, remoteParticipants, waitingParticipants },
+                        });
+                    },
+                },
+                {
+                    eventName: "screenshare_started",
+                    listener: (e) => {
+                        const { participantId, id, hasAudioTrack, stream } = e.detail as ScreenshareStartedEvent;
+                        dispatch({
+                            type: "SCREENSHARE_STARTED",
+                            payload: { participantId, id, hasAudioTrack, stream },
+                        });
+                    },
+                },
+                {
+                    eventName: "screenshare_stopped",
+                    listener: (e) => {
+                        const { participantId, id } = e.detail as ScreenshareStoppedEvent;
+                        dispatch({ type: "SCREENSHARE_STOPPED", payload: { participantId, id } });
+                    },
+                },
+                {
+                    eventName: "streaming_started",
+                    listener: (e) => {
+                        const { status, startedAt } = e.detail as StreamingState;
+                        dispatch({ type: "STREAMING_STARTED", payload: { status, startedAt } });
+                    },
+                },
+                {
+                    eventName: "streaming_stopped",
+                    listener: () => {
+                        dispatch({ type: "STREAMING_STOPPED" });
+                    },
+                },
+                {
+                    eventName: "waiting_participant_joined",
+                    listener: (e) => {
+                        const { participantId, displayName } = e.detail as WaitingParticipantJoinedEvent;
+                        dispatch({ type: "WAITING_PARTICIPANT_JOINED", payload: { participantId, displayName } });
+                    },
+                },
+                {
+                    eventName: "waiting_participant_left",
+                    listener: (e) => {
+                        const { participantId } = e.detail as WaitingParticipantLeftEvent;
+                        dispatch({ type: "WAITING_PARTICIPANT_LEFT", payload: { participantId } });
+                    },
+                },
+            ] as { eventName: keyof RoomEventsMap; listener: RoomEventListener<keyof RoomEventsMap> }[],
+        []
+    );
+
     useEffect(() => {
-        roomConnection.addEventListener("chat_message", (e) => {
-            const chatMessage = e.detail;
-            dispatch({ type: "CHAT_MESSAGE", payload: chatMessage });
-        });
-
-        roomConnection.addEventListener("cloud_recording_started", (e) => {
-            const { status, startedAt } = e.detail;
-            dispatch({ type: "CLOUD_RECORDING_STARTED", payload: { status, startedAt } });
-        });
-
-        roomConnection.addEventListener("cloud_recording_stopped", () => {
-            dispatch({ type: "CLOUD_RECORDING_STOPPED" });
-        });
-
-        roomConnection.addEventListener("participant_audio_enabled", (e) => {
-            const { participantId, isAudioEnabled } = e.detail;
-            dispatch({ type: "PARTICIPANT_AUDIO_ENABLED", payload: { participantId, isAudioEnabled } });
-        });
-
-        roomConnection.addEventListener("participant_joined", (e) => {
-            const { remoteParticipant } = e.detail;
-            dispatch({ type: "PARTICIPANT_JOINED", payload: { paritipant: remoteParticipant } });
-        });
-
-        roomConnection.addEventListener("participant_left", (e) => {
-            const { participantId } = e.detail;
-            dispatch({ type: "PARTICIPANT_LEFT", payload: { participantId } });
-        });
-
-        roomConnection.addEventListener("participant_stream_added", (e) => {
-            const { participantId, stream } = e.detail;
-            dispatch({ type: "PARTICIPANT_STREAM_ADDED", payload: { participantId, stream } });
-        });
-
-        roomConnection.addEventListener("room_connection_status_changed", (e) => {
-            const { roomConnectionStatus } = e.detail;
-            dispatch({ type: "ROOM_CONNECTION_STATUS_CHANGED", payload: { roomConnectionStatus } });
-        });
-
-        roomConnection.addEventListener("room_joined", (e) => {
-            const { localParticipant, remoteParticipants, waitingParticipants } = e.detail;
-            dispatch({ type: "ROOM_JOINED", payload: { localParticipant, remoteParticipants, waitingParticipants } });
-        });
-
-        roomConnection.addEventListener("participant_video_enabled", (e) => {
-            const { participantId, isVideoEnabled } = e.detail;
-            dispatch({ type: "PARTICIPANT_VIDEO_ENABLED", payload: { participantId, isVideoEnabled } });
-        });
-
-        roomConnection.addEventListener("participant_metadata_changed", (e) => {
-            const { participantId, displayName } = e.detail;
-            dispatch({ type: "PARTICIPANT_METADATA_CHANGED", payload: { participantId, displayName } });
-        });
-
-        roomConnection.addEventListener("screenshare_started", (e) => {
-            const { participantId, id, hasAudioTrack, stream } = e.detail;
-
-            dispatch({ type: "SCREENSHARE_STARTED", payload: { participantId, id, hasAudioTrack, stream } });
-        });
-
-        roomConnection.addEventListener("screenshare_stopped", (e) => {
-            const { participantId, id } = e.detail;
-            dispatch({ type: "SCREENSHARE_STOPPED", payload: { participantId, id } });
-        });
-
-        roomConnection.addEventListener("streaming_started", (e) => {
-            const { status, startedAt } = e.detail;
-            dispatch({ type: "STREAMING_STARTED", payload: { status, startedAt } });
-        });
-
-        roomConnection.addEventListener("streaming_stopped", () => {
-            dispatch({ type: "STREAMING_STOPPED" });
-        });
-
-        roomConnection.addEventListener("waiting_participant_joined", (e) => {
-            const { participantId, displayName } = e.detail;
-            dispatch({ type: "WAITING_PARTICIPANT_JOINED", payload: { participantId, displayName } });
-        });
-
-        roomConnection.addEventListener("waiting_participant_left", (e) => {
-            const { participantId } = e.detail;
-            dispatch({ type: "WAITING_PARTICIPANT_LEFT", payload: { participantId } });
+        eventListeners.forEach(({ eventName, listener }) => {
+            roomConnection.addEventListener(eventName, listener);
         });
 
         roomConnection.join();

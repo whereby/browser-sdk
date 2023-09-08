@@ -67,66 +67,66 @@ export type StreamingState = {
     startedAt: number | null;
 };
 
-type RoomJoinedEvent = {
+export type RoomJoinedEvent = {
     localParticipant: LocalParticipant;
     remoteParticipants: RemoteParticipant[];
     waitingParticipants: WaitingParticipant[];
 };
 
-type RoomConnectionStatusChangedEvent = {
+export type RoomConnectionStatusChangedEvent = {
     roomConnectionStatus: RoomConnectionStatus;
 };
 
-type ParticipantJoinedEvent = {
+export type ParticipantJoinedEvent = {
     remoteParticipant: RemoteParticipant;
 };
 
-type ParticipantLeftEvent = {
+export type ParticipantLeftEvent = {
     participantId: string;
 };
 
-type ParticipantStreamAddedEvent = {
+export type ParticipantStreamAddedEvent = {
     participantId: string;
     stream: MediaStream;
 };
 
-type ParticipantAudioEnabledEvent = {
+export type ParticipantAudioEnabledEvent = {
     participantId: string;
     isAudioEnabled: boolean;
 };
 
-type ParticipantVideoEnabledEvent = {
+export type ParticipantVideoEnabledEvent = {
     participantId: string;
     isVideoEnabled: boolean;
 };
 
-type ParticipantMetadataChangedEvent = {
+export type ParticipantMetadataChangedEvent = {
     participantId: string;
     displayName: string;
 };
 
-type ScreenshareStartedEvent = {
+export type ScreenshareStartedEvent = {
     participantId: string;
     id: string;
     hasAudioTrack: boolean;
     stream: MediaStream;
 };
 
-type ScreenshareStoppedEvent = {
+export type ScreenshareStoppedEvent = {
     participantId: string;
     id: string;
 };
 
-type WaitingParticipantJoinedEvent = {
+export type WaitingParticipantJoinedEvent = {
     participantId: string;
     displayName: string | null;
 };
 
-type WaitingParticipantLeftEvent = {
+export type WaitingParticipantLeftEvent = {
     participantId: string;
 };
 
-interface RoomEventsMap {
+export interface RoomEventsMap {
     chat_message: CustomEvent<ChatMessage>;
     cloud_recording_started: CustomEvent<CloudRecordingState>;
     participant_audio_enabled: CustomEvent<ParticipantAudioEnabledEvent>;
