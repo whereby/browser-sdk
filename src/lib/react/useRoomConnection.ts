@@ -508,6 +508,9 @@ export default function useRoomConnection(
         roomConnection.join();
 
         return () => {
+            eventListeners.forEach(({ eventName, listener }) => {
+                roomConnection.removeEventListener(eventName, listener);
+            });
             roomConnection.leave();
         };
     }, []);

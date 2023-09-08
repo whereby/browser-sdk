@@ -185,6 +185,16 @@ interface RoomEventTarget extends EventTarget {
         callback: EventListenerOrEventListenerObject | null,
         options?: EventListenerOptions | boolean
     ): void;
+    removeEventListener<K extends keyof RoomEventsMap>(
+        type: K,
+        listener: (ev: RoomEventsMap[K]) => void,
+        options?: boolean | EventListenerOptions
+    ): void;
+    removeEventListener(
+        type: string,
+        callback: EventListenerOrEventListenerObject | null,
+        options?: EventListenerOptions | boolean
+    ): void;
 }
 
 const noop = () => {
