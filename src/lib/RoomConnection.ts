@@ -127,21 +127,23 @@ export type WaitingParticipantLeftEvent = {
 };
 
 export interface RoomEventsMap {
-    chat_message: CustomEvent<ChatMessage>;
-    cloud_recording_started: CustomEvent<CloudRecordingState>;
-    participant_audio_enabled: CustomEvent<ParticipantAudioEnabledEvent>;
-    participant_joined: CustomEvent<ParticipantJoinedEvent>;
-    participant_left: CustomEvent<ParticipantLeftEvent>;
-    participant_metadata_changed: CustomEvent<ParticipantMetadataChangedEvent>;
-    participant_stream_added: CustomEvent<ParticipantStreamAddedEvent>;
-    participant_video_enabled: CustomEvent<ParticipantVideoEnabledEvent>;
-    room_connection_status_changed: CustomEvent<RoomConnectionStatusChangedEvent>;
-    room_joined: CustomEvent<RoomJoinedEvent>;
-    screenshare_started: CustomEvent<ScreenshareStartedEvent>;
-    screenshare_stopped: CustomEvent<ScreenshareStoppedEvent>;
-    streaming_started: CustomEvent<StreamingState>;
-    waiting_participant_joined: CustomEvent<WaitingParticipantJoinedEvent>;
-    waiting_participant_left: CustomEvent<WaitingParticipantLeftEvent>;
+    chat_message: (e: CustomEvent<ChatMessage>) => void;
+    cloud_recording_started: (e: CustomEvent<CloudRecordingState>) => void;
+    cloud_recording_stopped: (e: CustomEvent<CloudRecordingState>) => void;
+    participant_audio_enabled: (e: CustomEvent<ParticipantAudioEnabledEvent>) => void;
+    participant_joined: (e: CustomEvent<ParticipantJoinedEvent>) => void;
+    participant_left: (e: CustomEvent<ParticipantLeftEvent>) => void;
+    participant_metadata_changed: (e: CustomEvent<ParticipantMetadataChangedEvent>) => void;
+    participant_stream_added: (e: CustomEvent<ParticipantStreamAddedEvent>) => void;
+    participant_video_enabled: (e: CustomEvent<ParticipantVideoEnabledEvent>) => void;
+    room_connection_status_changed: (e: CustomEvent<RoomConnectionStatusChangedEvent>) => void;
+    room_joined: (e: CustomEvent<RoomJoinedEvent>) => void;
+    screenshare_started: (e: CustomEvent<ScreenshareStartedEvent>) => void;
+    screenshare_stopped: (e: CustomEvent<ScreenshareStoppedEvent>) => void;
+    streaming_started: (e: CustomEvent<StreamingState>) => void;
+    streaming_stopped: (e: CustomEvent<StreamingState>) => void;
+    waiting_participant_joined: (e: CustomEvent<WaitingParticipantJoinedEvent>) => void;
+    waiting_participant_left: (e: CustomEvent<WaitingParticipantLeftEvent>) => void;
 }
 
 const API_BASE_URL = process.env["REACT_APP_API_BASE_URL"] || "https://api.whereby.dev";
@@ -177,7 +179,7 @@ function createSocket() {
 interface RoomEventTarget extends EventTarget {
     addEventListener<K extends keyof RoomEventsMap>(
         type: K,
-        listener: (ev: RoomEventsMap[K]) => void,
+        listener: RoomEventsMap[K],
         options?: boolean | AddEventListenerOptions
     ): void;
     addEventListener(
@@ -187,7 +189,7 @@ interface RoomEventTarget extends EventTarget {
     ): void;
     removeEventListener<K extends keyof RoomEventsMap>(
         type: K,
-        listener: (ev: RoomEventsMap[K]) => void,
+        listener: RoomEventsMap[K],
         options?: boolean | EventListenerOptions
     ): void;
     removeEventListener(
