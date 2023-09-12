@@ -438,7 +438,7 @@ export default function useRoomConnection(
             const { participantId } = e.detail;
             dispatch({ type: "WAITING_PARTICIPANT_LEFT", payload: { participantId } });
         });
-
+        console.log("Joining....");
         roomConnection.join();
 
         return () => {

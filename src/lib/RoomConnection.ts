@@ -15,6 +15,9 @@ import {
     RoomService,
 } from "./api";
 
+import { BehaviorSubject, combineLatest, Observable, ObservableInput } from "rxjs";
+import { ComponentStore, createComponentStateSelector } from "mini-rx-store";
+
 import { LocalParticipant, RemoteParticipant, Screenshare, StreamState, WaitingParticipant } from "./RoomParticipant";
 
 import ServerSocket, {
@@ -34,6 +37,7 @@ import ServerSocket, {
 } from "@whereby/jslib-media/src/utils/ServerSocket";
 import { sdkVersion } from "./index";
 import LocalMedia from "./LocalMedia";
+import Organization from "./api/models/Organization";
 
 type Logger = Pick<Console, "debug" | "error" | "log" | "warn">;
 
@@ -191,8 +195,63 @@ const noop = () => {
     return;
 };
 
-const TypedEventTarget = EventTarget as { new (): RoomEventTarget };
-export default class RoomConnection extends TypedEventTarget {
+interface DeviceCredentialsState {
+    data: Credentials | null;
+    isFetching: boolean;
+}
+
+interface LocalMediaState {
+    hasStarted: boolean;
+    isStarting: boolean;
+}
+
+interface OrganizationState {
+    data: Organization | null;
+    isFetching: boolean;
+}
+
+interface SignalConnectionState {
+    deviceIdentified: boolean;
+    status: "" | "connected" | "disconnected";
+}
+
+interface RoomConnectionState {
+    deviceCredentials: DeviceCredentialsState;
+    localMedia: LocalMediaState;
+    organization: OrganizationState;
+    signalConnection: SignalConnectionState;
+    signalConnectionStatus: string;
+    wantsConnection: boolean;
+}
+
+const initialState: RoomConnectionState = {
+    deviceCredentials: {
+        data: null,
+        isFetching: false,
+    },
+    localMedia: {
+        hasStarted: false,
+        isStarting: false,
+    },
+    organization: {
+        data: null,
+        isFetching: false,
+    },
+    signalConnection: {
+        deviceIdentified: false,
+        status: "",
+    },
+    signalConnectionStatus: "",
+    wantsConnection: false,
+};
+
+type MethodOf<T> = {
+    [P in keyof T]: T[P] extends (this: infer U) => any ? (U extends T ? P : never) : never;
+}[keyof T];
+
+//fn("d");
+
+export default class RoomConnection extends ComponentStore<RoomConnectionState> implements RoomEventTarget {
     public localMedia: LocalMedia;
     public localParticipant: LocalParticipant | null = null;
     public roomUrl: URL;
@@ -221,11 +280,23 @@ export default class RoomConnection extends TypedEventTarget {
     private displayName?: string;
     private _roomKey: string | null;
 
+    private _eventTarget = new EventTarget();
+
+    // Selectors
+    private selectDeviceCredentialsRaw = this.select((state) => state.deviceCredentials);
+    private selectSignalConnectionStatus = this.select((state) => state.signalConnection.status);
+    private selectWantsConnection = this.select((state) => state.wantsConnection);
+
+    private selectLocalMediaRaw = this.select((state) => state.localMedia);
+
+    private selectOrganizationRaw = this.select((state) => state.organization);
+
     constructor(
         roomUrl: string,
         { displayName, localMedia, localMediaConstraints, logger, roomKey }: RoomConnectionOptions
     ) {
-        super();
+        super(initialState);
+
         this.organizationId = "";
         this.roomConnectionStatus = "";
         this.selfId = null;
@@ -291,6 +362,31 @@ export default class RoomConnection extends TypedEventTarget {
         this.signalSocket.on("streaming_stopped", this._handleStreamingStopped.bind(this));
         this.signalSocket.on("disconnect", this._handleDisconnect.bind(this));
         this.signalSocket.on("connect_error", this._handleDisconnect.bind(this));
+        this.signalSocket.on("connect", () => {
+            console.log("Socket connected");
+            this.setState((state) => {
+                return {
+                    ...state,
+                    signalConnection: {
+                        ...state.signalConnection,
+                        status: "connected",
+                    },
+                };
+            });
+        });
+
+        this.signalSocket.on("device_identified", () => {
+            console.log("Device identified");
+            this.setState((state) => {
+                return {
+                    ...state,
+                    signalConnection: {
+                        ...state.signalConnection,
+                        deviceIdentified: true,
+                    },
+                };
+            });
+        });
 
         this.signalSocketManager = this.signalSocket.getManager();
         this.signalSocketManager.on("reconnect", this._handleReconnect.bind(this));
@@ -330,6 +426,129 @@ export default class RoomConnection extends TypedEventTarget {
                 simulcastScreenshareOn: false,
             },
         });
+
+        // Reactors
+
+        combineLatest([this.selectWantsConnection, this.selectOrganizationRaw]).subscribe(
+            async ([wantsConnection, organizationRaw]) => {
+                if (wantsConnection && !organizationRaw.data && !organizationRaw.isFetching) {
+                    this.setState((state) => ({
+                        ...state,
+                        organization: {
+                            ...state.organization,
+                            data: null,
+                            isFetching: true,
+                        },
+                    }));
+
+                    try {
+                        const organization = await this.organizationServiceCache.fetchOrganization();
+                        this.setState((state) => ({
+                            ...state,
+                            organization: {
+                                ...state.organization,
+                                data: organization,
+                                isFetching: false,
+                            },
+                        }));
+                        console.log("Organization fetched");
+                    } catch (error) {
+                        this.setState((state) => ({
+                            ...state,
+                            organization: {
+                                ...state.organization,
+                                isFetching: false,
+                            },
+                        }));
+                    }
+                }
+            }
+        );
+
+        // Signal connection
+        combineLatest([this.selectWantsConnection]).subscribe(([wantsConnection]) => {
+            if (wantsConnection) {
+                this.signalSocket.connect();
+            } else {
+                this.signalSocket.disconnect();
+            }
+        });
+
+        combineLatest([this.selectSignalConnectionStatus, this.selectDeviceCredentialsRaw]).subscribe(
+            ([signalConnectionStatus, deviceCredentialsRaw]) => {
+                if (signalConnectionStatus === "connected" && deviceCredentialsRaw.data) {
+                    this.signalSocket.emit("identify_device", { deviceCredentials: deviceCredentialsRaw.data });
+                }
+            }
+        );
+
+        // Device credentials
+        combineLatest([this.selectWantsConnection, this.selectDeviceCredentialsRaw]).subscribe(
+            async ([wantsConnection, deviceCredentialsRaw]) => {
+                if (wantsConnection && !deviceCredentialsRaw.data && !deviceCredentialsRaw.isFetching) {
+                    this.setState((state) => {
+                        return {
+                            ...state,
+                            deviceCredentials: {
+                                ...state.deviceCredentials,
+                                isFetching: true,
+                            },
+                        };
+                    });
+
+                    try {
+                        const credentials = await this.credentialsService.getCredentials();
+
+                        this.setState((state) => {
+                            return {
+                                ...state,
+                                deviceCredentials: {
+                                    ...state.deviceCredentials,
+                                    data: credentials,
+                                    isFetching: false,
+                                },
+                            };
+                        });
+                    } catch (error) {
+                        this.setState((state) => {
+                            return {
+                                ...state,
+                                deviceCredentials: {
+                                    ...state.deviceCredentials,
+                                    isFetching: false,
+                                },
+                            };
+                        });
+                    }
+                }
+            }
+        );
+    }
+
+    removeEventListener(
+        type: string,
+        callback: EventListenerOrEventListenerObject | null,
+        options?: boolean | EventListenerOptions | undefined
+    ): void {
+        throw new Error("Method not implemented.");
+    }
+
+    public addEventListener<K extends keyof RoomEventsMap>(
+        type: K,
+        listener: (ev: RoomEventsMap[K]) => void,
+        options?: boolean | AddEventListenerOptions | undefined
+    ): void;
+    public addEventListener(
+        type: string,
+        callback: EventListenerOrEventListenerObject | null,
+        options?: boolean | EventListenerOptions | undefined
+    ): void;
+    public addEventListener(type: unknown, callback: unknown, options?: unknown): void {
+        this._eventTarget.addEventListener(type as string, callback as EventListenerOrEventListenerObject | null);
+    }
+
+    public dispatchEvent(event: CustomEvent) {
+        return this._eventTarget.dispatchEvent(event);
     }
 
     public get roomKey(): string | null {
@@ -751,6 +970,9 @@ export default class RoomConnection extends TypedEventTarget {
     }
 
     public async join() {
+        this.setState({ wantsConnection: true });
+        return;
+
         if (["connected", "connecting"].includes(this.roomConnectionStatus)) {
             console.warn(`Trying to join when room state is already ${this.roomConnectionStatus}`);
             return;

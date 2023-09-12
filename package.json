@@ -74,7 +74,9 @@
         "assert": "^2.0.0",
         "axios": "^1.2.3",
         "btoa": "^1.2.1",
-        "heresy": "^1.0.4"
+        "heresy": "^1.0.4",
+        "mini-rx-store": "^5.1.0",
+        "rxjs": "^7.8.1"
     },
     "peerDependencies": {
         "react": "^18.2.0",
