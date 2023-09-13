@@ -34,7 +34,7 @@ import ServerSocket, {
 } from "@whereby/jslib-media/src/utils/ServerSocket";
 import { sdkVersion } from "./index";
 import LocalMedia from "./LocalMedia";
-import { Observable, ObservableInputTuple, Subject, combineLatest, map, scan } from "rxjs";
+import { Observable, ObservableInputTuple, Subject, combineLatest, distinctUntilChanged, map, merge, scan } from "rxjs";
 
 type Logger = Pick<Console, "debug" | "error" | "log" | "warn">;
 
@@ -206,6 +206,16 @@ const noop = () => {
 
 type Action =
     | {
+          type: "DEVICE_CREDENTIALS_FETCH_STARTED";
+      }
+    | {
+          type: "DEVICE_CREDENTIALS_FETCH_FINISHED";
+          payload: Credentials | null;
+      }
+    | {
+          type: "DEVICE_CREDENTIALS_FETCH_FAILED";
+      }
+    | {
           type: "join";
           payload: undefined;
       }
@@ -214,28 +224,63 @@ type Action =
           payload: undefined;
       }
     | {
-          type: "DEVICE_CREDENTIALS_FETCHED";
-          payload: Credentials;
+          type: "SIGNAL_CONNECTED";
+      }
+    | {
+          type: "SIGNAL_IDENTIFYING_DEVICE";
+      }
+    | {
+          type: "SIGNAL_DEVICE_IDENTIFIED";
       };
 
 interface RoomConnectionState {
-    deviceCredentials: Credentials | null;
+    deviceCredentials: {
+        data: Credentials | null;
+        isFetching: boolean;
+    };
     wantsToJoin: boolean;
     signalConnection: {
+        deviceIdentified: boolean;
+        isIdentifyingDevice: boolean;
         status: "connected" | "connecting" | "disconnected" | "reconnect" | "";
     };
 }
 
 const initialState: RoomConnectionState = {
-    deviceCredentials: null,
-    wantsToJoin: false,
+    deviceCredentials: {
+        data: null,
+        isFetching: false,
+    },
     signalConnection: {
+        deviceIdentified: false,
+        isIdentifyingDevice: false,
         status: "",
     },
+    wantsToJoin: false,
 };
 
 function reducer(state: RoomConnectionState, action: Action): RoomConnectionState {
     switch (action.type) {
+        case "DEVICE_CREDENTIALS_FETCH_STARTED":
+            return {
+                ...state,
+                deviceCredentials: {
+                    ...state.deviceCredentials,
+                    isFetching: true,
+                },
+            };
+        case "DEVICE_CREDENTIALS_FETCH_FINISHED":
+            return {
+                ...state,
+                deviceCredentials: {
+                    ...state.deviceCredentials,
+                    data: action.payload,
+                    isFetching: false,
+                },
+            };
+        case "DEVICE_CREDENTIALS_FETCH_FAILED":
+            // This is not handled in PWA either, leaving the state in "isFetching" eternally
+            return state;
         case "join":
             return {
                 ...state,
@@ -245,7 +290,33 @@ function reducer(state: RoomConnectionState, action: Action): RoomConnectionStat
             return {
                 ...state,
                 signalConnection: {
+                    ...state.signalConnection,
                     status: "connecting",
+                },
+            };
+        case "SIGNAL_CONNECTED":
+            return {
+                ...state,
+                signalConnection: {
+                    ...state.signalConnection,
+                    status: "connected",
+                },
+            };
+        case "SIGNAL_IDENTIFYING_DEVICE":
+            return {
+                ...state,
+                signalConnection: {
+                    ...state.signalConnection,
+                    isIdentifyingDevice: true,
+                },
+            };
+        case "SIGNAL_DEVICE_IDENTIFIED":
+            return {
+                ...state,
+                signalConnection: {
+                    ...state.signalConnection,
+                    deviceIdentified: true,
+                    isIdentifyingDevice: false,
                 },
             };
         default:
@@ -254,16 +325,32 @@ function reducer(state: RoomConnectionState, action: Action): RoomConnectionStat
 }
 
 const TypedEventTarget = EventTarget as { new (): RoomEventTarget };
+
+// Here we can filter more, just include methods starting with `do...`
+type AllowedMethodNames = {
+    [K in keyof RoomConnection]: RoomConnection[K] extends (...args: any) => any ? K : never;
+}[keyof RoomConnection];
+
+type Reaction<M extends AllowedMethodNames> =
+    | {
+          action: M;
+          args: Parameters<RoomConnection[M]>;
+      }
+    | undefined;
+
 export default class RoomConnection extends TypedEventTarget {
     private action$ = new Subject<Action>();
     private state$ = this.action$.pipe(scan(reducer, initialState));
 
     private dispatch(action: Action) {
+        console.log(`Dispatching ${action.type}`);
         this.action$.next(action);
     }
 
+    // --- utility functions
+
     private createSelector<A>(selectorFn: (state: RoomConnectionState) => A) {
-        return this.state$.pipe(map(selectorFn));
+        return this.state$.pipe(map(selectorFn), distinctUntilChanged());
     }
 
     private createCombinedSelector<A extends readonly unknown[], R>(
@@ -273,26 +360,82 @@ export default class RoomConnection extends TypedEventTarget {
         return combineLatest(sources, resultSelector);
     }
 
-    private doSignalSocketConnect() {
-        this.signalSocket.connect();
+    private createReactor<A extends readonly unknown[], R extends AllowedMethodNames>(
+        sources: readonly [...ObservableInputTuple<A>],
+        resultSelector: (...values: A) => Reaction<R>
+    ): Observable<Reaction<R>> {
+        return combineLatest(sources, resultSelector);
+    }
+
+    // --- action creators
+
+    public doSignalSocketConnect() {
         this.dispatch({ type: "SIGNAL_CONNECTING", payload: undefined });
+        this.signalSocket.connect();
     }
 
-    private doGetDeviceCredentials() {
-        this.credentialsService.getCredentials().then((deviceCredentials) => {
-            if (!deviceCredentials) {
-                throw new Error("Missing device credentials");
-            }
-            this.dispatch({ type: "DEVICE_CREDENTIALS_FETCHED", payload: deviceCredentials });
-        });
+    public doSignalIdentifyDevice(deviceCredentials: Credentials | null) {
+        this.dispatch({ type: "SIGNAL_IDENTIFYING_DEVICE" });
+        this.signalSocket.emit("identify_device", { deviceCredentials });
     }
 
-    // selectors
+    public async doGetDeviceCredentials() {
+        this.dispatch({ type: "DEVICE_CREDENTIALS_FETCH_STARTED" });
+        try {
+            const deviceCredentials = await this.credentialsService.getCredentials();
+            this.dispatch({ type: "DEVICE_CREDENTIALS_FETCH_FINISHED", payload: deviceCredentials });
+        } catch (error) {
+            this.dispatch({ type: "DEVICE_CREDENTIALS_FETCH_FAILED" });
+        }
+    }
+
+    // raw selectors
     private selectWantsToJoin$ = this.createSelector((state) => state.wantsToJoin);
-    private selectSignalConnectionStatus$ = this.createSelector((state) => state.signalConnection.status);
     private selectDeviceCredentialsRaw$ = this.createSelector((state) => state.deviceCredentials);
+    private selectSignalConnectionRaw$ = this.createSelector((state) => state.signalConnection);
+
+    private selectSignalConnectionStatus$ = this.createSelector((state) => state.signalConnection.status);
 
     // reactors
+    private reactors = [
+        this.createReactor(
+            [this.selectWantsToJoin$, this.selectSignalConnectionStatus$],
+            (wantsToJoin, signalConnectionStatus) => {
+                if (wantsToJoin && signalConnectionStatus === "") {
+                    return {
+                        action: "doSignalSocketConnect",
+                        args: [],
+                    };
+                }
+            }
+        ),
+        this.createReactor(
+            [this.selectWantsToJoin$, this.selectDeviceCredentialsRaw$],
+            (wantsToJoin, deviceCredentialsRaw) => {
+                if (wantsToJoin && !deviceCredentialsRaw.data && !deviceCredentialsRaw.isFetching) {
+                    return {
+                        action: "doGetDeviceCredentials",
+                        args: [],
+                    };
+                }
+            }
+        ),
+        this.createReactor(
+            [this.selectDeviceCredentialsRaw$, this.selectSignalConnectionRaw$],
+            (deviceCredentials, signalConnection) => {
+                if (
+                    deviceCredentials.data &&
+                    !signalConnection.deviceIdentified &&
+                    !signalConnection.isIdentifyingDevice
+                ) {
+                    return {
+                        action: "doSignalIdentifyDevice",
+                        args: [deviceCredentials.data],
+                    };
+                }
+            }
+        ),
+    ];
 
     // old
     public localMedia: LocalMedia;
@@ -300,7 +443,7 @@ export default class RoomConnection extends TypedEventTarget {
     public roomUrl: URL;
     public remoteParticipants: RemoteParticipant[] = [];
     public screenshares: Screenshare[] = [];
-    public readonly localMediaConstraints?: MediaStreamConstraints;
+    private readonly localMediaConstraints?: MediaStreamConstraints;
     public readonly roomName: string;
     private organizationId: string;
 
@@ -329,24 +472,26 @@ export default class RoomConnection extends TypedEventTarget {
     ) {
         super();
 
-        combineLatest([this.selectWantsToJoin$, this.selectSignalConnectionStatus$]).subscribe(
-            ([wantsConnection, signalConnectionStatus]) => {
-                if (wantsConnection && signalConnectionStatus === "") {
-                    this.doSignalSocketConnect();
-                }
-            }
-        );
-
-        combineLatest([this.selectSignalConnectionStatus$, this.selectDeviceCredentialsRaw$]).subscribe(
+        /*combineLatest([this.selectSignalConnectionStatus$, this.selectDeviceCredentialsRaw$]).subscribe(
             ([signalConnectionStatus, deviceCredentialsRaw]) => {
                 if (signalConnectionStatus === "connected" && deviceCredentialsRaw) {
                     this.signalSocket.emit("identify_device", { deviceCredentials: deviceCredentialsRaw });
                 }
             }
-        );
+        );*/
 
         this.state$.subscribe((state) => {
-            console.log(state);
+            console.log("State update: ", state);
+        });
+
+        // Start reactors
+        merge(...this.reactors).subscribe((v) => {
+            if (v) {
+                console.log(`Reacting by calling ${v.action}`);
+                this[v?.action](...v.args);
+            } else {
+                // I dont like this if/else. We should find a way to emit only when an action
+            }
         });
 
         // old
@@ -415,6 +560,12 @@ export default class RoomConnection extends TypedEventTarget {
         this.signalSocket.on("streaming_stopped", this._handleStreamingStopped.bind(this));
         this.signalSocket.on("disconnect", this._handleDisconnect.bind(this));
         this.signalSocket.on("connect_error", this._handleDisconnect.bind(this));
+        this.signalSocket.on("connect", () => {
+            this.dispatch({ type: "SIGNAL_CONNECTED" });
+        });
+        this.signalSocket.on("device_identified", () => {
+            this.dispatch({ type: "SIGNAL_DEVICE_IDENTIFIED" });
+        });
 
         this.signalSocketManager = this.signalSocket.getManager();
         this.signalSocketManager.on("reconnect", this._handleReconnect.bind(this));
@@ -880,7 +1031,8 @@ export default class RoomConnection extends TypedEventTarget {
             return;
         }
         this.dispatch({ type: "join", payload: undefined });
-        this.logger.log("Joining room");
+
+        /*this.logger.log("Joining room");
         this.signalSocket.connect();
         this.roomConnectionStatus = "connecting";
         this.dispatchEvent(
@@ -894,8 +1046,10 @@ export default class RoomConnection extends TypedEventTarget {
         const organization = await this.organizationServiceCache.fetchOrganization();
         if (!organization) {
             throw new Error("Invalid room url");
+        } else {
+            this.organizationId = organization.organizationId;
         }
-        this.organizationId = organization.organizationId;
+        
 
         if (this._ownsLocalMedia) {
             await this.localMedia.start();
@@ -909,7 +1063,7 @@ export default class RoomConnection extends TypedEventTarget {
 
         this.signalSocket.once("device_identified", () => {
             this._joinRoom();
-        });
+        });*/
     }
 
     public knock() {
