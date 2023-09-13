@@ -15,7 +15,19 @@ import {
     RoomService,
 } from "./api";
 
-import { BehaviorSubject, combineLatest, Observable, ObservableInput } from "rxjs";
+import {
+    of,
+    BehaviorSubject,
+    combineLatest,
+    Observable,
+    ObservableInput,
+    scan,
+    map,
+    startWith,
+    Subject,
+    distinctUntilChanged,
+    ObservableInputTuple,
+} from "rxjs";
 import { ComponentStore, createComponentStateSelector } from "mini-rx-store";
 
 import { LocalParticipant, RemoteParticipant, Screenshare, StreamState, WaitingParticipant } from "./RoomParticipant";
@@ -40,6 +52,16 @@ import LocalMedia from "./LocalMedia";
 import Organization from "./api/models/Organization";
 
 type Logger = Pick<Console, "debug" | "error" | "log" | "warn">;
+
+
+
+function a<T, A extends readonly [], R>(
+    sources: [...ObservableInputTuple<A>],
+    project: (...values: [T, ...A]) => R
+  ){
+
+}
+//a([new Subject<string>()],() => {})
 
 export interface RoomConnectionOptions {
     displayName?: string; // Might not be needed at all
@@ -251,7 +273,50 @@ type MethodOf<T> = {
 
 //fn("d");
 
-export default class RoomConnection extends ComponentStore<RoomConnectionState> implements RoomEventTarget {
+interface TestState {
+    wantsConnection: boolean;
+}
+
+function reducer(state: RoomConnectionState, action: Action): RoomConnectionState {
+    return state;
+}
+
+interface Action {
+    type: string;
+    payload: string;
+}
+
+export function selectTestWantsConnection(state: TestState) {
+    return state.wantsConnection;
+}
+
+export default class RoomConnection implements RoomEventTarget {
+    
+    // Actions & reducer
+    private action$ = new Subject<Action>();
+    private state$ = this.action$.pipe(scan(reducer, initialState));
+
+    // Raw Selectors
+    private selectDeviceCredentialsRaw = this.state$.pipe(map((state) => state.deviceCredentials));
+    private selectSignalConnectionRaw = this.state$.pipe(map((state) => state.signalConnection));
+    private selectWantsConnection = this.state$.pipe(map((state) => state.wantsConnection));
+    private selectLocalMediaRaw = this.state$.pipe(map((state) => state.localMedia));
+    private selectOrganizationRaw = this.state$.pipe(map((state) => state.organization));
+
+    // Selectors
+    private selectSignalConnectionStatus = combineLatest([this.selectSignalConnectionRaw], (signalConnectionRaw) => {
+        return signalConnectionRaw.status;
+    });
+
+    // Reactors
+    private reactors = {
+        reactSomething: combineLatest([this.selectSignalConnectionRaw], (signalConnectionRaw) => {
+            return { action: "doSomething", args: []};
+        })
+    };
+
+    // ----- old state management
+
     public localMedia: LocalMedia;
     public localParticipant: LocalParticipant | null = null;
     public roomUrl: URL;
@@ -282,21 +347,11 @@ export default class RoomConnection extends ComponentStore<RoomConnectionState> 
 
     private _eventTarget = new EventTarget();
 
-    // Selectors
-    private selectDeviceCredentialsRaw = this.select((state) => state.deviceCredentials);
-    private selectSignalConnectionStatus = this.select((state) => state.signalConnection.status);
-    private selectWantsConnection = this.select((state) => state.wantsConnection);
-
-    private selectLocalMediaRaw = this.select((state) => state.localMedia);
-
-    private selectOrganizationRaw = this.select((state) => state.organization);
-
     constructor(
         roomUrl: string,
         { displayName, localMedia, localMediaConstraints, logger, roomKey }: RoomConnectionOptions
     ) {
-        super(initialState);
-
+        combineLatest()
         this.organizationId = "";
         this.roomConnectionStatus = "";
         this.selfId = null;
@@ -523,6 +578,10 @@ export default class RoomConnection extends ComponentStore<RoomConnectionState> 
                 }
             }
         );
+    }
+
+    private createReactor((A)sources: Observable<A>[], resultSelector: (...values: A) => R): Observable<R>) {
+        return combineLatest(observables, callback);
     }
 
     removeEventListener(
