@@ -34,6 +34,7 @@ import ServerSocket, {
 } from "@whereby/jslib-media/src/utils/ServerSocket";
 import { sdkVersion } from "./index";
 import LocalMedia from "./LocalMedia";
+import { Observable, ObservableInputTuple, Subject, combineLatest, map, scan } from "rxjs";
 
 type Logger = Pick<Console, "debug" | "error" | "log" | "warn">;
 
@@ -203,8 +204,97 @@ const noop = () => {
     return;
 };
 
+type Action =
+    | {
+          type: "join";
+          payload: undefined;
+      }
+    | {
+          type: "SIGNAL_CONNECTING";
+          payload: undefined;
+      }
+    | {
+          type: "DEVICE_CREDENTIALS_FETCHED";
+          payload: Credentials;
+      };
+
+interface RoomConnectionState {
+    deviceCredentials: Credentials | null;
+    wantsToJoin: boolean;
+    signalConnection: {
+        status: "connected" | "connecting" | "disconnected" | "reconnect" | "";
+    };
+}
+
+const initialState: RoomConnectionState = {
+    deviceCredentials: null,
+    wantsToJoin: false,
+    signalConnection: {
+        status: "",
+    },
+};
+
+function reducer(state: RoomConnectionState, action: Action): RoomConnectionState {
+    switch (action.type) {
+        case "join":
+            return {
+                ...state,
+                wantsToJoin: true,
+            };
+        case "SIGNAL_CONNECTING":
+            return {
+                ...state,
+                signalConnection: {
+                    status: "connecting",
+                },
+            };
+        default:
+            return state;
+    }
+}
+
 const TypedEventTarget = EventTarget as { new (): RoomEventTarget };
 export default class RoomConnection extends TypedEventTarget {
+    private action$ = new Subject<Action>();
+    private state$ = this.action$.pipe(scan(reducer, initialState));
+
+    private dispatch(action: Action) {
+        this.action$.next(action);
+    }
+
+    private createSelector<A>(selectorFn: (state: RoomConnectionState) => A) {
+        return this.state$.pipe(map(selectorFn));
+    }
+
+    private createCombinedSelector<A extends readonly unknown[], R>(
+        sources: readonly [...ObservableInputTuple<A>],
+        resultSelector: (...values: A) => R
+    ): Observable<R> {
+        return combineLatest(sources, resultSelector);
+    }
+
+    private doSignalSocketConnect() {
+        this.signalSocket.connect();
+        this.dispatch({ type: "SIGNAL_CONNECTING", payload: undefined });
+    }
+
+    private doGetDeviceCredentials() {
+        this.credentialsService.getCredentials().then((deviceCredentials) => {
+            if (!deviceCredentials) {
+                throw new Error("Missing device credentials");
+            }
+            this.dispatch({ type: "DEVICE_CREDENTIALS_FETCHED", payload: deviceCredentials });
+        });
+    }
+
+    // selectors
+    private selectWantsToJoin$ = this.createSelector((state) => state.wantsToJoin);
+    private selectSignalConnectionStatus$ = this.createSelector((state) => state.signalConnection.status);
+    private selectDeviceCredentialsRaw$ = this.createSelector((state) => state.deviceCredentials);
+
+    // reactors
+
+    // old
     public localMedia: LocalMedia;
     public localParticipant: LocalParticipant | null = null;
     public roomUrl: URL;
@@ -238,6 +328,28 @@ export default class RoomConnection extends TypedEventTarget {
         { displayName, localMedia, localMediaConstraints, logger, roomKey }: RoomConnectionOptions
     ) {
         super();
+
+        combineLatest([this.selectWantsToJoin$, this.selectSignalConnectionStatus$]).subscribe(
+            ([wantsConnection, signalConnectionStatus]) => {
+                if (wantsConnection && signalConnectionStatus === "") {
+                    this.doSignalSocketConnect();
+                }
+            }
+        );
+
+        combineLatest([this.selectSignalConnectionStatus$, this.selectDeviceCredentialsRaw$]).subscribe(
+            ([signalConnectionStatus, deviceCredentialsRaw]) => {
+                if (signalConnectionStatus === "connected" && deviceCredentialsRaw) {
+                    this.signalSocket.emit("identify_device", { deviceCredentials: deviceCredentialsRaw });
+                }
+            }
+        );
+
+        this.state$.subscribe((state) => {
+            console.log(state);
+        });
+
+        // old
         this.organizationId = "";
         this.roomConnectionStatus = "";
         this.selfId = null;
@@ -767,7 +879,7 @@ export default class RoomConnection extends TypedEventTarget {
             console.warn(`Trying to join when room state is already ${this.roomConnectionStatus}`);
             return;
         }
-
+        this.dispatch({ type: "join", payload: undefined });
         this.logger.log("Joining room");
         this.signalSocket.connect();
         this.roomConnectionStatus = "connecting";
