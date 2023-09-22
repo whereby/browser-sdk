@@ -13,9 +13,9 @@ import {
     OrganizationService,
     OrganizationServiceCache,
     RoomService,
-} from "./api";
+} from "../api";
 
-import { LocalParticipant, RemoteParticipant, Screenshare, StreamState, WaitingParticipant } from "./RoomParticipant";
+import { LocalParticipant, RemoteParticipant, Screenshare, StreamState, WaitingParticipant } from "../RoomParticipant";
 
 import ServerSocket, {
     ChatMessage as SignalChatMessage,
@@ -36,6 +36,9 @@ import { sdkVersion } from "./index";
 import LocalMedia from "./LocalMedia";
 import { Observable, ObservableInputTuple, Subject, combineLatest, distinctUntilChanged, map, merge, scan } from "rxjs";
 import Organization from "./api/models/Organization";
+
+//import signalConnection, { SignalConnectionState } from "./slices/signalConnection";
+//import deviceCredentials, { DeviceCredentialsState } from "./slices/deviceCredentials";
 
 type Logger = Pick<Console, "debug" | "error" | "log" | "warn">;
 
@@ -700,6 +703,34 @@ export default class RoomConnection extends TypedEventTarget {
         { displayName, localMedia, localMediaConstraints, logger, roomKey }: RoomConnectionOptions
     ) {
         super();
+
+        /*        type GlobalState = {
+            deviceCredentials: DeviceCredentialsState;
+            signalConnection: SignalConnectionState;
+        };
+
+        const initialState: GlobalState = {
+            deviceCredentials: {
+                ...deviceCredentials.initialState,
+            },
+            signalConnection: {
+                ...signalConnection.initialState,
+            },
+        };
+
+        const newState$ = this.action$.pipe(
+            scan((state, action) => {
+                return {
+                    ...state,
+                    deviceCredentials: {
+                        ...deviceCredentials.reducer(state.deviceCredentials, action),
+                    },
+                    signalConnection: {
+                        ...signalConnection.reducer(state.signalConnection, action),
+                    },
+                };
+            }, initialState)
+        );*/
 
         this.state$.subscribe((state) => {
             console.log("State update: ", state);
