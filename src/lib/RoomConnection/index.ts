@@ -35,6 +35,7 @@ import ServerSocket, {
 import { sdkVersion } from "./index";
 import LocalMedia from "./LocalMedia";
 import { Observable, ObservableInputTuple, Subject, combineLatest, distinctUntilChanged, map, merge, scan } from "rxjs";
+import Organization from "./api/models/Organization";
 
 type Logger = Pick<Console, "debug" | "error" | "log" | "warn">;
 
@@ -57,6 +58,8 @@ export type RoomConnectionStatus =
     | "disconnected"
     | "accepted"
     | "rejected";
+
+export type InteralRoomConnectionStatus = "" | "joining" | "joined" | "leaving" | "reconnect" | "queued" | "error";
 
 export type CloudRecordingState = {
     status: "" | "recording";
@@ -204,13 +207,13 @@ const noop = () => {
     return;
 };
 
-type Action =
+export type Action =
     | {
           type: "DEVICE_CREDENTIALS_FETCH_STARTED";
       }
     | {
           type: "DEVICE_CREDENTIALS_FETCH_FINISHED";
-          payload: Credentials | null;
+          payload: Credentials;
       }
     | {
           type: "DEVICE_CREDENTIALS_FETCH_FAILED";
@@ -218,6 +221,36 @@ type Action =
     | {
           type: "join";
           payload: undefined;
+      }
+    | {
+          type: "LOCAL_MEDIA_STARTING";
+      }
+    | {
+          type: "LOCAL_MEDIA_STARTED";
+      }
+    | {
+          type: "LOCAL_MEDIA_START_FAILED";
+      }
+    | {
+          type: "ORGANIZATION_FETCH_STARTED";
+      }
+    | {
+          type: "ORGANIZATION_FETCH_FINISHED";
+          payload: Organization;
+      }
+    | {
+          type: "ORGANIZATION_FETCH_FAILED";
+          payload: unknown;
+      }
+    | {
+          type: "ROOM_CONNECTION_JOINING";
+      }
+    | {
+          type: "ROOM_CONNECTION_JOINED";
+      }
+    | {
+          type: "ROOM_CONNECTION_FAILED";
+          payload: unknown;
       }
     | {
           type: "SIGNAL_CONNECTING";
@@ -233,23 +266,49 @@ type Action =
           type: "SIGNAL_DEVICE_IDENTIFIED";
       };
 
-interface RoomConnectionState {
+export interface RoomConnectionState {
     deviceCredentials: {
         data: Credentials | null;
         isFetching: boolean;
     };
-    wantsToJoin: boolean;
+    localMedia: {
+        isStarted: boolean;
+        isStarting: boolean;
+    };
+    organization: {
+        data: Organization | null;
+        isFetching: boolean;
+        error: unknown;
+    };
+    roomConnection: {
+        status: InteralRoomConnectionStatus;
+        error: unknown;
+    };
     signalConnection: {
         deviceIdentified: boolean;
         isIdentifyingDevice: boolean;
         status: "connected" | "connecting" | "disconnected" | "reconnect" | "";
     };
+    wantsToJoin: boolean;
 }
 
 const initialState: RoomConnectionState = {
     deviceCredentials: {
         data: null,
         isFetching: false,
+    },
+    localMedia: {
+        isStarted: false,
+        isStarting: false,
+    },
+    organization: {
+        data: null,
+        isFetching: false,
+        error: null,
+    },
+    roomConnection: {
+        status: "",
+        error: null,
     },
     signalConnection: {
         deviceIdentified: false,
@@ -285,6 +344,82 @@ function reducer(state: RoomConnectionState, action: Action): RoomConnectionStat
             return {
                 ...state,
                 wantsToJoin: true,
+            };
+        case "LOCAL_MEDIA_STARTING":
+            return {
+                ...state,
+                localMedia: {
+                    ...state.localMedia,
+                    isStarting: true,
+                },
+            };
+        case "LOCAL_MEDIA_STARTED":
+            return {
+                ...state,
+                localMedia: {
+                    ...state.localMedia,
+                    isStarted: true,
+                    isStarting: false,
+                },
+            };
+        case "LOCAL_MEDIA_START_FAILED":
+            return state;
+        case "ORGANIZATION_FETCH_STARTED":
+            return {
+                ...state,
+                organization: {
+                    ...state.organization,
+                    data: null,
+                    isFetching: true,
+                    error: null,
+                },
+            };
+        case "ORGANIZATION_FETCH_FINISHED":
+            return {
+                ...state,
+                organization: {
+                    ...state.organization,
+                    data: action.payload,
+                    isFetching: false,
+                    error: null,
+                },
+            };
+        case "ORGANIZATION_FETCH_FAILED":
+            return {
+                ...state,
+                organization: {
+                    ...state.organization,
+                    data: null,
+                    isFetching: false,
+                    error: action.payload,
+                },
+            };
+        case "ROOM_CONNECTION_JOINING":
+            return {
+                ...state,
+                roomConnection: {
+                    ...state.roomConnection,
+                    status: "joining",
+                    error: null,
+                },
+            };
+        case "ROOM_CONNECTION_JOINED":
+            return {
+                ...state,
+                roomConnection: {
+                    ...state.roomConnection,
+                    status: "joined",
+                    error: null,
+                },
+            };
+        case "ROOM_CONNECTION_FAILED":
+            return {
+                ...state,
+                roomConnection: {
+                    ...state.roomConnection,
+                    status: "error",
+                    error: action.payload,
+                },
             };
         case "SIGNAL_CONNECTING":
             return {
@@ -383,19 +518,75 @@ export default class RoomConnection extends TypedEventTarget {
         this.dispatch({ type: "DEVICE_CREDENTIALS_FETCH_STARTED" });
         try {
             const deviceCredentials = await this.credentialsService.getCredentials();
+
+            if (!deviceCredentials) {
+                this.dispatch({ type: "DEVICE_CREDENTIALS_FETCH_FAILED" });
+                return;
+            }
+
             this.dispatch({ type: "DEVICE_CREDENTIALS_FETCH_FINISHED", payload: deviceCredentials });
         } catch (error) {
             this.dispatch({ type: "DEVICE_CREDENTIALS_FETCH_FAILED" });
         }
     }
 
+    public async doOrganizationFetch() {
+        this.dispatch({ type: "ORGANIZATION_FETCH_STARTED" });
+        try {
+            const organization = await this.organizationServiceCache.fetchOrganization();
+
+            if (!organization) {
+                this.dispatch({ type: "ORGANIZATION_FETCH_FAILED", payload: "Organization not found" });
+                return;
+            }
+
+            this.dispatch({ type: "ORGANIZATION_FETCH_FINISHED", payload: organization });
+        } catch (error) {
+            this.dispatch({ type: "ORGANIZATION_FETCH_FAILED", payload: error });
+        }
+    }
+
+    public async doLocalMediaStart() {
+        this.dispatch({ type: "LOCAL_MEDIA_STARTING" });
+        try {
+            await this.localMedia.start();
+            this.dispatch({ type: "LOCAL_MEDIA_STARTED" });
+        } catch (error) {
+            this.dispatch({ type: "LOCAL_MEDIA_START_FAILED" });
+        }
+    }
+
+    public async doRoomConnectionJoin(organizationId: string) {
+        this.dispatch({ type: "ROOM_CONNECTION_JOINING" });
+
+        this.signalSocket.emit("join_room", {
+            avatarUrl: null,
+            config: {
+                isAudioEnabled: this.localMedia.isMicrophoneEnabled(),
+                isVideoEnabled: this.localMedia.isCameraEnabled(),
+            },
+            deviceCapabilities: { canScreenshare: true },
+            displayName: this.displayName,
+            isCoLocated: false,
+            isDevicePermissionDenied: false,
+            kickFromOtherRooms: false,
+            organizationId,
+            roomKey: this.roomKey,
+            roomName: this.roomName,
+            selfId: "",
+            userAgent: `browser-sdk:${sdkVersion || "unknown"}`,
+        });
+    }
+
     // raw selectors
-    private selectWantsToJoin$ = this.createSelector((state) => state.wantsToJoin);
     private selectDeviceCredentialsRaw$ = this.createSelector((state) => state.deviceCredentials);
+    private selectLocalMediaRaw$ = this.createSelector((state) => state.localMedia);
+    private selectOrganizationRaw$ = this.createSelector((state) => state.organization);
+    private selectRoomConnectionRaw$ = this.createSelector((state) => state.roomConnection);
     private selectSignalConnectionRaw$ = this.createSelector((state) => state.signalConnection);
 
     private selectSignalConnectionStatus$ = this.createSelector((state) => state.signalConnection.status);
-
+    private selectWantsToJoin$ = this.createSelector((state) => state.wantsToJoin);
     // reactors
     private reactors = [
         this.createReactor(
@@ -431,6 +622,44 @@ export default class RoomConnection extends TypedEventTarget {
                     return {
                         action: "doSignalIdentifyDevice",
                         args: [deviceCredentials.data],
+                    };
+                }
+            }
+        ),
+        this.createReactor([this.selectWantsToJoin$, this.selectLocalMediaRaw$], (wantsToJoin, localMedia) => {
+            if (wantsToJoin && !localMedia.isStarted && !localMedia.isStarting) {
+                return {
+                    action: "doLocalMediaStart",
+                    args: [],
+                };
+            }
+        }),
+        this.createReactor([this.selectWantsToJoin$, this.selectOrganizationRaw$], (wantsToJoin, organization) => {
+            if (wantsToJoin && !organization.data && !organization.isFetching) {
+                return {
+                    action: "doOrganizationFetch",
+                    args: [],
+                };
+            }
+        }),
+        this.createReactor(
+            [
+                this.selectSignalConnectionRaw$,
+                this.selectLocalMediaRaw$,
+                this.selectRoomConnectionRaw$,
+                this.selectOrganizationRaw$,
+            ],
+            (signalConnection, localMedia, roomConnection, organization) => {
+                if (
+                    signalConnection.status === "connected" &&
+                    signalConnection.deviceIdentified &&
+                    localMedia.isStarted &&
+                    ["", "reconnect"].includes(roomConnection.status) &&
+                    organization.data
+                ) {
+                    return {
+                        action: "doRoomConnectionJoin",
+                        args: [organization.data.organizationId],
                     };
                 }
             }
@@ -472,14 +701,6 @@ export default class RoomConnection extends TypedEventTarget {
     ) {
         super();
 
-        /*combineLatest([this.selectSignalConnectionStatus$, this.selectDeviceCredentialsRaw$]).subscribe(
-            ([signalConnectionStatus, deviceCredentialsRaw]) => {
-                if (signalConnectionStatus === "connected" && deviceCredentialsRaw) {
-                    this.signalSocket.emit("identify_device", { deviceCredentials: deviceCredentialsRaw });
-                }
-            }
-        );*/
-
         this.state$.subscribe((state) => {
             console.log("State update: ", state);
         });
@@ -488,7 +709,9 @@ export default class RoomConnection extends TypedEventTarget {
         merge(...this.reactors).subscribe((v) => {
             if (v) {
                 console.log(`Reacting by calling ${v.action}`);
-                this[v?.action](...v.args);
+                // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                const fn = this[v.action] as any;
+                fn.apply(this, v.args);
             } else {
                 // I dont like this if/else. We should find a way to emit only when an action
             }
@@ -552,7 +775,7 @@ export default class RoomConnection extends TypedEventTarget {
         this.signalSocket.on("client_metadata_received", this._handleClientMetadataReceived.bind(this));
         this.signalSocket.on("knock_handled", this._handleKnockHandled.bind(this));
         this.signalSocket.on("knocker_left", this._handleKnockerLeft.bind(this));
-        this.signalSocket.on("room_joined", this._handleRoomJoined.bind(this));
+        this.signalSocket.on("room_joined", () => this.dispatch({ type: "ROOM_CONNECTION_JOINED" }));
         this.signalSocket.on("room_knocked", this._handleRoomKnocked.bind(this));
         this.signalSocket.on("cloud_recording_stopped", this._handleCloudRecordingStopped.bind(this));
         this.signalSocket.on("screenshare_started", this._handleScreenshareStarted.bind(this));
