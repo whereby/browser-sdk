@@ -1,8 +1,10 @@
-import React, { useState } from "react";
-import { useLocalMedia } from "../lib/react";
+import React, { useEffect, useRef, useState } from "react";
+import { LocalMediaRef } from "~/lib/react/useLocalMedia";
+import { useLocalMedia, useRoomConnection, VideoView } from "../lib/react";
 import PrecallExperience from "./components/PrecallExperience";
 import VideoExperience from "./components/VideoExperience";
 import "./styles.css";
+import clockAnimation from "./utils/clockAnimation";
 
 export default {
     title: "Examples/Custom UI",
@@ -42,6 +44,52 @@ export const LocalMediaOnly = () => {
     return (
         <div>
             <PrecallExperience {...localMedia} />
+        </div>
+    );
+};
+
+function CanvasInRoom({ localMedia, roomUrl }: { localMedia: LocalMediaRef; roomUrl: string }) {
+    const { state } = useRoomConnection(roomUrl, { localMedia });
+
+    return <div>{state.roomConnectionStatus}</div>;
+}
+
+function LocalMediaWithCanvasStream_({ canvasStream }: { canvasStream: MediaStream }) {
+    const [shouldConnect, setShouldConnect] = useState(false);
+
+    const localMedia = useLocalMedia(canvasStream);
+
+    return (
+        <div>
+            {shouldConnect && <CanvasInRoom localMedia={localMedia} roomUrl="https://team.whereby.com/andytyra" />}
+            {localMedia.state.localStream && <VideoView stream={localMedia.state.localStream} />}
+            <button onClick={() => setShouldConnect(!shouldConnect)}>{shouldConnect ? "Disconnect" : "Connect"}</button>
+        </div>
+    );
+}
+
+export const LocalMediaWithCanvasStream = () => {
+    const canvas = useRef<HTMLCanvasElement>(null);
+    const [localStream, setLocalStream] = useState<MediaStream | null>(null);
+
+    useEffect(() => {
+        if (canvas.current) {
+            clockAnimation(canvas.current);
+        }
+    }, [canvas]);
+
+    useEffect(() => {
+        setTimeout(() => {
+            if (canvas.current) {
+                setLocalStream(canvas.current.captureStream());
+            }
+        }, 1000);
+    }, [canvas]);
+
+    return (
+        <div>
+            <canvas ref={canvas} id="canvas"></canvas>
+            {localStream && <LocalMediaWithCanvasStream_ canvasStream={localStream} />}
         </div>
     );
 };

@@ -131,9 +131,9 @@ function reducer(state: LocalMediaState, action: LocalMediaEvents): LocalMediaSt
 }
 
 export default function useLocalMedia(
-    constraints: MediaStreamConstraints = { audio: true, video: true }
+    constraintsOrStream: MediaStreamConstraints | MediaStream = { audio: true, video: true }
 ): LocalMediaRef {
-    const [localMedia] = useState<LocalMedia>(() => new LocalMedia(constraints));
+    const [localMedia] = useState<LocalMedia>(() => new LocalMedia(constraintsOrStream));
     const [state, dispatch] = useReducer(reducer, initialState);
 
     useEffect(() => {
