@@ -74,6 +74,7 @@
         "assert": "^2.0.0",
         "axios": "^1.2.3",
         "btoa": "^1.2.1",
+        "events": "^3.3.0",
         "heresy": "^1.0.4"
     },
     "peerDependencies": {
