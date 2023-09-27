@@ -1,10 +1,10 @@
-import { Slice } from ".";
+import { Bundle } from ".";
 
 export type SignalConnectionState = {
     status: "connected";
 };
 
-const slice: Slice<SignalConnectionState> = {
+const slice: Bundle<SignalConnectionState> = {
     initialState: {
         status: "connected",
     },
