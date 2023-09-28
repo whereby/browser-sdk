@@ -23,6 +23,7 @@
         "build": "rollup -c",
         "build:storybook": "build-storybook",
         "dev": "start-storybook -p 6006",
+        "install:e2e-sample-app": "cd test/sample-app && yarn",
         "start:e2e-sample-app": "cd test/sample-app && yarn start",
         "test": "yarn test:lint && yarn test:unit",
         "test:lint": "eslint src/",
