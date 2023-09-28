@@ -1,3 +1,5 @@
+echo "Installing yalc"
+yarn add yalc --ignore-scripts --no-lockfile
 echo "Building browser sdk"
 cd ../../
 yarn build
