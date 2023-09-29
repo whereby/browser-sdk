@@ -7,14 +7,14 @@
         "@types/node": "^16.18.54",
         "@types/react": "^18.2.23",
         "@types/react-dom": "^18.2.8",
-        "@whereby.com/browser-sdk": "^2.0.0-alpha19",
+        "@whereby.com/browser-sdk": "2.0.0-alpha19",
         "react": "^18.2.0",
         "react-dom": "^18.2.0",
         "react-scripts": "5.0.1",
         "typescript": "^4.9.5"
     },
     "scripts": {
-        "preinstall": "sh build-browser-sdk.sh",
+        "postinstall": "sh build-browser-sdk.sh",
         "start": "react-scripts start",
         "build": "react-scripts build",
         "eject": "react-scripts eject"
