@@ -76,6 +76,7 @@ describe("@whereby/browser-sdk", () => {
                     toggleCamera: expect.any(Function),
                     toggleMicrophone: expect.any(Function),
                     toggleScreenshare: expect.any(Function),
+                    toggleChat: expect.any(Function),
                 })
             );
         });
