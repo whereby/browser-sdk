@@ -42,15 +42,21 @@ interface LocalMediaEventTarget extends EventTarget {
 const TypedLocalMediaEventTarget = EventTarget as { new (): LocalMediaEventTarget };
 
 export default class LocalMedia extends TypedLocalMediaEventTarget {
-    private _constraints: MediaStreamConstraints;
+    private _constraints: MediaStreamConstraints | null = null;
     public _rtcManagers: RtcManager[];
     public stream: MediaStream;
     public screenshareStream?: MediaStream;
 
-    constructor(constraints: MediaStreamConstraints) {
+    constructor(constraintsOrStream: MediaStreamConstraints | MediaStream) {
         super();
-        this._constraints = constraints;
-        this.stream = new MediaStream();
+
+        if (constraintsOrStream instanceof MediaStream) {
+            this.stream = constraintsOrStream;
+        } else {
+            this._constraints = constraintsOrStream;
+            this.stream = new MediaStream();
+        }
+
         this._rtcManagers = [];
         this.screenshareStream = undefined;
 
@@ -191,8 +197,10 @@ export default class LocalMedia extends TypedLocalMediaEventTarget {
     }
 
     async start() {
-        const newStream = await navigator.mediaDevices.getUserMedia(this._constraints);
-        newStream.getTracks().forEach((t) => this.stream.addTrack(t));
+        if (this._constraints) {
+            const newStream = await navigator.mediaDevices.getUserMedia(this._constraints);
+            newStream.getTracks().forEach((t) => this.stream.addTrack(t));
+        }
 
         this._updateDeviceList();
 
@@ -205,8 +213,10 @@ export default class LocalMedia extends TypedLocalMediaEventTarget {
     }
 
     stop() {
-        this.stream?.getTracks().forEach((t) => {
-            t.stop();
-        });
+        if (this._constraints) {
+            this.stream?.getTracks().forEach((t) => {
+                t.stop();
+            });
+        }
     }
 }
