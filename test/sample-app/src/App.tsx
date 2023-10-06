@@ -1,5 +1,5 @@
-import React, { useState } from "react";
-import { useRoomConnection } from "@whereby.com/browser-sdk";
+import React, { useEffect, useRef, useState } from "react";
+import { useRoomConnection, useLocalMedia, fakeWebcamFrame } from "@whereby.com/browser-sdk";
 import "./App.css";
 
 const WaitingArea = ({ knock }: { knock: () => void }) => {
@@ -12,16 +12,17 @@ const WaitingArea = ({ knock }: { knock: () => void }) => {
     );
 };
 
+type LocalMediaRef = ReturnType<typeof useLocalMedia>;
+
 type RoomProps = {
     roomUrl: string;
-    localMedia: MediaStreamConstraints;
+    localMedia: LocalMediaRef;
     displayName: string;
     isHost: boolean;
 };
 const Room = ({ roomUrl, localMedia, displayName, isHost }: RoomProps) => {
     const roomConnection = useRoomConnection(roomUrl, {
-        // localMedia: null,
-        localMediaConstraints: localMedia,
+        localMedia,
         displayName,
         logger: console,
     });
@@ -83,10 +84,16 @@ const Room = ({ roomUrl, localMedia, displayName, isHost }: RoomProps) => {
             {remoteParticipants.length > 0 && (
                 <div>
                     <h3>Remote participants ({remoteParticipants.length})</h3>
-                    <div className="RemoteParticipants">
+                    <div className="RemoteParticipants" data-testid="remote-participant-list">
                         {remoteParticipants.map((r) => (
                             <div key={r.id}>
-                                {r.stream && <VideoView style={{ width: "250px" }} stream={r.stream} />}
+                                {r.stream && (
+                                    <VideoView
+                                        style={{ width: "250px" }}
+                                        stream={r.stream}
+                                        data-testid="remoteParticipant"
+                                    />
+                                )}
                                 <p>{r.displayName}</p>
                             </div>
                         ))}
@@ -99,7 +106,9 @@ const Room = ({ roomUrl, localMedia, displayName, isHost }: RoomProps) => {
                     <div className="Screenshares">
                         {screenshares.map((s) => (
                             <div key={s.id || s.participantId}>
-                                {s.stream && <VideoView style={{ width: "250px" }} stream={s.stream} />}
+                                {s.stream && (
+                                    <VideoView style={{ width: "250px" }} stream={s.stream} data-testid="screenShare" />
+                                )}
                             </div>
                         ))}
                     </div>
@@ -118,32 +127,63 @@ const Room = ({ roomUrl, localMedia, displayName, isHost }: RoomProps) => {
     );
 };
 
-const App = () => {
-    const [roomUrlInput, setRoomUrlInput] = useState<string>("");
-    const [roomUrl, setRoomUrl] = useState<string | null>(null);
-
-    if (roomUrl === null) {
-        return (
-            <div>
-                <h1>Enter room URL</h1>
-                <label>Room URL</label>
-                <input type="text" onChange={(e) => setRoomUrlInput(e.target.value)} defaultValue={roomUrlInput} />
-                <br />
-                <button onClick={() => setRoomUrl(roomUrlInput)}>Enter</button>
-            </div>
-        );
-    }
-
+const CanvasWrapper = ({ roomUrl, canvasStream }: { roomUrl: string; canvasStream: MediaStream }) => {
+    const localMedia = useLocalMedia(canvasStream);
     const isHost = roomUrl.includes("roomKey=");
 
     return (
+        <Room
+            roomUrl={roomUrl}
+            localMedia={localMedia}
+            displayName={`SDK boy${isHost ? " (host)" : ""}`}
+            isHost={isHost}
+        />
+    );
+};
+
+const App = () => {
+    const [roomUrlInput, setRoomUrlInput] = useState<string>("");
+    const [roomUrl, setRoomUrl] = useState<string | null>(null);
+    const [localStream, setLocalStream] = useState<MediaStream | null>(null);
+    const canvas = useRef<HTMLCanvasElement>(null);
+
+    useEffect(() => {
+        if (canvas.current) {
+            fakeWebcamFrame(canvas.current);
+        }
+    }, [canvas]);
+
+    useEffect(() => {
+        setTimeout(() => {
+            if (canvas.current) {
+                setLocalStream(canvas.current.captureStream());
+            }
+        }, 1000);
+    }, [canvas]);
+
+    return (
         <div>
-            <Room
-                roomUrl={roomUrl}
-                localMedia={{ audio: false, video: true }}
-                displayName={`SDK boy${isHost ? " (host)" : ""}`}
-                isHost={isHost}
-            />
+            {roomUrl ? (
+                localStream ? (
+                    <CanvasWrapper roomUrl={roomUrl} canvasStream={localStream} />
+                ) : (
+                    <p>loading</p>
+                )
+            ) : (
+                <div>
+                    <h1>Enter room URL</h1>
+                    <label>Room URL</label>
+                    <input type="text" onChange={(e) => setRoomUrlInput(e.target.value)} defaultValue={roomUrlInput} />
+                    <br />
+                    <button onClick={() => setRoomUrl(roomUrlInput)}>Enter</button>
+                </div>
+            )}
+
+            <hr />
+            <div className="LocalStreamCanvas">
+                <h3>Canvas for local stream</h3>
+                <canvas ref={canvas} width="640" height="360" />
+            </div>
         </div>
     );
 };
