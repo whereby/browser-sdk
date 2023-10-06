@@ -34,7 +34,7 @@ function makeCdnFilename() {
 
 const plugins = [
     replace(replaceValues),
-    nodeResolve({ preferBuiltins: false, resolveOnly: [/jslib-media|assert|util/] }),
+    nodeResolve({ preferBuiltins: false, resolveOnly: [/jslib-media|util/] }),
     commonjs(),
     typescript(),
 ];
