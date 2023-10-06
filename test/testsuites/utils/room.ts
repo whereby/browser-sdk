@@ -44,6 +44,15 @@ async function createTransientRoom({ isLocked, roomMode }: RoomConfig): Promise<
         },
     });
 
+    if (response.status() === 429) {
+        const retryAfter = response.headers()["retry-after"];
+        if (retryAfter) {
+            const retryAfterSeconds = parseInt(retryAfter, 10);
+            await new Promise((resolve) => setTimeout(resolve, retryAfterSeconds * 1000));
+            return createTransientRoom({ isLocked, roomMode });
+        }
+    }
+
     if (!response.ok()) {
         throw new Error(`createTransientRoom failed with status ${response.status()}`);
     }
@@ -75,6 +84,15 @@ async function deleteTransientRoom(meetingId: string) {
             Authorization: `Bearer ${apiKey}`,
         },
     });
+
+    if (response.status() === 429) {
+        const retryAfter = response.headers()["retry-after"];
+        if (retryAfter) {
+            const retryAfterSeconds = parseInt(retryAfter, 10);
+            await new Promise((resolve) => setTimeout(resolve, retryAfterSeconds * 1000));
+            return deleteTransientRoom(meetingId);
+        }
+    }
 
     if (!response.ok()) {
         throw new Error(`deleteTransientRoom failed with status ${response.status()}`);
