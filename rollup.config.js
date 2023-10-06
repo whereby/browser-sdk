@@ -7,7 +7,7 @@ import pkg from "./package.json";
 import typescript from "rollup-plugin-typescript2";
 import dts from "rollup-plugin-dts";
 
-const replaceValues = {
+export const replaceValues = {
     preventAssignment: true,
     values: {
         __SDK_VERSION__: pkg.version,
@@ -18,7 +18,7 @@ const replaceValues = {
     },
 };
 
-const peerDependencies = [...Object.keys(pkg.peerDependencies || {})];
+export const peerDependencies = [...Object.keys(pkg.peerDependencies || {})];
 
 function makeCdnFilename() {
     const major = pkg.version.split(".")[0];

@@ -1774,6 +1774,11 @@
   resolved "https://registry.yarnpkg.com/@mdx-js/util/-/util-1.6.22.tgz#219dfd89ae5b97a8801f015323ffa4b62f45718b"
   integrity sha512-H1rQc1ZOHANWBvPcW+JpGwr+juXSxM8Q8YCkm3GhZd8REu1fHR3z99CErO1p9pkcfcxZnMdIZdIsXkOHY0NilA==
 
+"@mprt/rollup-plugin-incremental@^0.1.0":
+  version "0.1.0"
+  resolved "https://registry.yarnpkg.com/@mprt/rollup-plugin-incremental/-/rollup-plugin-incremental-0.1.0.tgz#fcfe02dd2626a535d8f334285bcd76c5ccf1b17f"
+  integrity sha512-FIEYTgV0yYQc3bwDdPRiZWcTMUSKIL5CbjvI5jqj+i+OMVG6oSxlOIxidAiIkF56+5GcS78QdsKhWbnOC94M2A==
+
 "@mrmlnc/readdir-enhanced@^2.2.1":
   version "2.2.1"
   resolved "https://registry.yarnpkg.com/@mrmlnc/readdir-enhanced/-/readdir-enhanced-2.2.1.tgz#524af240d1a360527b730475ecfa1344aa540dde"

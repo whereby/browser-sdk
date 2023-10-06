@@ -10,17 +10,18 @@
     },
     "browserslist": "> 0.5%, last 2 versions, not dead",
     "source": "src/index.js",
-    "main": "dist/lib.cjs",
-    "module": "dist/lib.esm.js",
+    "main": "dist/lib/index.js",
+    "module": "dist/lib/index.js",
     "type": "module",
     "files": [
         "dist/**/*.js",
         "dist/*.d.ts"
     ],
-    "types": "dist/types.d.ts",
+    "types": "dist/index.d.d.ts",
     "scripts": {
         "prebuild": "rimraf dist",
         "build": "rollup -c",
+        "build:dev": "rollup --watch --config rollup.config.dev.js",
         "build:storybook": "build-storybook",
         "dev": "start-storybook -p 6006",
         "test": "yarn test:lint && yarn test:unit",
@@ -33,6 +34,7 @@
     "devDependencies": {
         "@babel/core": "^7.18.5",
         "@babel/plugin-proposal-optional-chaining": "^7.18.9",
+        "@mprt/rollup-plugin-incremental": "^0.1.0",
         "@rollup/plugin-commonjs": "^24.0.0",
         "@rollup/plugin-json": "^6.0.0",
         "@rollup/plugin-node-resolve": "^13.3.0",
