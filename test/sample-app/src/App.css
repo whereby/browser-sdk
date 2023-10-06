@@ -21,3 +21,6 @@ dd {
     padding: 0;
 }
 
+.LocalStreamCanvas canvas {
+    border: 1px solid #ccc;
+}
