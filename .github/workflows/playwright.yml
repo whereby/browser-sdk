@@ -22,7 +22,7 @@ jobs:
             - name: Run Playwright tests
               run: yarn playwright test
               env:
-                  REACT_APP_SMALL_ROOM_HOST_URL: ${{ secrets.REACT_APP_SMALL_ROOM_HOST_URL }}
+                  WHEREBY_API_KEY: ${{ secrets.WHEREBY_API_KEY }}
             - uses: actions/upload-artifact@v3
               if: always()
               with:

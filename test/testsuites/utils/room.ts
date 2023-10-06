@@ -1,7 +1,7 @@
 import { request } from "playwright";
 import { expect, Page } from "@playwright/test";
 
-type RoomMode = "normal" | "group";
+export type RoomMode = "normal" | "group";
 type RoomConfig = {
     isLocked: boolean;
     roomMode: RoomMode;
