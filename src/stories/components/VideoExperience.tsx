@@ -23,8 +23,14 @@ export default function VideoExperience({
         logger: console,
     });
 
-    const { localParticipant, mostRecentChatMessage, remoteParticipants, roomConnectionStatus, waitingParticipants } =
-        state;
+    const {
+        localParticipant,
+        mostRecentChatMessage,
+        remoteParticipants,
+        roomConnectionStatus,
+        waitingParticipants,
+        screenshares,
+    } = state;
     const {
         knock,
         sendChatMessage,
@@ -108,6 +114,12 @@ export default function VideoExperience({
                                 ) : null}
                             </div>
                         ))}
+                        {screenshares.map(
+                            (s) =>
+                                s.stream && (
+                                    <VideoView style={{ width: 200, height: "auto" }} key={s.id} stream={s.stream} />
+                                )
+                        )}
                     </div>
                     <div className="controls">
                         <button onClick={() => toggleCamera()}>Toggle camera</button>
