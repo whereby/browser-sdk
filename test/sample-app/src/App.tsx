@@ -45,6 +45,8 @@ const Room = ({ roomUrl, localMedia, displayName, isHost }: RoomProps) => {
         rejectWaitingParticipant,
         // sendChatMessage,
         // toggleCamera,
+        startScreenshare,
+        stopScreenshare,
     } = roomConnection.actions;
     const { VideoView } = roomConnection.components;
 
@@ -67,6 +69,14 @@ const Room = ({ roomUrl, localMedia, displayName, isHost }: RoomProps) => {
                 <dt>Streaming status</dt>
                 <dd data-testid="streamingStatus">{streaming?.status || "N/A"}</dd>
             </dl>
+            <div className="Controls">
+                <button data-testid="startScreenshareBtn" onClick={() => startScreenshare()}>
+                    Start screen share
+                </button>
+                <button data-testid="stopScreenshareBtn" onClick={() => stopScreenshare()}>
+                    Stop screen share
+                </button>
+            </div>
             {isHost && waitingParticipants.length > 0 && (
                 <div>
                     <h3>Participants in Waiting Area ({waitingParticipants.length})</h3>
