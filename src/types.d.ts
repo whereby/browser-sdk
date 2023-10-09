@@ -32,8 +32,8 @@ declare module "@whereby/jslib-media/src/webrtc/RtcManagerDispatcher" {
     interface RtcStreamAddedPayload {
         clientId: string;
         stream: MediaStream;
-        streamId: string;
-        streamType: "webcam" | "screenshare";
+        streamId: string | undefined;
+        streamType: "webcam" | "screenshare" | undefined;
     }
 
     type RtcEvents = {
