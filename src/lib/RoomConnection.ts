@@ -173,6 +173,34 @@ function createSocket() {
     return new ServerSocket(SOCKET_HOST, socketConf);
 }
 
+export function handleStreamAdded(
+    remoteParticipants: RemoteParticipant[],
+    { clientId, stream, streamId, streamType }: RtcStreamAddedPayload
+) {
+    if (!streamId) {
+        streamId = stream.id;
+    }
+    const remoteParticipant = remoteParticipants.find((p) => p.id === clientId);
+    if (!remoteParticipant) {
+        return;
+    }
+
+    const remoteParticipantStream =
+        remoteParticipant.streams.find((s) => s.id === streamId) || remoteParticipant.streams[0];
+
+    if (
+        (remoteParticipant.stream && remoteParticipant.stream.id === streamId) ||
+        (!remoteParticipant.stream && streamType === "webcam") ||
+        (!remoteParticipant.stream && !streamType && remoteParticipant.streams.indexOf(remoteParticipantStream) < 1)
+    ) {
+        return new CustomEvent("participant_stream_added", { detail: { participantId: clientId, stream, streamId } });
+    }
+    // screenshare
+    return new CustomEvent("screenshare_started", {
+        detail: { participantId: clientId, stream, id: streamId, isLocal: false },
+    });
+}
+
 /*
  * This is the topmost interface when dealing with Whereby.
  *
@@ -717,35 +745,11 @@ export default class RoomConnection extends TypedEventTarget {
         });
     }
 
-    private _handleStreamAdded({ clientId, stream, streamId, streamType }: RtcStreamAddedPayload) {
-        const remoteParticipant = this.remoteParticipants.find((p) => p.id === clientId);
-        if (!remoteParticipant) {
-            this.logger.log("WARN: Could not find participant for incoming stream");
-            return;
+    private _handleStreamAdded(args: RtcStreamAddedPayload) {
+        const streamAddedEvent = handleStreamAdded(this.remoteParticipants, args);
+        if (streamAddedEvent) {
+            this.dispatchEvent(streamAddedEvent);
         }
-
-        const remoteParticipantStream = remoteParticipant.streams.find((s) => s.id === streamId);
-
-        if (
-            (remoteParticipant.stream && remoteParticipant.stream.id === streamId) ||
-            (!remoteParticipant.stream && streamType === "webcam") ||
-            (!remoteParticipant.stream &&
-                !streamType &&
-                remoteParticipantStream &&
-                remoteParticipant.streams.indexOf(remoteParticipantStream) < 1)
-        ) {
-            this.dispatchEvent(
-                new CustomEvent("participant_stream_added", { detail: { participantId: clientId, stream, streamId } })
-            );
-            return;
-        }
-
-        // screenshare
-        this.dispatchEvent(
-            new CustomEvent("screenshare_started", {
-                detail: { participantId: clientId, stream, id: streamId, isLocal: false },
-            })
-        );
     }
 
     private _joinRoom() {
