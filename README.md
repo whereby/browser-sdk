@@ -99,6 +99,20 @@ function MyCallUX( { roomUrl, localStream }) {
 
 ```
 
+### Usage with Vite development environment
+
+There is a [known Vite issue](https://github.com/vitejs/vite/issues/1973) where modules trying to access `process.env` throw `Uncaught ReferenceError: process is not defined`.
+This can be solved in `vite.config.js` with the following line:
+
+``` javascript
+export default defineConfig({
+    ...rest,
+    define: {
+        'process.env': {}
+    },
+});
+```
+
 #### Usage with Next.js
 
 If you are integrating these React hooks with Next.js, you need to ensure your
