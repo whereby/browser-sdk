@@ -94,6 +94,9 @@ define("WherebyEmbed", {
     toggleScreenshare(enabled) {
         this._postCommand("toggle_screenshare", [enabled]);
     },
+    toggleChat(enabled) {
+        this._postCommand("toggle_chat", [enabled]);
+    },
 
     onmessage({ origin, data }) {
         if (origin !== this.roomUrl.origin) return;
