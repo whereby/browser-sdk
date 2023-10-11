@@ -17,7 +17,7 @@ test.describe("unlocked room", () => {
     });
 
     test("join room", async ({ page }) => {
-        await joinRoom(page, roomUrl);
+        await joinRoom({ page, roomUrl });
 
         await expect(page.locator("h1")).toContainText(/Room/);
         await expect(page.locator("dd[data-testid='roomConnectionStatus']")).toContainText("connected");

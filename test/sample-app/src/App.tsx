@@ -1,5 +1,5 @@
 import React, { useEffect, useRef, useState } from "react";
-import { useRoomConnection, useLocalMedia, fakeWebcamFrame } from "@whereby.com/browser-sdk";
+import { useRoomConnection, useLocalMedia, fakeAudioStream, fakeWebcamFrame } from "@whereby.com/browser-sdk";
 import "./App.css";
 
 const WaitingArea = ({ knock }: { knock: () => void }) => {
@@ -171,6 +171,20 @@ const App = () => {
         }, 1000);
     }, [canvas]);
 
+    function toggleFakeAudio() {
+        if (!localStream) {
+            return;
+        }
+        if (localStream.getAudioTracks().length > 0) {
+            localStream.getAudioTracks()[0].stop();
+            localStream.removeTrack(localStream.getAudioTracks()[0]);
+        } else {
+            const audioStream = fakeAudioStream();
+            localStream.addTrack(audioStream.getAudioTracks()[0]);
+        }
+        setLocalStream(localStream.clone());
+    }
+
     return (
         <div>
             {roomUrl ? (
@@ -192,6 +206,24 @@ const App = () => {
             <hr />
             <div className="LocalStreamCanvas">
                 <h3>Canvas for local stream</h3>
+                {!roomUrl && (
+                    <button onClick={toggleFakeAudio} data-testid="toggleFakeAudio">
+                        Toggle fake audio
+                    </button>
+                )}
+                {localStream && (
+                    <dl data-testid="fakeMediaStats">
+                        <dt>Audio track</dt>
+                        <dd data-testid="fakeAudioTrackStatus">
+                            {localStream.getAudioTracks().length ? "ready" : "missing"}
+                        </dd>
+                        <dt>Video track</dt>
+                        <dd data-testid="fakeWebcamStatus">
+                            {localStream.getVideoTracks().length ? "ready" : "missing"}
+                        </dd>
+                    </dl>
+                )}
+                <br />
                 <canvas ref={canvas} width="640" height="360" />
             </div>
         </div>

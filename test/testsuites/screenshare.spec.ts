@@ -21,10 +21,10 @@ roomModes.forEach((roomMode) => {
 
         test("screen share is visible", async ({ page }) => {
             const participant1 = page;
-            await joinRoom(page, roomUrl);
+            await joinRoom({ page, roomUrl });
 
             const participant2 = await page.context().newPage();
-            await joinRoom(participant2, roomUrl);
+            await joinRoom({ page: participant2, roomUrl });
 
             // participant1 starts screen share
             await participant1.click('[data-testid="startScreenshareBtn"]');
