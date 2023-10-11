@@ -101,14 +101,27 @@ async function deleteTransientRoom(meetingId: string) {
     return;
 }
 
-async function joinRoom(page: Page, roomUrl: string) {
+async function joinRoom({
+    page,
+    roomUrl,
+    withFakeAudioStream,
+}: {
+    page: Page;
+    roomUrl: string;
+    withFakeAudioStream?: boolean;
+}) {
     await page.goto("http://127.0.0.1:3001");
     const locator = page.locator("h1");
     await expect(locator).toContainText(/Enter room URL/);
 
     const input = page.locator("input");
     await input.fill(roomUrl);
-    await page.click("button");
+    if (withFakeAudioStream) {
+        await expect(page.getByTestId("fakeMediaStats")).toBeAttached();
+        await page.getByTestId("toggleFakeAudio").click();
+        await expect(page.getByTestId("fakeAudioTrackStatus")).toContainText("ready");
+    }
+    await page.getByRole("button", { name: "Enter" }).click();
 
     await expect(page.locator("h1")).toContainText(/Room/);
     await expect(page.locator("dd[data-testid='roomConnectionStatus']")).toContainText("connected");
