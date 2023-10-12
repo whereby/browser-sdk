@@ -374,7 +374,10 @@ export type RoomConnectionRef = {
     _ref: RoomConnection;
 };
 
-export function useRoomConnection(roomUrl: string, roomConnectionOptions: UseRoomConnectionOptions): RoomConnectionRef {
+export default function useRoomConnection(
+    roomUrl: string,
+    roomConnectionOptions: UseRoomConnectionOptions
+): RoomConnectionRef {
     const [roomConnection] = useState<RoomConnection>(
         () =>
             new RoomConnection(roomUrl, {
