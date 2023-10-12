@@ -21,6 +21,23 @@ dd {
     padding: 0;
 }
 
+.NoStreamCell {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    background-color: #f3f3f3;
+}
+
+.RemoteParticipants .NoStreamCell {
+    width: 250px;
+    height: 140px;
+}
+
+.LocalParticipant .NoStreamCell {
+    width: 200px;
+    height: 112px;
+}
+
 .LocalStreamCanvas canvas {
     border: 1px solid #ccc;
 }
