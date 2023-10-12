@@ -32,24 +32,24 @@ roomModes.forEach((roomMode) => {
             const participant2 = await page.context().newPage();
             await joinRoom({ page: participant2, roomUrl });
 
-            await expect(participant1.getByTestId("remoteParticipant")).toHaveCount(1);
-            await expect(participant2.getByTestId("remoteParticipant")).toHaveCount(1);
+            await expect(participant1.getByTestId("remoteParticipantVideo")).toHaveCount(1);
+            await expect(participant2.getByTestId("remoteParticipantVideo")).toHaveCount(1);
 
             // 4 = HAVE_ENOUGH_DATA - It tells that there is enough data available to start playing.
-            await expect(participant1.getByTestId("remoteParticipant")).toHaveJSProperty("readyState", 4);
-            await expect(participant2.getByTestId("remoteParticipant")).toHaveJSProperty("readyState", 4);
+            await expect(participant1.getByTestId("remoteParticipantVideo")).toHaveJSProperty("readyState", 4);
+            await expect(participant2.getByTestId("remoteParticipantVideo")).toHaveJSProperty("readyState", 4);
 
-            await expect(participant1.getByTestId("remoteParticipant")).toHaveJSProperty("muted", false);
+            await expect(participant1.getByTestId("remoteParticipantVideo")).toHaveJSProperty("muted", false);
 
             // check audio track
             const participant2AudioTrackProperties = await participant2
-                .getByTestId("remoteParticipant")
+                .getByTestId("remoteParticipantVideo")
                 .evaluate(getAudioTrackPropertiesFromHTMLVideoElement);
             expect(participant2AudioTrackProperties).toHaveProperty("readyState", "live");
             expect(participant2AudioTrackProperties).toHaveProperty("kind", "audio");
             expect(participant2AudioTrackProperties).toHaveProperty("muted", false);
             expect(participant2AudioTrackProperties).toHaveProperty("enabled", true);
-            await expect(participant2.getByTestId("remoteParticipant")).toHaveJSProperty("muted", false);
+            await expect(participant2.getByTestId("remoteParticipantVideo")).toHaveJSProperty("muted", false);
         });
 
         test("video is not frozen", async ({ page, browserName }) => {
@@ -62,12 +62,12 @@ roomModes.forEach((roomMode) => {
             await joinRoom({ page: participant2, roomUrl });
 
             // 4 = HAVE_ENOUGH_DATA - It tells that there is enough data available to start playing.
-            await expect(participant1.getByTestId("remoteParticipant")).toHaveJSProperty("readyState", 4);
-            await expect(participant2.getByTestId("remoteParticipant")).toHaveJSProperty("readyState", 4);
+            await expect(participant1.getByTestId("remoteParticipantVideo")).toHaveJSProperty("readyState", 4);
+            await expect(participant2.getByTestId("remoteParticipantVideo")).toHaveJSProperty("readyState", 4);
 
             const countFramesHandle = await page.evaluateHandle(`${countFrames}`);
             const participant1Samples = await participant1
-                .getByTestId("remoteParticipant")
+                .getByTestId("remoteParticipantVideo")
                 .evaluate((element: HTMLVideoElement, countFramesFn) => {
                     const countFrames = countFramesFn as CountFramesFunction;
                     // counts 15 samples in a 1000ms interval.

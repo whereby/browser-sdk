@@ -21,6 +21,9 @@ type RoomProps = {
     isHost: boolean;
 };
 const Room = ({ roomUrl, localMedia, displayName, isHost }: RoomProps) => {
+    const [isCameraEnabled, setIsCameraEnabled] = useState(true);
+    const [isMicrophoneEnabled, setIsMicrophoneEnabled] = useState(true);
+
     const roomConnection = useRoomConnection(roomUrl, {
         localMedia,
         displayName,
@@ -44,11 +47,20 @@ const Room = ({ roomUrl, localMedia, displayName, isHost }: RoomProps) => {
         knock,
         rejectWaitingParticipant,
         // sendChatMessage,
-        // toggleCamera,
+        toggleCamera,
+        toggleMicrophone,
         startScreenshare,
         stopScreenshare,
     } = roomConnection.actions;
     const { VideoView } = roomConnection.components;
+
+    useEffect(() => {
+        setIsCameraEnabled(localParticipant?.isVideoEnabled || false);
+    }, [localParticipant?.isVideoEnabled]);
+
+    useEffect(() => {
+        setIsMicrophoneEnabled(localParticipant?.isAudioEnabled || false);
+    }, [localParticipant?.isAudioEnabled]);
 
     if (roomConnectionStatus === "room_locked") {
         return <WaitingArea knock={knock} />;
@@ -76,6 +88,29 @@ const Room = ({ roomUrl, localMedia, displayName, isHost }: RoomProps) => {
                 <button data-testid="stopScreenshareBtn" onClick={() => stopScreenshare()}>
                     Stop screen share
                 </button>
+                {localParticipant && (
+                    <>
+                        <button
+                            data-testid="toggleCameraBtn"
+                            onClick={() => {
+                                toggleCamera(!isCameraEnabled);
+                                setIsCameraEnabled(!isCameraEnabled);
+                            }}
+                        >
+                            {isCameraEnabled ? "Disable" : "Enable"} camera
+                        </button>
+                        <button
+                            data-testid="toggleMicrophoneBtn"
+                            disabled={!localParticipant.stream?.getAudioTracks().length}
+                            onClick={() => {
+                                toggleMicrophone(!isMicrophoneEnabled);
+                                setIsMicrophoneEnabled(!isMicrophoneEnabled);
+                            }}
+                        >
+                            {isMicrophoneEnabled ? "Disable" : "Enable"} microphone
+                        </button>
+                    </>
+                )}
             </div>
             {isHost && waitingParticipants.length > 0 && (
                 <div>
@@ -94,16 +129,21 @@ const Room = ({ roomUrl, localMedia, displayName, isHost }: RoomProps) => {
             {remoteParticipants.length > 0 && (
                 <div>
                     <h3>Remote participants ({remoteParticipants.length})</h3>
-                    <div className="RemoteParticipants" data-testid="remote-participant-list">
+                    <div className="RemoteParticipants" data-testid="remoteParticipantList">
                         {remoteParticipants.map((r) => (
-                            <div key={r.id}>
-                                {r.stream && (
+                            <div key={r.id} data-testid="remoteParticipant">
+                                {r.stream && r.isVideoEnabled ? (
                                     <VideoView
                                         style={{ width: "250px" }}
                                         stream={r.stream}
-                                        data-testid="remoteParticipant"
+                                        data-testid="remoteParticipantVideo"
                                     />
+                                ) : (
+                                    <div className="NoStreamCell">Participant's camera is off</div>
                                 )}
+                                <div data-testid="remoteParticipantAudioStatus">
+                                    Audio is {r.isAudioEnabled ? "on" : "off"}
+                                </div>
                                 <p>{r.displayName}</p>
                             </div>
                         ))}
@@ -125,10 +165,12 @@ const Room = ({ roomUrl, localMedia, displayName, isHost }: RoomProps) => {
                 </div>
             )}
             {localParticipant && (
-                <div className="LocalParticipant">
+                <div className="LocalParticipant" data-testid="localParticipant">
                     <h3>Local Participant</h3>
-                    {localParticipant.stream && (
+                    {localParticipant.stream && isCameraEnabled ? (
                         <VideoView style={{ width: "200px" }} stream={localParticipant.stream} />
+                    ) : (
+                        <div className="NoStreamCell">Your camera is off</div>
                     )}
                     <p>{localParticipant.displayName} (you)</p>
                 </div>
