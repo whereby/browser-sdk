@@ -12,6 +12,25 @@ const WaitingArea = ({ knock }: { knock: () => void }) => {
     );
 };
 
+const ChatInput = ({ sendChatMessage }: { sendChatMessage: (message: string) => void }) => {
+    const [message, setMessage] = useState("");
+    return (
+        <div>
+            <input type="text" value={message} onChange={(e) => setMessage(e.target.value)} data-testid="chatInput" />
+            <button
+                data-testid="sendChatMessageBtn"
+                onClick={() => {
+                    if (!message) return;
+                    sendChatMessage(message);
+                    setMessage("");
+                }}
+            >
+                Send
+            </button>
+        </div>
+    );
+};
+
 type LocalMediaRef = ReturnType<typeof useLocalMedia>;
 
 type RoomProps = {
@@ -36,7 +55,7 @@ const Room = ({ roomUrl, localMedia, displayName, isHost }: RoomProps) => {
         localParticipant,
         // isJoining,
         roomConnectionStatus,
-        // chatMessages,
+        chatMessages,
         // mostRecentChatMessage,
         cloudRecording,
         streaming,
@@ -46,7 +65,7 @@ const Room = ({ roomUrl, localMedia, displayName, isHost }: RoomProps) => {
         acceptWaitingParticipant,
         knock,
         rejectWaitingParticipant,
-        // sendChatMessage,
+        sendChatMessage,
         toggleCamera,
         toggleMicrophone,
         startScreenshare,
@@ -76,6 +95,8 @@ const Room = ({ roomUrl, localMedia, displayName, isHost }: RoomProps) => {
             <dl>
                 <dt>Room Connection Status</dt>
                 <dd data-testid="roomConnectionStatus">{roomConnectionStatus}</dd>
+                <dt>Local client ID</dt>
+                <dd data-testid="localClientId">{localParticipant?.id || "N/A"}</dd>
                 <dt>Cloud recording status</dt>
                 <dd data-testid="cloudRecordingStatus">{cloudRecording?.status || "N/A"}</dd>
                 <dt>Streaming status</dt>
@@ -175,6 +196,24 @@ const Room = ({ roomUrl, localMedia, displayName, isHost }: RoomProps) => {
                     <p>{localParticipant.displayName} (you)</p>
                 </div>
             )}
+
+            <div data-testid="chatMessages">
+                {chatMessages.length > 0 ? (
+                    <div>
+                        <h3>Chat messages ({chatMessages.length})</h3>
+                        <ul>
+                            {chatMessages.map((m) => (
+                                <li key={m.timestamp}>
+                                    {m.senderId}: {m.text}
+                                </li>
+                            ))}
+                        </ul>
+                    </div>
+                ) : (
+                    <p>No chat messages</p>
+                )}
+            </div>
+            <ChatInput sendChatMessage={sendChatMessage} />
         </div>
     );
 };
