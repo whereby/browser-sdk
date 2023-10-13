@@ -117,7 +117,7 @@ define("WherebyEmbed", {
         this._postCommand("toggle_screenshare", [enabled]);
     },
     onmessage({ origin, data }: { origin: string; data: { type: string; payload: string } }) {
-        if (origin !== this.url.origin) return;
+        if (origin !== this.url?.origin) return;
         const { type, payload: detail } = data;
         this.dispatchEvent(new CustomEvent(type, { detail }));
     },
