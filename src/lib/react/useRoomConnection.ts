@@ -483,6 +483,13 @@ export default function useRoomConnection(
                     payload: { participantId, displayName },
                 });
             }),
+            createEventListener("waiting_participant_left", (e) => {
+                const { participantId } = e.detail;
+                dispatch({
+                    type: "WAITING_PARTICIPANT_LEFT",
+                    payload: { participantId },
+                });
+            }),
         ],
         []
     );
