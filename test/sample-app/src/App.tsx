@@ -5,7 +5,7 @@ import "./App.css";
 const WaitingArea = ({ knock }: { knock: () => void }) => {
     return (
         <div>
-            <h1>Waiting Area</h1>
+            <h1>Room locked</h1>
             <p>Waiting for host to let you in</p>
             <button onClick={knock}>Knock</button>
         </div>
@@ -67,7 +67,7 @@ const Room = ({ roomUrl, localMedia, displayName, isHost }: RoomProps) => {
     }
 
     if (roomConnectionStatus === "rejected") {
-        return <p>You have been rejected access</p>;
+        return <p data-testid="knockRejectedMessage">You have been rejected access</p>;
     }
 
     return (
@@ -114,12 +114,12 @@ const Room = ({ roomUrl, localMedia, displayName, isHost }: RoomProps) => {
             </div>
             {isHost && waitingParticipants.length > 0 && (
                 <div>
-                    <h3>Participants in Waiting Area ({waitingParticipants.length})</h3>
+                    <h3>Knocking participants ({waitingParticipants.length})</h3>
                     <ul>
                         {waitingParticipants.map((a) => (
-                            <li key={a.id}>
+                            <li key={a.id} data-testid="knockRequest">
                                 <p>{a.displayName}</p>
-                                <button onClick={() => acceptWaitingParticipant(a.id)}>Approve</button>
+                                <button onClick={() => acceptWaitingParticipant(a.id)}>Let in</button>
                                 <button onClick={() => rejectWaitingParticipant(a.id)}>Reject</button>
                             </li>
                         ))}
