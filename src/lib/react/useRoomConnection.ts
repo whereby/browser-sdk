@@ -10,6 +10,10 @@ import RoomConnection, {
     StreamingState,
 } from "../RoomConnection";
 import { LocalParticipant, RemoteParticipant, Screenshare, WaitingParticipant } from "../RoomParticipant";
+import { createServices } from "../Services";
+import { create } from "../redux/store";
+import { doSignalSocketConnect } from "../redux/slices/signalConnection";
+import { doAppJoin } from "../redux/slices/app";
 
 type RemoteParticipantState = Omit<RemoteParticipant, "updateStreamState">;
 
@@ -378,13 +382,16 @@ export default function useRoomConnection(
     roomUrl: string,
     roomConnectionOptions: UseRoomConnectionOptions
 ): RoomConnectionRef {
-    const [roomConnection] = useState<RoomConnection>(
-        () =>
-            new RoomConnection(roomUrl, {
-                ...roomConnectionOptions,
-                localMedia: roomConnectionOptions?.localMedia?._ref || undefined,
-            })
-    );
+    const [store] = useState(() => {
+        const services = createServices(roomUrl);
+        return create({ injectServices: services });
+    });
+
+    React.useEffect(() => {
+        if (!store) return;
+        store.dispatch(doAppJoin());
+    }, [store]);
+
     const [state, dispatch] = useReducer(reducer, initialState);
 
     type EventListener<K extends keyof RoomEventsMap> = {
@@ -487,57 +494,57 @@ export default function useRoomConnection(
         []
     );
 
-    useEffect(() => {
-        eventListeners.forEach(({ eventName, listener }) => {
-            roomConnection.addEventListener(eventName, listener);
-        });
+    // useEffect(() => {
+    //     eventListeners.forEach(({ eventName, listener }) => {
+    //         roomConnection.addEventListener(eventName, listener);
+    //     });
 
-        roomConnection.join();
+    //     roomConnection.join();
 
-        return () => {
-            eventListeners.forEach(({ eventName, listener }) => {
-                roomConnection.removeEventListener(eventName, listener);
-            });
-            roomConnection.leave();
-        };
-    }, []);
+    //     return () => {
+    //         eventListeners.forEach(({ eventName, listener }) => {
+    //             roomConnection.removeEventListener(eventName, listener);
+    //         });
+    //         roomConnection.leave();
+    //     };
+    // }, []);
 
     return {
         state,
         actions: {
             knock: () => {
-                roomConnection.knock();
+                // roomConnection.knock();
             },
             sendChatMessage: (text) => {
-                roomConnection.sendChatMessage(text);
+                // roomConnection.sendChatMessage(text);
             },
             setDisplayName: (displayName) => {
-                roomConnection.setDisplayName(displayName);
+                // roomConnection.setDisplayName(displayName);
                 dispatch({ type: "LOCAL_CLIENT_DISPLAY_NAME_CHANGED", payload: { displayName } });
             },
             toggleCamera: (enabled) => {
-                roomConnection.localMedia.toggleCameraEnabled(enabled);
+                // roomConnection.localMedia.toggleCameraEnabled(enabled);
             },
             toggleMicrophone: (enabled) => {
-                roomConnection.localMedia.toggleMichrophoneEnabled(enabled);
+                // roomConnection.localMedia.toggleMichrophoneEnabled(enabled);
             },
             acceptWaitingParticipant: (participantId) => {
-                roomConnection.acceptWaitingParticipant(participantId);
+                // roomConnection.acceptWaitingParticipant(participantId);
             },
             rejectWaitingParticipant: (participantId) => {
-                roomConnection.rejectWaitingParticipant(participantId);
+                // roomConnection.rejectWaitingParticipant(participantId);
             },
             startScreenshare: () => {
                 dispatch({ type: "LOCAL_SCREENSHARE_STARTING" });
 
                 try {
-                    roomConnection.startScreenshare();
+                    // roomConnection.startScreenshare();
                 } catch (error) {
                     dispatch({ type: "LOCAL_SCREENSHARE_START_ERROR", payload: error });
                 }
             },
             stopScreenshare: () => {
-                roomConnection.stopScreenshare();
+                // roomConnection.stopScreenshare();
             },
         },
         components: {
@@ -554,15 +561,15 @@ export default function useRoomConnection(
                             width: number;
                             height: number;
                         }) => {
-                            roomConnection.updateStreamResolution({
-                                streamId: stream.id,
-                                width,
-                                height,
-                            });
+                            // roomConnection.updateStreamResolution({
+                            //     streamId: stream.id,
+                            //     width,
+                            //     height,
+                            // });
                         },
                     })
                 ),
         },
-        _ref: roomConnection,
+        _ref: undefined as any,
     };
 }
