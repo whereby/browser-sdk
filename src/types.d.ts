@@ -93,6 +93,7 @@ declare module "@whereby/jslib-media/src/utils/ServerSocket" {
         reconnectionDelay?: number;
         reconnectoinDelayMax?: number;
         timeout?: number;
+        autoConnect?: boolean;
     }
 
     interface SocketManager {
