@@ -1,7 +1,10 @@
-import React, { useState } from "react";
-import { useLocalMedia } from "../lib/react";
+import React, { useEffect, useRef, useState } from "react";
+import { useLocalMedia, useRoomConnection, VideoView } from "../lib/react";
+import { LocalMediaRef } from "../lib/react/useLocalMedia";
 import PrecallExperience from "./components/PrecallExperience";
 import VideoExperience from "./components/VideoExperience";
+import fakeWebcamFrame from "../lib/utils/fakeWebcamFrame";
+import fakeAudioStream from "../lib/utils/fakeAudioStream";
 import "./styles.css";
 
 export default {
@@ -42,6 +45,88 @@ export const LocalMediaOnly = () => {
     return (
         <div>
             <PrecallExperience {...localMedia} />
+        </div>
+    );
+};
+
+function CanvasInRoom({ localMedia, roomUrl }: { localMedia: LocalMediaRef; roomUrl: string }) {
+    const { state } = useRoomConnection(roomUrl, { localMedia });
+
+    return <div>Room connection status: {state.roomConnectionStatus}</div>;
+}
+
+function LocalMediaWithCanvasStream_({ canvasStream, roomUrl }: { canvasStream: MediaStream; roomUrl: string }) {
+    const [shouldConnect, setShouldConnect] = useState(false);
+
+    const localMedia = useLocalMedia(canvasStream);
+
+    return (
+        <div>
+            {localMedia.state.localStream && (
+                <div>
+                    <h3>Connect to room</h3>
+                    <h4>Local media (self-view)</h4>
+                    <VideoView stream={localMedia.state.localStream} />
+                </div>
+            )}
+            <button onClick={() => setShouldConnect(!shouldConnect)}>
+                {shouldConnect ? "Disconnect" : "Connect to room"}
+            </button>
+            {shouldConnect && <CanvasInRoom localMedia={localMedia} roomUrl={roomUrl} />}
+        </div>
+    );
+}
+
+export const LocalMediaWithFakeMediaStream = ({ roomUrl }: { roomUrl: string }) => {
+    const canvas = useRef<HTMLCanvasElement>(null);
+    const [localStream, setLocalStream] = useState<MediaStream | null>(null);
+    const [isAudioReady, setIsAudioReady] = useState(false);
+
+    useEffect(() => {
+        if (canvas.current) {
+            fakeWebcamFrame(canvas.current);
+        }
+    }, [canvas]);
+
+    useEffect(() => {
+        setTimeout(() => {
+            if (canvas.current) {
+                setLocalStream(canvas.current.captureStream());
+            }
+        }, 1000);
+    }, [canvas]);
+
+    function addAudioTrack() {
+        if (localStream) {
+            const audioStream = fakeAudioStream();
+            localStream.addTrack(audioStream.getAudioTracks()[0]);
+            setLocalStream(localStream.clone());
+            setIsAudioReady(true);
+        }
+    }
+
+    return (
+        <div>
+            {localStream && isAudioReady && (
+                <div>
+                    <LocalMediaWithCanvasStream_ canvasStream={localStream} roomUrl={roomUrl} />{" "}
+                </div>
+            )}
+            <div style={{ display: localStream && isAudioReady ? "none" : "block" }}>
+                <h3>Set up fake media stream</h3>
+                <p>
+                    We create a fake webcam stream using an HTML canvas element and a fake audio stream using Web Audio
+                    API.
+                </p>
+                <p>Adding the audio track needs a user interaction, so please click the button below.</p>
+                {localStream ? (
+                    <button onClick={addAudioTrack}>Add fake audio track</button>
+                ) : (
+                    <div>Waiting for canvas to be loaded</div>
+                )}
+                <br />
+                <canvas ref={canvas} id="canvas" width="640" height="360"></canvas>
+            </div>
         </div>
     );
 };
