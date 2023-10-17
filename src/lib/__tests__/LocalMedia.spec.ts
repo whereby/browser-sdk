@@ -24,6 +24,42 @@ Object.defineProperty(navigator, "mediaDevices", {
 const mockedMediaDevices = jest.mocked(navigator.mediaDevices);
 
 describe("LocalMedia", () => {
+    describe("constructor", () => {
+        describe("when passing constraints", () => {
+            it("`isCameraEnabled` should be false", () => {
+                const localMedia = new LocalMedia({ audio: true, video: true });
+
+                expect(localMedia.isCameraEnabled()).toEqual(false);
+            });
+
+            it("`isMicrophoneEnabled should be false`", () => {
+                const localMedia = new LocalMedia({ audio: true, video: true });
+
+                expect(localMedia.isMicrophoneEnabled()).toEqual(false);
+            });
+        });
+
+        describe("when passing an existing stream with enabled tracks", () => {
+            let localMedia: LocalMedia;
+
+            beforeEach(() => {
+                const mediaStream = new MockMediaStream([
+                    new MockMediaStreamTrack("audio"),
+                    new MockMediaStreamTrack("video"),
+                ]);
+                localMedia = new LocalMedia(mediaStream);
+            });
+
+            it("`isCameraEnabled` should be true", () => {
+                expect(localMedia.isCameraEnabled()).toEqual(true);
+            });
+
+            it("`isMicrophoneEnabled` should be true", () => {
+                expect(localMedia.isMicrophoneEnabled()).toEqual(true);
+            });
+        });
+    });
+
     describe("instance", () => {
         let localMedia: LocalMedia;
         let mediaConstraints: MediaStreamConstraints;
@@ -102,21 +138,35 @@ describe("LocalMedia", () => {
             });
 
             describe("when getUserMedia succeeds", () => {
-                it("should return a stream with tracks", async () => {
-                    const audioTrack = new MediaStreamTrack();
-                    const videoTrack = new MediaStreamTrack();
-                    mockedMediaDevices.getUserMedia.mockResolvedValueOnce(new MediaStream([audioTrack, videoTrack]));
+                let audioTrack: MediaStreamTrack;
+                let videoTrack: MediaStreamTrack;
 
+                beforeEach(() => {
+                    audioTrack = new MockMediaStreamTrack("audio");
+                    videoTrack = new MockMediaStreamTrack("video");
+                    mockedMediaDevices.getUserMedia.mockResolvedValueOnce(new MediaStream([audioTrack, videoTrack]));
+                });
+
+                it("should return a stream with tracks", async () => {
                     const stream = await localMedia.start();
 
-                    expect(!!stream.getTracks().find((t) => t === audioTrack)).toEqual(true);
-                    expect(!!stream.getTracks().find((t) => t === videoTrack)).toEqual(true);
+                    expect(stream.getAudioTracks()[0]).toEqual(audioTrack);
+                    expect(stream.getVideoTracks()[0]).toEqual(videoTrack);
+                });
+
+                it("`isCameraEnabled` should be true", async () => {
+                    await localMedia.start();
+
+                    expect(localMedia.isCameraEnabled()).toEqual(true);
+                });
+
+                it("`isMicrophoneEnabled` should be true", async () => {
+                    await localMedia.start();
+
+                    expect(localMedia.isMicrophoneEnabled()).toEqual(true);
                 });
 
                 it("should dispatch 'stream_updated' containing stream with tracks", async () => {
-                    const audioTrack = new MediaStreamTrack();
-                    const videoTrack = new MediaStreamTrack();
-                    mockedMediaDevices.getUserMedia.mockResolvedValueOnce(new MediaStream([audioTrack, videoTrack]));
                     const eventHandler = jest.fn();
                     localMedia.addEventListener("stream_updated", eventHandler);
 
@@ -129,8 +179,8 @@ describe("LocalMedia", () => {
 
         describe("stop()", () => {
             it("should stop all tracks", async () => {
-                const audioTrack = new MediaStreamTrack();
-                const videoTrack = new MediaStreamTrack();
+                const audioTrack = new MockMediaStreamTrack("audio");
+                const videoTrack = new MockMediaStreamTrack("video");
                 mockedMediaDevices.getUserMedia.mockResolvedValueOnce(new MediaStream([audioTrack, videoTrack]));
 
                 await localMedia.start();
@@ -138,6 +188,112 @@ describe("LocalMedia", () => {
 
                 expect(audioTrack.stop).toHaveBeenCalled();
                 expect(videoTrack.stop).toHaveBeenCalled();
+            });
+        });
+
+        describe("toggleCameraEnabled()", () => {
+            let localMedia: LocalMedia;
+
+            describe("when camera is enabled", () => {
+                let audioTrack: MediaStreamTrack;
+                let videoTrack: MediaStreamTrack;
+
+                beforeEach(async () => {
+                    audioTrack = new MockMediaStreamTrack("audio");
+                    videoTrack = new MockMediaStreamTrack("video");
+                    mockedMediaDevices.getUserMedia.mockResolvedValueOnce(new MediaStream([audioTrack, videoTrack]));
+                    localMedia = new LocalMedia({ audio: true, video: true });
+
+                    await localMedia.start();
+                });
+
+                [undefined, false].forEach((val) => {
+                    describe(`when called with ${val}`, () => {
+                        it("should stop the existing video track", async () => {
+                            await localMedia.toggleCameraEnabled(val);
+
+                            expect(videoTrack.stop).toHaveBeenCalled();
+                        });
+
+                        it("`isCameraEnabled()` should be false", async () => {
+                            await localMedia.toggleCameraEnabled(val);
+
+                            expect(localMedia.isCameraEnabled()).toEqual(false);
+                        });
+
+                        it("should dispatch `camera_enabled`", async () => {
+                            const eventListener = jest.fn();
+                            localMedia.addEventListener("camera_enabled", eventListener);
+
+                            await localMedia.toggleCameraEnabled(val);
+
+                            expect(eventListener).toHaveBeenCalledWith(
+                                new CustomEvent("camera_enable", { detail: { enabled: false } })
+                            );
+                        });
+
+                        it("should dispatch `stopresumevideo` on stream", async () => {
+                            const eventListener = jest.fn();
+                            localMedia.stream.addEventListener("stopresumevideo", eventListener);
+
+                            await localMedia.toggleCameraEnabled(val);
+
+                            expect(eventListener).toHaveBeenCalledWith(
+                                new CustomEvent("stopresumevideo", { detail: { track: videoTrack, enable: false } })
+                            );
+                        });
+                    });
+                });
+            });
+
+            describe("when camera is disabled", () => {
+                let newVideoTrack: MediaStreamTrack;
+
+                beforeEach(async () => {
+                    newVideoTrack = new MockMediaStreamTrack("video");
+                    mockedMediaDevices.getUserMedia.mockResolvedValueOnce(new MockMediaStream([]));
+                    mockedMediaDevices.getUserMedia.mockResolvedValueOnce(new MockMediaStream([newVideoTrack]));
+                    localMedia = new LocalMedia({ video: false });
+                    await localMedia.start();
+                });
+
+                [undefined, true].forEach((val) => {
+                    describe(`when called with ${val}`, () => {
+                        it("should call getUserMedia", async () => {
+                            await localMedia.toggleCameraEnabled(val);
+
+                            expect(mockMediaDevices.getUserMedia).toBeCalled();
+                        });
+
+                        it("should add new video track to stream", async () => {
+                            await localMedia.toggleCameraEnabled(val);
+
+                            expect(localMedia.stream.getVideoTracks()[0]).toEqual(newVideoTrack);
+                        });
+
+                        it("should dispatch `camera_enabled`", async () => {
+                            const eventListener = jest.fn();
+                            localMedia.addEventListener("camera_enabled", eventListener);
+
+                            await localMedia.toggleCameraEnabled(val);
+
+                            expect(eventListener).toHaveBeenCalledWith(
+                                new CustomEvent("camera_enable", { detail: { enabled: true } })
+                            );
+                        });
+
+                        it("should dispatch `stopresumevideo` on stream", async () => {
+                            const eventListener = jest.fn();
+                            localMedia.stream.addEventListener("stopresumevideo", eventListener);
+
+                            await localMedia.toggleCameraEnabled(val);
+
+                            expect(eventListener).toHaveBeenCalledWith(
+                                new CustomEvent("stopresumevideo", { detail: { track: newVideoTrack, enable: true } })
+                            );
+                        });
+                    });
+                });
             });
         });
     });

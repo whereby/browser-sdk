@@ -44,8 +44,18 @@ const TypedLocalMediaEventTarget = EventTarget as { new (): LocalMediaEventTarge
 export default class LocalMedia extends TypedLocalMediaEventTarget {
     private _constraints: MediaStreamConstraints | null = null;
     public _rtcManagers: RtcManager[];
+
     public stream: MediaStream;
     public screenshareStream?: MediaStream;
+
+    // Camera state
+    private _cameraEnabled: boolean;
+    private _currentCameraDeviceId: string | undefined;
+    private _isTogglingCameraEnabled = false;
+
+    // Mircophone state
+    private _microphoneEnabled: boolean;
+    private _currentMicrophoneDeviceId: string | undefined;
 
     constructor(constraintsOrStream: MediaStreamConstraints | MediaStream) {
         super();
@@ -56,6 +66,9 @@ export default class LocalMedia extends TypedLocalMediaEventTarget {
             this._constraints = constraintsOrStream;
             this.stream = new MediaStream();
         }
+
+        this._cameraEnabled = this.stream.getVideoTracks()[0]?.enabled || false;
+        this._microphoneEnabled = this.stream.getAudioTracks()[0]?.enabled || false;
 
         this._rtcManagers = [];
         this.screenshareStream = undefined;
@@ -72,31 +85,80 @@ export default class LocalMedia extends TypedLocalMediaEventTarget {
     }
 
     getCameraDeviceId() {
-        return this.stream.getVideoTracks()[0]?.getSettings().deviceId;
+        return this._currentCameraDeviceId;
     }
 
     getMicrophoneDeviceId() {
-        return this.stream.getAudioTracks()[0]?.getSettings().deviceId;
+        return this._currentMicrophoneDeviceId;
     }
 
     isCameraEnabled() {
-        return !!this.stream.getVideoTracks()[0]?.enabled;
+        return this._cameraEnabled;
     }
 
     isMicrophoneEnabled() {
-        return !!this.stream.getAudioTracks()[0]?.enabled;
+        return this._microphoneEnabled;
     }
 
-    toggleCameraEnabled(enabled?: boolean) {
-        const videoTrack = this.stream.getVideoTracks()[0];
-        if (!videoTrack) {
+    async toggleCameraEnabled(enabled?: boolean) {
+        if (this._isTogglingCameraEnabled) {
             return;
         }
 
-        const newValue = enabled ?? !videoTrack.enabled;
-        videoTrack.enabled = newValue;
+        let track = this.stream.getVideoTracks()[0];
+        const newValue = enabled ?? !track?.enabled;
+        if (this._cameraEnabled === newValue) {
+            return;
+        }
 
-        this.dispatchEvent(new CustomEvent("camera_enabled", { detail: { enabled: newValue } }));
+        this._cameraEnabled = newValue;
+        this.dispatchEvent(new CustomEvent("camera_enabled", { detail: { enabled: this._cameraEnabled } }));
+
+        // Only stop tracks if we fully own the media stream
+        const shouldStopTrack = !!this._constraints;
+
+        this._isTogglingCameraEnabled = true;
+
+        try {
+            if (this._cameraEnabled) {
+                if (track) {
+                    // We have existing video track, just enable it
+                    track.enabled = true;
+                } else {
+                    // We dont have video track, get new one
+                    const newStream = await navigator.mediaDevices.getUserMedia({
+                        video: this._currentCameraDeviceId
+                            ? { deviceId: { exact: this._currentCameraDeviceId } }
+                            : true,
+                    });
+
+                    track = newStream.getVideoTracks()[0];
+                    if (track) {
+                        this.stream.addTrack(track);
+                    }
+                }
+            } else {
+                if (!track) {
+                    return;
+                }
+
+                track.enabled = false;
+
+                if (shouldStopTrack) {
+                    track.stop();
+                    this.stream.removeTrack(track);
+                }
+            }
+
+            // Dispatch event on stream to allow RTC layer effects
+            this.stream.dispatchEvent(
+                new CustomEvent("stopresumevideo", { detail: { track, enable: this._cameraEnabled } })
+            );
+        } catch (error) {
+            // TODO: Update error state
+        }
+
+        this._isTogglingCameraEnabled = false;
     }
 
     toggleMichrophoneEnabled(enabled?: boolean) {
@@ -105,10 +167,11 @@ export default class LocalMedia extends TypedLocalMediaEventTarget {
             return;
         }
 
-        const newValue = enabled ?? !audioTrack.enabled;
-        audioTrack.enabled = newValue;
+        // Update internal state and dispatch event early
+        this._microphoneEnabled = enabled ?? !audioTrack.enabled;
+        this.dispatchEvent(new CustomEvent("microphone_enabled", { detail: { enabled: this._microphoneEnabled } }));
 
-        this.dispatchEvent(new CustomEvent("microphone_enabled", { detail: { enabled: newValue } }));
+        audioTrack.enabled = this._microphoneEnabled;
     }
 
     async startScreenshare() {
@@ -126,7 +189,8 @@ export default class LocalMedia extends TypedLocalMediaEventTarget {
     }
 
     async setCameraDevice(deviceId: string) {
-        const newStream = await navigator.mediaDevices.getUserMedia({ video: { deviceId } });
+        this._currentCameraDeviceId = deviceId;
+        const newStream = await navigator.mediaDevices.getUserMedia({ video: { deviceId: { exact: deviceId } } });
         const newVideoTrack = newStream.getVideoTracks()[0];
 
         if (newVideoTrack) {
@@ -150,6 +214,7 @@ export default class LocalMedia extends TypedLocalMediaEventTarget {
     }
 
     async setMicrophoneDevice(deviceId: string) {
+        this._currentMicrophoneDeviceId = deviceId;
         const newStream = await navigator.mediaDevices.getUserMedia({ audio: { deviceId } });
         const newAudioTrack = newStream.getAudioTracks()[0];
         const oldAudioTrack = this.stream.getAudioTracks()[0];
@@ -199,7 +264,20 @@ export default class LocalMedia extends TypedLocalMediaEventTarget {
     async start() {
         if (this._constraints) {
             const newStream = await navigator.mediaDevices.getUserMedia(this._constraints);
-            newStream.getTracks().forEach((t) => this.stream.addTrack(t));
+
+            const cameraTrack = newStream.getVideoTracks()[0];
+            if (cameraTrack) {
+                this._cameraEnabled = cameraTrack.enabled;
+                this._currentCameraDeviceId = cameraTrack.getSettings().deviceId;
+                this.stream.addTrack(cameraTrack);
+            }
+
+            const microphoneTrack = newStream.getAudioTracks()[0];
+            if (microphoneTrack) {
+                this._microphoneEnabled = microphoneTrack.enabled;
+                this._currentMicrophoneDeviceId = microphoneTrack.getSettings().deviceId;
+                this.stream.addTrack(microphoneTrack);
+            }
         }
 
         this._updateDeviceList();
