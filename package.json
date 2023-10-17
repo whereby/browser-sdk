@@ -62,6 +62,8 @@
         "@typescript-eslint/eslint-plugin": "^5.46.1",
         "@typescript-eslint/parser": "^5.46.1",
         "babel-loader": "^8.2.5",
+        "dotenv": "^16.3.1",
+        "dotenv-run-script": "^0.4.1",
         "esbuild": "^0.19.4",
         "esbuild-plugin-replace": "^1.4.0",
         "eslint": "^8.29.0",
