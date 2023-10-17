@@ -1882,10 +1882,10 @@
   dependencies:
     "@types/node" "*"
 
-"@types/debug@^4.1.8":
-  version "4.1.9"
-  resolved "https://registry.yarnpkg.com/@types/debug/-/debug-4.1.9.tgz#906996938bc672aaf2fb8c0d3733ae1dda05b005"
-  integrity sha512-8Hz50m2eoS56ldRlepxSBa6PWEVCtzUo/92HgLc2qTMnotJNIm7xP+UZhyWoYsyOdd5dxZ+NZLb24rsKyFs2ow==
+"@types/debug@^4.1.10":
+  version "4.1.10"
+  resolved "https://registry.yarnpkg.com/@types/debug/-/debug-4.1.10.tgz#f23148a6eb771a34c466a4fc28379d8101e84494"
+  integrity sha512-tOSCru6s732pofZ+sMv9o4o3Zc+Sa8l3bxd/tweTQudFn06vAzb13ZX46Zi6m6EJ+RUbRTHvgQJ1gBtSgkaUYA==
   dependencies:
     "@types/ms" "*"
 
@@ -2413,7 +2413,7 @@
     events "^3.3.0"
     heresy "^1.0.4"
 
-"@whereby/jslib-media@whereby/jslib-media.git#1.3.1":
+"@whereby/jslib-media@github:whereby/jslib-media#1.3.1":
   version "1.3.1"
   resolved "https://codeload.github.com/whereby/jslib-media/tar.gz/d9ed057b7848da6d9916eda911f8f2053780344b"
   dependencies:
@@ -6610,11 +6610,11 @@ media-typer@0.3.0:
   integrity sha512-dq+qelQ9akHpcOl/gUVRTxVIOkAJ1wR3QAvb4RsVjS8oVoFjDGTc679wJYmUmknUF5HwMLOgb5O+a3KxfWapPQ==
 
 mediasoup-client@^3.6.80:
-  version "3.6.101"
-  resolved "https://registry.yarnpkg.com/mediasoup-client/-/mediasoup-client-3.6.101.tgz#9950f96bce0a4654c7bb1cec5cb133c9b68e3b2b"
-  integrity sha512-EreP7qnozEUsQiS0ErpqsG55f3RIWv/PvcxDh4N2SxR+Uxgg+zGLB/+nVFVEx+4IIZZt/isK3YvxAI7Q8L7U0Q==
+  version "3.6.102"
+  resolved "https://registry.yarnpkg.com/mediasoup-client/-/mediasoup-client-3.6.102.tgz#b0a86699f69d71f9e3bcc0c496a47b05dea6f76d"
+  integrity sha512-C388Deb9OcVxoL+4g+zLHFzv8/OH5KNESQEln8SyKa2Afd28PuTlEtX7xkC22Bxx0xlN5VV7ivYP8+56jhVZMA==
   dependencies:
-    "@types/debug" "^4.1.8"
+    "@types/debug" "^4.1.10"
     awaitqueue "^3.0.1"
     debug "^4.3.4"
     events "^3.3.0"
