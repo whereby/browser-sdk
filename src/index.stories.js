@@ -14,6 +14,7 @@ export default {
         displayName: { control: "text", description: "The name to use for the local participant" },
         embed: { control: "boolean" },
         emptyRoomInvitation: { control: "boolean" },
+        externalId: { control: "text", description: "An external id to use for the local participant" },
         floatSelf: { control: "boolean" },
         help: { control: "boolean" },
         leaveButton: { control: "boolean" },
@@ -40,6 +41,7 @@ const WherebyEmbed = ({
     chat,
     displayName,
     emptyRoomInvitation,
+    externalId,
     floatSelf,
     help,
     leaveButton,
@@ -62,6 +64,7 @@ const WherebyEmbed = ({
     el.setAttribute("chat", offOn(chat));
     el.setAttribute("displayName", displayName);
     el.setAttribute("emptyRoomInvitation", emptyRoomInvitation);
+    el.setAttribute("externalId", externalId);
     el.setAttribute("floatSelf", offOn(floatSelf));
     el.setAttribute("help", offOn(help));
     el.setAttribute("leaveButton", offOn(leaveButton));
@@ -89,6 +92,7 @@ Primary.args = {
     chat: true,
     displayName: "Your name",
     emptyRoomInvitation: true,
+    externalId: null,
     floatSelf: false,
     help: true,
     leaveButton: true,
