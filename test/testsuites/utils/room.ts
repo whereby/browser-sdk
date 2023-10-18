@@ -102,10 +102,12 @@ async function deleteTransientRoom(meetingId: string) {
 }
 
 async function joinRoom({
+    expectLockScreen,
     page,
     roomUrl,
     withFakeAudioStream,
 }: {
+    expectLockScreen?: boolean;
     page: Page;
     roomUrl: string;
     withFakeAudioStream?: boolean;
@@ -123,8 +125,12 @@ async function joinRoom({
     }
     await page.getByRole("button", { name: "Enter" }).click();
 
-    await expect(page.locator("h1")).toContainText(/Room/);
-    await expect(page.locator("dd[data-testid='roomConnectionStatus']")).toContainText("connected");
+    if (expectLockScreen) {
+        await expect(page.locator("h1")).toContainText(/Room locked/);
+    } else {
+        await expect(page.locator("h1")).toContainText(/Room/);
+        await expect(page.locator("dd[data-testid='roomConnectionStatus']")).toContainText("connected");
+    }
 }
 
 export { createTransientRoom, deleteTransientRoom, joinRoom };
