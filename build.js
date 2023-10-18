@@ -1,6 +1,6 @@
-import { build } from "esbuild";
-import { replace } from "esbuild-plugin-replace";
-import pkg from "./package.json" assert { type: "json" };
+const { build } = require("esbuild");
+const { replace } = require("esbuild-plugin-replace");
+const pkg = require("./package.json");
 
 function makeCdnFilename() {
     const major = pkg.version.split(".")[0];
@@ -14,23 +14,16 @@ function makeCdnFilename() {
     return `v${major}${tag}.js`;
 }
 
-/**
- * we bundle jslib-media because webpack has issues resolving imports from it
- *
- * we bundle events because webpack tries to `require` it in the bundle which
- * causes `Dynamic require of "events" is not supported` when jslib-media imports
- * from mediasoup-client
- * */
-const external = Object.keys(pkg.dependencies)
-    .concat(Object.keys(pkg.peerDependencies))
-    .filter((dep) => !dep.match(/jslib-media|events/));
-
-const sharedConfig = {
+// embedded CDN
+build({
     bundle: true,
-    external,
+    entryPoints: ["src/lib/embed/index.ts"],
+    external: undefined,
     format: "esm",
     minify: process.env.NODE_ENV === "production",
+    outfile: `dist/${makeCdnFilename()}`,
     platform: "browser",
+    packages: undefined,
     plugins: [
         replace({
             __SDK_VERSION__: pkg.version,
@@ -42,20 +35,4 @@ const sharedConfig = {
     ],
     target: ["es6"],
     treeShaking: process.env.NODE_ENV === "production",
-};
-
-// full package
-build({
-    ...sharedConfig,
-    entryPoints: ["src/lib/index.ts"],
-    outfile: "dist/index.esm.js",
-});
-
-// embed with dependencies
-build({
-    ...sharedConfig,
-    external: undefined,
-    packages: undefined,
-    entryPoints: ["src/lib/embed/index.ts"],
-    outfile: `dist/${makeCdnFilename()}`,
 });
