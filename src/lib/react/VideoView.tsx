@@ -4,6 +4,7 @@ import debounce from "../utils/debounce";
 interface VideoViewSelfProps {
     stream: MediaStream;
     muted?: boolean;
+    mirror?: boolean;
     style?: React.CSSProperties;
     onResize?: ({ width, height, stream }: { width: number; height: number; stream: MediaStream }) => void;
 }
@@ -11,7 +12,7 @@ interface VideoViewSelfProps {
 type VideoViewProps = VideoViewSelfProps &
     React.DetailedHTMLProps<React.VideoHTMLAttributes<HTMLVideoElement>, HTMLVideoElement>;
 
-export default ({ muted, stream, onResize, ...rest }: VideoViewProps) => {
+export default ({ muted, mirror = false, stream, onResize, ...rest }: VideoViewProps) => {
     const videoEl = useRef<HTMLVideoElement>(null);
 
     useEffect(() => {
@@ -57,5 +58,13 @@ export default ({ muted, stream, onResize, ...rest }: VideoViewProps) => {
         }
     }, [muted, stream, videoEl]);
 
-    return <video ref={videoEl} autoPlay playsInline {...rest} />;
+    return (
+        <video
+            ref={videoEl}
+            autoPlay
+            playsInline
+            {...rest}
+            style={{ transform: mirror ? "scaleX(-1)" : "none", ...rest.style }}
+        />
+    );
 };
