@@ -48,6 +48,7 @@ define("WherebyEmbed", {
         "groups",
         "virtualBackgroundUrl",
         "avatarUrl",
+        "externalId",
         ...boolAttrs,
     ].map((a) => a.toLowerCase()),
     onattributechanged({ attributeName, oldValue }) {
@@ -109,6 +110,7 @@ define("WherebyEmbed", {
             displayname: displayName,
             lang,
             metadata,
+            externalid: externalId,
             minimal,
             room,
             groups,
@@ -131,6 +133,7 @@ define("WherebyEmbed", {
             ...(displayName && { displayName }),
             ...(lang && { lang: lang }),
             ...(metadata && { metadata: metadata }),
+            ...(externalId && { externalId }),
             ...(groups && { groups: groups }),
             ...(virtualBackgroundUrl && { virtualBackgroundUrl: virtualBackgroundUrl }),
             ...(avatarUrl && { avatarUrl: avatarUrl }),
