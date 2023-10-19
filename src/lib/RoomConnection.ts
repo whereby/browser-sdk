@@ -901,6 +901,18 @@ export default class RoomConnection extends TypedEventTarget {
 
     public async startScreenshare() {
         const screenshareStream = this.localMedia.screenshareStream || (await this.localMedia.startScreenshare());
+        const onEnded = () => {
+            this.stopScreenshare();
+        };
+
+        if ("oninactive" in screenshareStream) {
+            // Chrome
+            screenshareStream.addEventListener("inactive", onEnded);
+        } else {
+            // FF
+            screenshareStream.getVideoTracks()[0]?.addEventListener("ended", onEnded);
+        }
+
         this.rtcManager?.addNewStream(screenshareStream.id, screenshareStream, false, true);
         this.screenshares = [
             ...this.screenshares,
