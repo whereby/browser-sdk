@@ -1,6 +1,8 @@
+*.env
+*.log
+
 dist/
 node_modules/
-*.log
 storybook-static/
 yalc.lock
 .yalc/
