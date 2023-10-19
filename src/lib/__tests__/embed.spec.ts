@@ -30,6 +30,7 @@ describe("@whereby/browser-sdk", () => {
                         "groups",
                         "virtualbackgroundurl",
                         "avatarurl",
+                        "externalid",
                         "audio",
                         "background",
                         "cameraaccess",

@@ -43,6 +43,7 @@ export interface RoomConnectionOptions {
     roomKey?: string;
     logger?: Logger;
     localMedia?: LocalMedia;
+    externalId?: string;
 }
 
 export type ChatMessage = Pick<SignalChatMessage, "senderId" | "timestamp" | "text">;
@@ -260,11 +261,12 @@ export default class RoomConnection extends TypedEventTarget {
     private logger: Logger;
     private _ownsLocalMedia = false;
     private displayName?: string;
+    private externalId?: string;
     private _roomKey: string | null;
 
     constructor(
         roomUrl: string,
-        { displayName, localMedia, localMediaConstraints, logger, roomKey }: RoomConnectionOptions
+        { displayName, localMedia, localMediaConstraints, logger, roomKey, externalId }: RoomConnectionOptions
     ) {
         super();
         this.organizationId = "";
@@ -281,6 +283,7 @@ export default class RoomConnection extends TypedEventTarget {
             warn: noop,
         };
         this.displayName = displayName;
+        this.externalId = externalId;
         this.localMediaConstraints = localMediaConstraints;
         const urls = fromLocation({ host: this.roomUrl.host });
 
@@ -769,6 +772,7 @@ export default class RoomConnection extends TypedEventTarget {
             roomName: this.roomName,
             selfId: "",
             userAgent: `browser-sdk:${sdkVersion || "unknown"}`,
+            externalId: this.externalId,
         });
     }
 
@@ -778,7 +782,6 @@ export default class RoomConnection extends TypedEventTarget {
             return;
         }
 
-        this.logger.log("Joining room");
         this.signalSocket.connect();
         this.roomConnectionStatus = "connecting";
         this.dispatchEvent(
@@ -828,6 +831,7 @@ export default class RoomConnection extends TypedEventTarget {
             organizationId: this.organizationId,
             roomKey: this._roomKey,
             roomName: this.roomName,
+            externalId: this.externalId,
         });
     }
 
