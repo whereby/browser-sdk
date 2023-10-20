@@ -98,6 +98,9 @@ define("WherebyEmbed", {
     toggleChat(enabled) {
         this._postCommand("toggle_chat", [enabled]);
     },
+    togglePip(enabled) {
+        this._postCommand("toggle_pip", [enabled]);
+    },
 
     onmessage({ origin, data }) {
         if (origin !== this.roomUrl.origin) return;
