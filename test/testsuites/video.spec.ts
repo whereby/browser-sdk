@@ -14,14 +14,14 @@ roomModes.forEach((roomMode) => {
         let meetingId: string;
         let roomUrl: string;
 
-        test.beforeEach(async () => {
+        test.beforeAll(async () => {
             ({ meetingId, roomUrl } = await createTransientRoom({
                 isLocked: false,
                 roomMode,
             }));
         });
 
-        test.afterEach(async () => {
+        test.afterAll(async () => {
             await deleteTransientRoom(meetingId);
         });
 
