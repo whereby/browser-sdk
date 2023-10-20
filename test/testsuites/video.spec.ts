@@ -70,8 +70,8 @@ roomModes.forEach((roomMode) => {
                 .getByTestId("remoteParticipantVideo")
                 .evaluate((element: HTMLVideoElement, countFramesFn) => {
                     const countFrames = countFramesFn as CountFramesFunction;
-                    // counts 15 samples in a 1000ms interval.
-                    return countFrames(element, 1000, 15);
+                    // counts 10 samples in a 1000ms interval.
+                    return countFrames(element, 1000, 10);
                 }, countFramesHandle);
             const participant1FrameStatistics = makeFrameStatistics(participant1Samples);
 
