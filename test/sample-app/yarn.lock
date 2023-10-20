@@ -2413,7 +2413,7 @@
     events "^3.3.0"
     heresy "^1.0.4"
 
-"@whereby/jslib-media@github:whereby/jslib-media#1.3.1":
+"@whereby/jslib-media@whereby/jslib-media.git#1.3.1":
   version "1.3.1"
   resolved "https://codeload.github.com/whereby/jslib-media/tar.gz/d9ed057b7848da6d9916eda911f8f2053780344b"
   dependencies:
