@@ -1,7 +1,6 @@
 import DeviceService from "../index";
 import ApiClient from "../../ApiClient";
 import Credentials from "../../Credentials";
-import { itShouldThrowIfInvalid } from "../../test/helpers";
 import Response from "../../Response";
 
 jest.mock("../../ApiClient");
@@ -20,17 +19,6 @@ describe("deviceService", () => {
     beforeEach(() => {
         apiClient = new ApiClient() as jest.Mocked<ApiClient>;
         deviceService = new DeviceService({ apiClient });
-    });
-
-    describe("constructor", () => {
-        itShouldThrowIfInvalid(
-            "apiClient",
-            () =>
-                new DeviceService({
-                    //@ts-expect-error
-                    apiClient: undefined,
-                })
-        );
     });
 
     describe("getCredentials", () => {

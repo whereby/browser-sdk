@@ -3,9 +3,7 @@ import axios, { AxiosError, AxiosRequestConfig, AxiosResponse } from "axios";
 import Response, { ErrorResponseObject } from "./Response";
 import { assertString } from "./parameterAssertUtils";
 
-export type HttpClientRequestConfig =
-    | AxiosRequestConfig
-    | { [key: string]: any };
+export type HttpClientRequestConfig = AxiosRequestConfig | { [key: string]: unknown };
 
 export interface IHttpClient {
     request(url: string, options: HttpClientRequestConfig): Promise<Response>;

@@ -18,7 +18,7 @@ describe("ChromeStorageStore", () => {
     describe("loadOrDefault", () => {
         it("should resolve with the stored object", async () => {
             const savedValue = { mrT: "I pitty the fool" };
-            chromeStorage.get.mockImplementation((key: string, cb: any) => {
+            chromeStorage.get.mockImplementation((key: string, cb: (arg: { [key: string]: unknown }) => void) => {
                 cb({ [storeName]: savedValue });
             });
 
@@ -29,7 +29,7 @@ describe("ChromeStorageStore", () => {
 
         it("should resolve with the default value if a stored object cannot be retrieved", async () => {
             const defaultValue = { mrT: "I pitty the fool" };
-            chromeStorage.get.mockImplementation((key: string, cb: any) => {
+            chromeStorage.get.mockImplementation((key: string, cb: (arg: { [key: string]: unknown }) => void) => {
                 cb(defaultValue);
             });
 
@@ -42,20 +42,20 @@ describe("ChromeStorageStore", () => {
     describe("save", () => {
         it("should save the object to local storage", async () => {
             const savedValue = { mrT: "I pitty the fool" };
-            chromeStorage.set.mockImplementation((obj: any, cb: any) => {
+            chromeStorage.set.mockImplementation((obj: unknown, cb: () => void) => {
                 cb();
             });
 
             await credentialsStore.save(savedValue);
 
-            // The first arg of the first call to the function 
+            // The first arg of the first call to the function
             // The 2nd arg is the Promise.resolve anonymous fn
             expect(chromeStorage.set.mock.calls[0][0]).toEqual({ [storeName]: savedValue });
         });
 
         it("should return undefined", async () => {
             const savedValue = { mrT: "I pitty the fool" };
-            chromeStorage.set.mockImplementation((obj: any, cb: any) => {
+            chromeStorage.set.mockImplementation((obj: unknown, cb: () => void) => {
                 cb();
             });
 
