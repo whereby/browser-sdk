@@ -4,7 +4,6 @@ import {
     assertRoomName,
     assertNumber,
     assertString,
-    assertInstanceOf,
     assertOneOf,
     assertRecord,
 } from "../parameterAssertUtils";
@@ -133,73 +132,6 @@ describe("parameterAssertUtils", () => {
         });
     });
 
-    describe("assertInstanceOf", () => {
-        class SomeOtherClass {
-            _param: number;
-            constructor(param: number) {
-                this._param = param;
-            }
-        }
-
-        class SomeClass {
-            _param: string;
-            constructor(param: string) {
-                this._param = param;
-            }
-        }
-
-        class SubSomeClass extends SomeClass {}
-
-        forEachObject(
-            {
-                number: 1,
-                boolean: true,
-                null: null,
-                undefined: undefined, // eslint-disable-line object-shorthand
-                Object: {},
-                someOtherClass: new SomeOtherClass(1212),
-            },
-            (value, description) => {
-                it(`should throw if ${description} is not instanceof SomeClass`, () => {
-                    expect(() => {
-                        assertInstanceOf(value, SomeClass, "someClass");
-                    }).toThrowError("someClass<SomeClass> is required");
-                });
-            }
-        );
-
-        it("should throw with provided parameterName", () => {
-            expect(() => {
-                assertInstanceOf(null, SomeClass, "someParameterName");
-            }).toThrowError("someParameterName<SomeClass> is required");
-        });
-
-        it(
-            "should throw with parameterName = type (except that first character is lower-case) if none is provided",
-            () => {
-                expect(() => {
-                    assertInstanceOf(null, SomeClass);
-                }).toThrowError("someClass<SomeClass> is required");
-            }
-        );
-
-        it("should return value if instance of class", () => {
-            const instance = new SomeClass("some value");
-
-            const actualValue = assertInstanceOf(instance, SomeClass);
-
-            expect(actualValue).toBe(instance);
-        });
-
-        it("should return value if instance of subclass", () => {
-            const instance = new SubSomeClass("some value");
-
-            const actualValue = assertInstanceOf(instance, SomeClass);
-
-            expect(actualValue).toBe(instance);
-        });
-    });
-
     describe("assertOneOf", () => {
         const description = "testValue";
         const allowedValues = ["hi", "welcome"];
@@ -220,9 +152,7 @@ describe("parameterAssertUtils", () => {
         it("should throw if provided value is not allowed value", () => {
             expect(() => {
                 assertOneOf("hello", allowedValues, description);
-            }).toThrowError(
-                `${description}<string> must be one of the following: ${allowedValues.join(", ")}`
-            );
+            }).toThrowError(`${description}<string> must be one of the following: ${allowedValues.join(", ")}`);
         });
 
         it("should return value if it is allowed", () => {

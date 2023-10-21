@@ -1,5 +1,6 @@
 // @ts-nocheck
 
+import ApiClient from "../ApiClient";
 import { Json } from "../Response";
 
 export const itShouldThrowIfInvalid = (missingPropertyName: string, func: () => void, regexMatcher?: RegExp): void => {
@@ -16,7 +17,10 @@ export const itShouldThrowIfInvalid = (missingPropertyName: string, func: () => 
     });
 };
 
-export const itShouldRejectIfApiClientRejects = (getApiClient: any, func: () => void): void => {
+export const itShouldRejectIfApiClientRejects = (
+    getApiClient: () => jest.Mocked<ApiClient>,
+    func: () => void
+): void => {
     it("should fail if the request failed", async () => {
         const error = new Error("some error");
         getApiClient().request.mockRejectedValue(error);
@@ -25,7 +29,10 @@ export const itShouldRejectIfApiClientRejects = (getApiClient: any, func: () => 
     });
 };
 
-export const itShouldRejectIfMultipartRequestRejects = (getApiClient: any, func: () => void) => {
+export const itShouldRejectIfMultipartRequestRejects = (
+    getApiClient: () => jest.Mocked<ApiClient>,
+    func: () => void
+) => {
     it("should fail if the requestMultipart failed", () => {
         const error = new Error("some error");
         getApiClient().requestMultipart.rejects(error);

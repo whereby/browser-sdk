@@ -1,4 +1,3 @@
-import { assertInstanceOf, assertString } from "../parameterAssertUtils";
 import OrganizationService from "../organizationService/index";
 import Organization from "../models/Organization";
 
@@ -8,8 +7,6 @@ export default class OrganizationServiceCache {
     private _organizationPromise: Promise<Organization | null> | null;
 
     constructor({ organizationService, subdomain }: { organizationService: OrganizationService; subdomain: string }) {
-        assertInstanceOf(organizationService, OrganizationService);
-        assertString(subdomain, "subdomain");
         this._organizationService = organizationService;
         this._subdomain = subdomain;
         this._organizationPromise = null;

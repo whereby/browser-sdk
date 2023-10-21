@@ -13,29 +13,12 @@ describe("OrganizationApiClient", () => {
         apiClient = new ApiClient() as jest.Mocked<ApiClient>;
     });
 
-    describe("constructor", () => {
-        //@ts-expect-error
-        itShouldThrowIfInvalid("apiClient", () => new OrganizationApiClient({ apiClient: null }));
-        itShouldThrowIfInvalid(
-            "fetchOrganization",
-            () =>
-                new OrganizationApiClient({
-                    apiClient,
-                    //@ts-expect-error
-                    fetchOrganization: null,
-                })
-        );
-    });
-
     function testRequestMethod(requestMethodName: "request" | "requestMultipart") {
         describe(requestMethodName, () => {
             let fetchOrganization: jest.Mock;
             let organizationApiClient: OrganizationApiClient;
             let apiRequestMethod: jest.MockInstance<Promise<Response>, [url: string, options: HttpClientRequestConfig]>;
-            let organizationApiRequestMethod: (
-                url: string,
-                config: HttpClientRequestConfig
-            ) => Promise<Response>;
+            let organizationApiRequestMethod: (url: string, config: HttpClientRequestConfig) => Promise<Response>;
 
             beforeEach(() => {
                 fetchOrganization = jest.fn();

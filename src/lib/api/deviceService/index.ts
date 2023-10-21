@@ -1,5 +1,4 @@
 import ApiClient from "../ApiClient";
-import { assertInstanceOf } from "../parameterAssertUtils";
 import Credentials from "../Credentials";
 
 /**
@@ -9,7 +8,7 @@ export default class DeviceService {
     _apiClient: ApiClient;
 
     constructor({ apiClient }: { apiClient: ApiClient }) {
-        this._apiClient = assertInstanceOf(apiClient, ApiClient);
+        this._apiClient = apiClient;
     }
 
     /**

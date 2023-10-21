@@ -1,6 +1,6 @@
 import ApiClient from "./ApiClient";
 import assert from "assert";
-import { assertInstanceOf, assertString } from "./parameterAssertUtils";
+import { assertString } from "./parameterAssertUtils";
 import { HttpClientRequestConfig } from "./HttpClient";
 import Response from "./Response";
 import Organization from "./models/Organization";
@@ -28,7 +28,7 @@ export default class OrganizationApiClient {
         apiClient: ApiClient;
         fetchOrganization?: FetchOrganizationFunction;
     }) {
-        this._apiClient = assertInstanceOf(apiClient, ApiClient);
+        this._apiClient = apiClient;
         assert.ok(typeof fetchOrganization === "function", "fetchOrganization<Function> is required");
 
         this._fetchOrganization = fetchOrganization;
