@@ -153,7 +153,7 @@ define("WherebyEmbed", {
       <iframe
         ref=${this.iframe}
         src=${this.roomUrl}
-        allow="autoplay; camera; microphone; fullscreen; speaker; display-capture" />
+        allow="autoplay; camera; microphone; fullscreen; display-capture" sandbox="allow-downloads allow-same-origin allow-forms allow-scripts" />
       `;
     },
 });
