@@ -9,9 +9,7 @@ import RoomConnection, {
     RoomEventsMap,
     StreamingState,
 } from "../RoomConnection";
-import { LocalParticipant, RemoteParticipant, Screenshare, WaitingParticipant } from "../RoomParticipant";
-
-type RemoteParticipantState = Omit<RemoteParticipant, "updateStreamState">;
+import { LocalParticipantState, RemoteParticipantState, Screenshare, WaitingParticipant } from "../RoomParticipant";
 
 export interface RoomConnectionState {
     chatMessages: ChatMessage[];
@@ -20,7 +18,7 @@ export interface RoomConnectionState {
     isStartingScreenshare: boolean;
     joinError: unknown;
     startScreenshareError: unknown;
-    localParticipant?: LocalParticipant;
+    localParticipant?: LocalParticipantState;
     mostRecentChatMessage: ChatMessage | null;
     remoteParticipants: RemoteParticipantState[];
     screenshares: Screenshare[];
@@ -65,7 +63,7 @@ type RoomConnectionEvents =
     | {
           type: "ROOM_JOINED";
           payload: {
-              localParticipant: LocalParticipant;
+              localParticipant: LocalParticipantState;
               remoteParticipants: RemoteParticipantState[];
               waitingParticipants: WaitingParticipant[];
           };
