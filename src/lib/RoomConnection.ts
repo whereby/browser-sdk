@@ -228,7 +228,7 @@ const noop = () => {
 const TypedEventTarget = EventTarget as { new (): RoomEventTarget };
 export default class RoomConnection extends TypedEventTarget {
     public localMedia: LocalMedia;
-    public localParticipant: LocalParticipant | null = null;
+    public localParticipant?: LocalParticipant;
     public roomUrl: URL;
     public remoteParticipants: RemoteParticipant[] = [];
     public screenshares: Screenshare[] = [];
