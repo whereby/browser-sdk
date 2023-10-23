@@ -34,7 +34,7 @@ const initialState: RoomConnectionState = {
     waitingParticipants: [],
 };
 
-type RoomConnectionEvents =
+type RoomConnectionEvent =
     | {
           type: "CHAT_MESSAGE";
           payload: ChatMessage;
@@ -180,7 +180,7 @@ function addScreenshare(screenshares: Screenshare[], screenshare: Screenshare): 
     return [...screenshares, screenshare];
 }
 
-function reducer(state: RoomConnectionState, action: RoomConnectionEvents): RoomConnectionState {
+function reducer(state: RoomConnectionState, action: RoomConnectionEvent): RoomConnectionState {
     switch (action.type) {
         case "CHAT_MESSAGE":
             return {
