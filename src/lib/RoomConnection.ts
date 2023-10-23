@@ -58,13 +58,13 @@ export type RoomConnectionStatus =
     | "rejected";
 
 export type CloudRecordingState = {
-    status: "" | "recording";
-    startedAt: number | null;
+    status: "recording";
+    startedAt: number;
 };
 
-export type StreamingState = {
-    status: "" | "streaming";
-    startedAt: number | null;
+export type LiveStreamState = {
+    status: "streaming";
+    startedAt: number;
 };
 
 export type RoomJoinedEvent = {
@@ -141,8 +141,8 @@ export interface RoomEventsMap {
     room_joined: (e: CustomEvent<RoomJoinedEvent>) => void;
     screenshare_started: (e: CustomEvent<ScreenshareStartedEvent>) => void;
     screenshare_stopped: (e: CustomEvent<ScreenshareStoppedEvent>) => void;
-    streaming_started: (e: CustomEvent<StreamingState>) => void;
-    streaming_stopped: (e: CustomEvent<StreamingState>) => void;
+    streaming_started: (e: CustomEvent<LiveStreamState>) => void;
+    streaming_stopped: (e: CustomEvent<LiveStreamState>) => void;
     waiting_participant_joined: (e: CustomEvent<WaitingParticipantJoinedEvent>) => void;
     waiting_participant_left: (e: CustomEvent<WaitingParticipantLeftEvent>) => void;
 }
