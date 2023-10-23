@@ -1,7 +1,7 @@
 echo "Building browser sdk"
 cd ../../
 yarn build
-yalc publish 
+yalc publish
 cd ./test/sample-app
 rm -rf node_modules/@whereby.com
 yalc add @whereby.com/browser-sdk
@@ -10,5 +10,5 @@ yalc add @whereby.com/browser-sdk
 # so the git diff is clean (only when not on CI)
 if [ -z "$CI" ]; then
     echo "Reverting package.json"
-    sed -i '' -e 's/"@whereby.com\/browser-sdk": "file:.yalc\/@whereby.com\/browser-sdk"/"@whereby.com\/browser-sdk": "2.0.0-alpha19"/g' package.json
+    sed -i '' -e 's/"@whereby.com\/browser-sdk": "file:.yalc\/@whereby.com\/browser-sdk"/"@whereby.com\/browser-sdk": "2.0.0-alpha26"/g' package.json
 fi
