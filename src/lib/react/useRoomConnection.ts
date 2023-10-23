@@ -7,13 +7,13 @@ import RoomConnection, {
     RoomConnectionOptions,
     RoomConnectionStatus,
     RoomEventsMap,
-    StreamingState,
+    LiveStreamState,
 } from "../RoomConnection";
 import { LocalParticipantState, RemoteParticipantState, Screenshare, WaitingParticipant } from "../RoomParticipant";
 
 export interface RoomConnectionState {
     chatMessages: ChatMessage[];
-    cloudRecording: CloudRecordingState;
+    cloudRecording?: CloudRecordingState;
     isStartingScreenshare: boolean;
     startScreenshareError?: unknown;
     localParticipant?: LocalParticipantState;
@@ -21,24 +21,16 @@ export interface RoomConnectionState {
     remoteParticipants: RemoteParticipantState[];
     screenshares: Screenshare[];
     roomConnectionStatus: RoomConnectionStatus;
-    streaming: StreamingState;
+    liveStream?: LiveStreamState;
     waitingParticipants: WaitingParticipant[];
 }
 
 const initialState: RoomConnectionState = {
     chatMessages: [],
-    cloudRecording: {
-        status: "",
-        startedAt: null,
-    },
     isStartingScreenshare: false,
     remoteParticipants: [],
     roomConnectionStatus: "",
     screenshares: [],
-    streaming: {
-        status: "",
-        startedAt: null,
-    },
     waitingParticipants: [],
 };
 
@@ -133,7 +125,7 @@ type RoomConnectionEvents =
       }
     | {
           type: "STREAMING_STARTED";
-          payload: StreamingState;
+          payload: LiveStreamState;
       }
     | {
           type: "STREAMING_STOPPED";
@@ -205,12 +197,9 @@ function reducer(state: RoomConnectionState, action: RoomConnectionEvents): Room
                 },
             };
         case "CLOUD_RECORDING_STOPPED":
+            delete state.cloudRecording;
             return {
                 ...state,
-                cloudRecording: {
-                    status: "",
-                    startedAt: null,
-                },
             };
         case "ROOM_JOINED":
             return {
@@ -306,18 +295,15 @@ function reducer(state: RoomConnectionState, action: RoomConnectionEvents): Room
         case "STREAMING_STARTED":
             return {
                 ...state,
-                streaming: {
+                liveStream: {
                     status: action.payload.status,
                     startedAt: action.payload.startedAt,
                 },
             };
         case "STREAMING_STOPPED":
+            delete state.liveStream;
             return {
                 ...state,
-                streaming: {
-                    status: "",
-                    startedAt: null,
-                },
             };
         case "WAITING_PARTICIPANT_JOINED":
             return {
