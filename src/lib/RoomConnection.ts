@@ -47,7 +47,7 @@ export interface RoomConnectionOptions {
 
 export type ChatMessage = Pick<SignalChatMessage, "senderId" | "timestamp" | "text">;
 export type RoomConnectionStatus =
-    | ""
+    | "initializing"
     | "connecting"
     | "connected"
     | "room_locked"
@@ -261,7 +261,7 @@ export default class RoomConnection extends TypedEventTarget {
     ) {
         super();
         this.organizationId = "";
-        this.roomConnectionStatus = "";
+        this.roomConnectionStatus = "initializing";
         this.selfId = null;
         this.roomUrl = new URL(roomUrl); // Throw if invalid Whereby room url
         const searchParams = new URLSearchParams(this.roomUrl.search);
