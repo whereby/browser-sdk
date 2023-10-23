@@ -509,11 +509,11 @@ export function useRoomConnection(roomUrl: string, roomConnectionOptions: UseRoo
             rejectWaitingParticipant: (participantId) => {
                 roomConnection.rejectWaitingParticipant(participantId);
             },
-            startScreenshare: () => {
+            startScreenshare: async () => {
                 dispatch({ type: "LOCAL_SCREENSHARE_STARTING" });
 
                 try {
-                    roomConnection.startScreenshare();
+                    await roomConnection.startScreenshare();
                 } catch (error) {
                     dispatch({ type: "LOCAL_SCREENSHARE_START_ERROR", payload: error });
                 }
