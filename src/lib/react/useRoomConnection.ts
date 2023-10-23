@@ -14,12 +14,10 @@ import { LocalParticipantState, RemoteParticipantState, Screenshare, WaitingPart
 export interface RoomConnectionState {
     chatMessages: ChatMessage[];
     cloudRecording: CloudRecordingState;
-    isJoining: boolean;
     isStartingScreenshare: boolean;
-    joinError: unknown;
-    startScreenshareError: unknown;
+    startScreenshareError?: unknown;
     localParticipant?: LocalParticipantState;
-    mostRecentChatMessage: ChatMessage | null;
+    mostRecentChatMessage?: ChatMessage;
     remoteParticipants: RemoteParticipantState[];
     screenshares: Screenshare[];
     roomConnectionStatus: RoomConnectionStatus;
@@ -33,11 +31,7 @@ const initialState: RoomConnectionState = {
         status: "",
         startedAt: null,
     },
-    isJoining: false,
     isStartingScreenshare: false,
-    joinError: null,
-    startScreenshareError: null,
-    mostRecentChatMessage: null,
     remoteParticipants: [],
     roomConnectionStatus: "",
     screenshares: [],
