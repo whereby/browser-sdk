@@ -83,7 +83,7 @@ const Room = ({ roomUrl, localMedia, displayName, isHost }: RoomProps) => {
         return <WaitingArea knock={knock} />;
     }
 
-    if (roomConnectionStatus === "rejected") {
+    if (roomConnectionStatus === "knock_rejected") {
         return <p data-testid="knockRejectedMessage">You have been rejected access</p>;
     }
 

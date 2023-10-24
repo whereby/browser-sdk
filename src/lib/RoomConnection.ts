@@ -56,7 +56,7 @@ export type RoomConnectionStatus =
     | "disconnecting"
     | "disconnected"
     | "accepted"
-    | "rejected";
+    | "knock_rejected";
 
 export type CloudRecordingState = {
     status: "recording";
@@ -491,7 +491,7 @@ export default class RoomConnection extends TypedEventTarget {
             this._roomKey = payload.metadata.roomKey;
             this._joinRoom();
         } else if (resolution === "rejected") {
-            this.roomConnectionStatus = "rejected";
+            this.roomConnectionStatus = "knock_rejected";
 
             this.dispatchEvent(
                 new CustomEvent("room_connection_status_changed", {
