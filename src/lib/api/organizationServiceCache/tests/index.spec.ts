@@ -3,7 +3,6 @@ import ApiClient from "../../ApiClient";
 import OrganizationServiceCache from "../index";
 import OrganizationService from "../../organizationService";
 import Organization from "../../models/Organization";
-import { itShouldThrowIfInvalid } from "../../test/helpers";
 
 jest.mock("../../organizationService");
 
@@ -35,26 +34,6 @@ describe("OrganizationServiceCache", () => {
             subdomain,
             organizationService,
         });
-    });
-
-    describe("constructor", () => {
-        itShouldThrowIfInvalid(
-            "subdomain",
-            () =>
-                new OrganizationServiceCache({
-                    subdomain: undefined,
-                    organizationService,
-                })
-        );
-
-        itShouldThrowIfInvalid(
-            "organizationService",
-            () =>
-                new OrganizationServiceCache({
-                    subdomain,
-                    organizationService: undefined,
-                })
-        );
     });
 
     describe("initOrganization", () => {

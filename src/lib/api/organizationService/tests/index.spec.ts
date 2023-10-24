@@ -167,17 +167,6 @@ describe("organizationService", () => {
         organizationService = new OrganizationService({ apiClient });
     });
 
-    describe("constructor", () => {
-        itShouldThrowIfInvalid(
-            "apiClient",
-            () =>
-                new OrganizationService({
-                    //@ts-expect-error
-                    apiClient: undefined,
-                })
-        );
-    });
-
     describe("createOrganization", () => {
         const consents: Array<ConsentGrantRequest> = [
             {

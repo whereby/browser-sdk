@@ -19,7 +19,7 @@ export default class OrganizationService {
     constructor({ apiClient }: { apiClient: ApiClient }) {
         // apiClient is added since it will be used eventually or rather soon.
         // this is to avoid the api to be broken again
-        this._apiClient = assertInstanceOf(apiClient, ApiClient);
+        this._apiClient = apiClient;
     }
 
     /**

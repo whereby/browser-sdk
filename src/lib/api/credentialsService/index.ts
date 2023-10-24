@@ -4,7 +4,6 @@ import DeviceService from "../deviceService/index";
 import AbstractStore from "../modules/AbstractStore";
 import ChromeStorageStore from "../modules/ChromeStorageStore";
 import LocalStorageStore from "../modules/LocalStorageStore";
-import { assertInstanceOf } from "../parameterAssertUtils";
 import ApiClient from "../ApiClient";
 import localStorage from "../localStorageWrapper";
 import { Credentials } from "..";
@@ -34,7 +33,7 @@ export default class CredentialsService extends EventEmitter {
         credentialsStore: AbstractStore;
     }) {
         super();
-        this._deviceService = assertInstanceOf(deviceService, DeviceService);
+        this._deviceService = deviceService;
         this._credentialsStore = credentialsStore;
     }
 

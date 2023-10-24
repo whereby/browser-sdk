@@ -3,7 +3,7 @@ export type Json = string | number | boolean | null | Array<Json> | { [key: stri
 
 export type ErrorResponseObject = {
     data?: Json;
-    headers?: Record<string, any>;
+    headers?: Record<string, unknown>;
     status?: number;
     statusText?: string;
     config?: { url?: string; baseURL?: string } | null;
@@ -11,7 +11,7 @@ export type ErrorResponseObject = {
 
 interface ResponseOptions {
     data?: Json;
-    headers?: Record<string, any>;
+    headers?: Record<string, unknown>;
     status?: number;
     statusText?: string;
     url?: string | null;
