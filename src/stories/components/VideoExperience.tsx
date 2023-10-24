@@ -52,7 +52,7 @@ export default function VideoExperience({
                 </div>
             )}
             {roomConnectionStatus === "knocking" && <span>Knocking...</span>}
-            {roomConnectionStatus === "rejected" && <span>Rejected :(</span>}
+            {roomConnectionStatus === "knock_rejected" && <span>Rejected :(</span>}
             {roomConnectionStatus === "connected" && (
                 <>
                     <div className="chat">
