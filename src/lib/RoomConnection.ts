@@ -47,7 +47,7 @@ export interface RoomConnectionOptions {
 
 export type ChatMessage = Pick<SignalChatMessage, "senderId" | "timestamp" | "text">;
 export type RoomConnectionStatus =
-    | ""
+    | "initializing"
     | "connecting"
     | "connected"
     | "room_locked"
@@ -58,13 +58,13 @@ export type RoomConnectionStatus =
     | "rejected";
 
 export type CloudRecordingState = {
-    status: "" | "recording";
-    startedAt: number | null;
+    status: "recording";
+    startedAt: number;
 };
 
-export type StreamingState = {
-    status: "" | "streaming";
-    startedAt: number | null;
+export type LiveStreamState = {
+    status: "streaming";
+    startedAt: number;
 };
 
 export type RoomJoinedEvent = {
@@ -141,8 +141,8 @@ export interface RoomEventsMap {
     room_joined: (e: CustomEvent<RoomJoinedEvent>) => void;
     screenshare_started: (e: CustomEvent<ScreenshareStartedEvent>) => void;
     screenshare_stopped: (e: CustomEvent<ScreenshareStoppedEvent>) => void;
-    streaming_started: (e: CustomEvent<StreamingState>) => void;
-    streaming_stopped: (e: CustomEvent<StreamingState>) => void;
+    streaming_started: (e: CustomEvent<LiveStreamState>) => void;
+    streaming_stopped: (e: CustomEvent<LiveStreamState>) => void;
     waiting_participant_joined: (e: CustomEvent<WaitingParticipantJoinedEvent>) => void;
     waiting_participant_left: (e: CustomEvent<WaitingParticipantLeftEvent>) => void;
 }
@@ -228,7 +228,7 @@ const noop = () => {
 const TypedEventTarget = EventTarget as { new (): RoomEventTarget };
 export default class RoomConnection extends TypedEventTarget {
     public localMedia: LocalMedia;
-    public localParticipant: LocalParticipant | null = null;
+    public localParticipant?: LocalParticipant;
     public roomUrl: URL;
     public remoteParticipants: RemoteParticipant[] = [];
     public screenshares: Screenshare[] = [];
@@ -261,7 +261,7 @@ export default class RoomConnection extends TypedEventTarget {
     ) {
         super();
         this.organizationId = "";
-        this.roomConnectionStatus = "";
+        this.roomConnectionStatus = "initializing";
         this.selfId = null;
         this.roomUrl = new URL(roomUrl); // Throw if invalid Whereby room url
         const searchParams = new URLSearchParams(this.roomUrl.search);

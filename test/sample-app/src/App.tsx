@@ -53,12 +53,10 @@ const Room = ({ roomUrl, localMedia, displayName, isHost }: RoomProps) => {
         waitingParticipants,
         remoteParticipants,
         localParticipant,
-        // isJoining,
         roomConnectionStatus,
         chatMessages,
-        // mostRecentChatMessage,
         cloudRecording,
-        streaming,
+        liveStream,
         screenshares,
     } = roomConnection.state;
     const {
@@ -100,7 +98,7 @@ const Room = ({ roomUrl, localMedia, displayName, isHost }: RoomProps) => {
                 <dt>Cloud recording status</dt>
                 <dd data-testid="cloudRecordingStatus">{cloudRecording?.status || "N/A"}</dd>
                 <dt>Streaming status</dt>
-                <dd data-testid="streamingStatus">{streaming?.status || "N/A"}</dd>
+                <dd data-testid="streamingStatus">{liveStream?.status || "N/A"}</dd>
             </dl>
             <div className="Controls">
                 <button data-testid="startScreenshareBtn" onClick={() => startScreenshare()}>

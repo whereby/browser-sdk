@@ -79,6 +79,8 @@ export class RemoteParticipant extends RoomParticipant {
     }
 }
 
+export type RemoteParticipantState = Omit<RemoteParticipant, "updateStreamState">;
+
 export class LocalParticipant extends RoomParticipant {
     public readonly isLocalParticipant = true;
 
@@ -86,6 +88,8 @@ export class LocalParticipant extends RoomParticipant {
         super({ displayName, id, stream, isAudioEnabled, isVideoEnabled });
     }
 }
+
+export type LocalParticipantState = LocalParticipant;
 
 export interface WaitingParticipant {
     id: string;
