@@ -378,7 +378,17 @@ export type RoomConnectionRef = {
     _ref: RoomConnection;
 };
 
-export function useRoomConnection(roomUrl: string, roomConnectionOptions: UseRoomConnectionOptions): RoomConnectionRef {
+const defaultRoomConnectionOptions: UseRoomConnectionOptions = {
+    localMediaConstraints: {
+        audio: true,
+        video: true,
+    },
+};
+
+export function useRoomConnection(
+    roomUrl: string,
+    roomConnectionOptions = defaultRoomConnectionOptions
+): RoomConnectionRef {
     const [roomConnection] = useState<RoomConnection>(
         () =>
             new RoomConnection(roomUrl, {
