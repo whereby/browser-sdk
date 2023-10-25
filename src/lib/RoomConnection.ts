@@ -127,10 +127,20 @@ export type WaitingParticipantLeftEvent = {
     participantId: string;
 };
 
+export type LocalCameraEnabledEvent = {
+    enabled: boolean;
+};
+
+export type LocalMicrophoneEnabledEvent = {
+    enabled: boolean;
+};
+
 export interface RoomEventsMap {
     chat_message: (e: CustomEvent<ChatMessage>) => void;
     cloud_recording_started: (e: CustomEvent<CloudRecordingState>) => void;
     cloud_recording_stopped: (e: CustomEvent<CloudRecordingState>) => void;
+    local_camera_enabled: (e: CustomEvent<LocalCameraEnabledEvent>) => void;
+    local_microphone_enabled: (e: CustomEvent<LocalMicrophoneEnabledEvent>) => void;
     participant_audio_enabled: (e: CustomEvent<ParticipantAudioEnabledEvent>) => void;
     participant_joined: (e: CustomEvent<ParticipantJoinedEvent>) => void;
     participant_left: (e: CustomEvent<ParticipantLeftEvent>) => void;
@@ -333,10 +343,12 @@ export default class RoomConnection extends TypedEventTarget {
         this.localMedia.addEventListener("camera_enabled", (e) => {
             const { enabled } = e.detail;
             this.signalSocket.emit("enable_video", { enabled });
+            this.dispatchEvent(new CustomEvent("local_camera_enabled", { detail: { enabled } }));
         });
         this.localMedia.addEventListener("microphone_enabled", (e) => {
             const { enabled } = e.detail;
             this.signalSocket.emit("enable_audio", { enabled });
+            this.dispatchEvent(new CustomEvent("local_microphone_enabled", { detail: { enabled } }));
         });
 
         const webrtcProvider = {

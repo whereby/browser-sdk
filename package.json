@@ -1,6 +1,6 @@
 {
     "name": "@whereby.com/browser-sdk",
-    "version": "2.0.0-alpha29",
+    "version": "2.0.0-alpha30",
     "description": "Modules for integration Whereby video in web apps",
     "author": "Whereby AS",
     "license": "MIT",
@@ -30,7 +30,7 @@
         "postbuild": "tsc --project tsconfig.build.json",
         "build:storybook": "build-storybook",
         "dev": "start-storybook -p 6006",
-        "install:e2e-sample-app": "cd test/sample-app && yarn",
+        "install:e2e-sample-app": "cd test/sample-app && yarn custom_install",
         "start:e2e-sample-app": "cd test/sample-app && yarn start",
         "test": "yarn test:lint && yarn test:unit",
         "test:lint": "eslint src/",
@@ -78,11 +78,12 @@
         "rimraf": "^3.0.2",
         "ts-jest": "29.0.5",
         "tslib": "^2.4.1",
-        "typescript": "^4.9.4"
+        "typescript": "^4.9.4",
+        "yalc": "^1.0.0-pre.53"
     },
     "dependencies": {
         "@swc/helpers": "^0.3.13",
-        "@whereby/jslib-media": "whereby/jslib-media.git#1.3.1",
+        "@whereby/jslib-media": "whereby/jslib-media.git#1.3.2",
         "assert": "^2.0.0",
         "axios": "^1.2.3",
         "btoa": "^1.2.1",

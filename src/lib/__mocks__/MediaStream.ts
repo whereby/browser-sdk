@@ -1,5 +1,6 @@
 export default class MockMediaStream implements MediaStream {
     private _tracks: MediaStreamTrack[];
+    private _eventTarget: EventTarget;
 
     active = false;
     id = "";
@@ -10,6 +11,8 @@ export default class MockMediaStream implements MediaStream {
         } else {
             this._tracks = [];
         }
+
+        this._eventTarget = new EventTarget();
     }
 
     onaddtrack: ((this: MediaStream, ev: MediaStreamTrackEvent) => void) | null = null;
@@ -30,10 +33,10 @@ export default class MockMediaStream implements MediaStream {
         return this._tracks;
     }
     getVideoTracks(): MediaStreamTrack[] {
-        throw new Error("Method not implemented.");
+        return this._tracks.filter((t) => t.kind === "video");
     }
     removeTrack(track: MediaStreamTrack): void {
-        throw new Error(`Method not implemented. ${track}`);
+        this._tracks = this._tracks.filter((t) => t !== track);
     }
     addEventListener<K extends keyof MediaStreamEventMap>(
         type: K,
@@ -46,7 +49,11 @@ export default class MockMediaStream implements MediaStream {
         options?: boolean | AddEventListenerOptions | undefined
     ): void;
     addEventListener(type: unknown, listener: unknown, options?: unknown): void {
-        throw new Error(`Method not implemented. ${type}, ${listener}, ${options}`);
+        this._eventTarget.addEventListener(
+            type as string,
+            listener as EventListenerOrEventListenerObject,
+            options as AddEventListenerOptions
+        );
     }
     removeEventListener<K extends keyof MediaStreamEventMap>(
         type: K,
@@ -62,6 +69,6 @@ export default class MockMediaStream implements MediaStream {
         throw new Error(`Method not implemented. ${type}, ${listener}, ${options}`);
     }
     dispatchEvent(event: Event): boolean {
-        throw new Error(`Method not implemented. ${event}`);
+        return this._eventTarget.dispatchEvent(event);
     }
 }

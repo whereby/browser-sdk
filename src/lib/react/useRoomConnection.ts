@@ -141,6 +141,14 @@ type RoomConnectionEvent =
           type: "LOCAL_SCREENSHARE_STOPPED";
       }
     | {
+          type: "LOCAL_CAMERA_ENABLED";
+          payload: boolean;
+      }
+    | {
+          type: "LOCAL_MICROPHONE_ENABLED";
+          payload: boolean;
+      }
+    | {
           type: "WAITING_PARTICIPANT_JOINED";
           payload: {
               participantId: string;
@@ -292,6 +300,18 @@ function reducer(state: RoomConnectionState, action: RoomConnectionEvent): RoomC
                 ...state,
                 screenshares: state.screenshares.filter((ss) => !ss.isLocal),
             };
+        case "LOCAL_CAMERA_ENABLED":
+            if (!state.localParticipant) return state;
+            return {
+                ...state,
+                localParticipant: { ...state.localParticipant, isVideoEnabled: action.payload },
+            };
+        case "LOCAL_MICROPHONE_ENABLED":
+            if (!state.localParticipant) return state;
+            return {
+                ...state,
+                localParticipant: { ...state.localParticipant, isAudioEnabled: action.payload },
+            };
         case "STREAMING_STARTED":
             return {
                 ...state,
@@ -391,6 +411,14 @@ export function useRoomConnection(roomUrl: string, roomConnectionOptions: UseRoo
             }),
             createEventListener("cloud_recording_stopped", () => {
                 dispatch({ type: "CLOUD_RECORDING_STOPPED" });
+            }),
+            createEventListener("local_camera_enabled", (e) => {
+                const { enabled } = e.detail;
+                dispatch({ type: "LOCAL_CAMERA_ENABLED", payload: enabled });
+            }),
+            createEventListener("local_microphone_enabled", (e) => {
+                const { enabled } = e.detail;
+                dispatch({ type: "LOCAL_MICROPHONE_ENABLED", payload: enabled });
             }),
             createEventListener("participant_audio_enabled", (e) => {
                 const { participantId, isAudioEnabled } = e.detail;
