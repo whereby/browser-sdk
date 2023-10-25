@@ -40,7 +40,7 @@ export const RoomConnectionWithLocalMedia = ({ roomUrl, displayName }: { roomUrl
 };
 
 export const LocalMediaOnly = () => {
-    const localMedia = useLocalMedia({ audio: true, video: true });
+    const localMedia = useLocalMedia();
 
     return (
         <div>
