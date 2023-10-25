@@ -17,7 +17,6 @@ export interface RoomConnectionState {
     isStartingScreenshare: boolean;
     startScreenshareError?: unknown;
     localParticipant?: LocalParticipantState;
-    mostRecentChatMessage?: ChatMessage;
     remoteParticipants: RemoteParticipantState[];
     screenshares: Screenshare[];
     connectionStatus: ConnectionStatus;
@@ -194,7 +193,6 @@ function reducer(state: RoomConnectionState, action: RoomConnectionEvent): RoomC
             return {
                 ...state,
                 chatMessages: [...state.chatMessages, action.payload],
-                mostRecentChatMessage: action.payload,
             };
         case "CLOUD_RECORDING_STARTED":
             return {

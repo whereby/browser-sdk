@@ -25,7 +25,6 @@ export default function VideoExperience({
 
     const {
         localParticipant,
-        mostRecentChatMessage,
         remoteParticipants,
         connectionStatus,
         waitingParticipants,
@@ -56,7 +55,6 @@ export default function VideoExperience({
             {connectionStatus === "connected" && (
                 <>
                     <div className="chat">
-                        <div className="last_message">{mostRecentChatMessage?.text}</div>
                         <form
                             onSubmit={(e) => {
                                 e.preventDefault();
