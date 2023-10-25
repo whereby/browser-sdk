@@ -11,10 +11,12 @@ import RoomConnection, {
 } from "../RoomConnection";
 import { LocalParticipantState, RemoteParticipantState, Screenshare, WaitingParticipant } from "../RoomParticipant";
 
+type LocalScreenshareStatus = "starting" | "active";
+
 export interface RoomConnectionState {
     chatMessages: ChatMessage[];
     cloudRecording?: CloudRecordingState;
-    isStartingScreenshare: boolean;
+    localScreenshareStatus?: LocalScreenshareStatus;
     localParticipant?: LocalParticipantState;
     remoteParticipants: RemoteParticipantState[];
     screenshares: Screenshare[];
@@ -25,7 +27,6 @@ export interface RoomConnectionState {
 
 const initialState: RoomConnectionState = {
     chatMessages: [],
-    isStartingScreenshare: false,
     remoteParticipants: [],
     connectionStatus: "initializing",
     screenshares: [],
@@ -134,6 +135,9 @@ type RoomConnectionEvent =
       }
     | {
           type: "LOCAL_SCREENSHARE_STARTING";
+      }
+    | {
+          type: "LOCAL_SCREENSHARE_STARTED";
       }
     | {
           type: "LOCAL_SCREENSHARE_STOPPED";
@@ -284,16 +288,22 @@ function reducer(state: RoomConnectionState, action: RoomConnectionEvent): RoomC
         case "LOCAL_SCREENSHARE_START_ERROR":
             return {
                 ...state,
-                isStartingScreenshare: false,
+                localScreenshareStatus: undefined,
             };
         case "LOCAL_SCREENSHARE_STARTING":
             return {
                 ...state,
-                isStartingScreenshare: true,
+                localScreenshareStatus: "starting",
+            };
+        case "LOCAL_SCREENSHARE_STARTED":
+            return {
+                ...state,
+                localScreenshareStatus: "active",
             };
         case "LOCAL_SCREENSHARE_STOPPED":
             return {
                 ...state,
+                localScreenshareStatus: undefined,
                 screenshares: state.screenshares.filter((ss) => !ss.isLocal),
             };
         case "LOCAL_CAMERA_ENABLED":
@@ -467,6 +477,12 @@ export function useRoomConnection(roomUrl: string, roomConnectionOptions: UseRoo
                     type: "SCREENSHARE_STOPPED",
                     payload: { participantId, id },
                 });
+                // dispach LOCAL_SCREENSHARE_STOPPED here because the exposed
+                // stopScreenshare method is not called when the screenshare is
+                // stopped by the browser's native stop screenshare button
+                if (participantId === state.localParticipant?.id) {
+                    dispatch({ type: "LOCAL_SCREENSHARE_STOPPED" });
+                }
             }),
             createEventListener("streaming_started", (e) => {
                 const { status, startedAt } = e.detail;
@@ -538,6 +554,7 @@ export function useRoomConnection(roomUrl: string, roomConnectionOptions: UseRoo
 
                 try {
                     await roomConnection.startScreenshare();
+                    dispatch({ type: "LOCAL_SCREENSHARE_STARTED" });
                 } catch (error) {
                     dispatch({ type: "LOCAL_SCREENSHARE_START_ERROR", payload: error });
                 }
