@@ -79,7 +79,10 @@ export class RemoteParticipant extends RoomParticipant {
     }
 }
 
-export type RemoteParticipantState = Omit<RemoteParticipant, "updateStreamState">;
+export type RemoteParticipantState = Omit<
+    RemoteParticipant,
+    "updateStreamState" | "newJoiner" | "streams" | "addStream" | "removeStream"
+>;
 
 export class LocalParticipant extends RoomParticipant {
     public readonly isLocalParticipant = true;

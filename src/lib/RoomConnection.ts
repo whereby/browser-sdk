@@ -15,7 +15,14 @@ import {
     RoomService,
 } from "./api";
 
-import { LocalParticipant, RemoteParticipant, Screenshare, StreamState, WaitingParticipant } from "./RoomParticipant";
+import {
+    LocalParticipant,
+    RemoteParticipant,
+    RemoteParticipantState,
+    Screenshare,
+    StreamState,
+    WaitingParticipant,
+} from "./RoomParticipant";
 
 import ServerSocket, {
     ChatMessage as SignalChatMessage,
@@ -202,6 +209,18 @@ export function handleStreamAdded(
     return new CustomEvent("screenshare_started", {
         detail: { participantId: clientId, stream, id: streamId, isLocal: false },
     });
+}
+
+// omit the internal props
+function convertRemoteParticipantToRemoteParticipantState(p: RemoteParticipant): RemoteParticipantState {
+    return {
+        displayName: p.displayName,
+        id: p.id,
+        isAudioEnabled: p.isAudioEnabled,
+        isLocalParticipant: p.isLocalParticipant,
+        isVideoEnabled: p.isVideoEnabled,
+        stream: p.stream,
+    };
 }
 
 /*
@@ -429,7 +448,11 @@ export default class RoomConnection extends TypedEventTarget {
         const remoteParticipant = new RemoteParticipant({ ...client, newJoiner: true });
         this.remoteParticipants = [...this.remoteParticipants, remoteParticipant];
         this._handleAcceptStreams([remoteParticipant]);
-        this.dispatchEvent(new CustomEvent("participant_joined", { detail: { remoteParticipant } }));
+        this.dispatchEvent(
+            new CustomEvent("participant_joined", {
+                detail: { remoteParticipant: convertRemoteParticipantToRemoteParticipantState(remoteParticipant) },
+            })
+        );
     }
 
     private _handleClientLeft({ clientId }: ClientLeftEvent) {
@@ -560,7 +583,9 @@ export default class RoomConnection extends TypedEventTarget {
                 new CustomEvent("room_joined", {
                     detail: {
                         localParticipant: this.localParticipant,
-                        remoteParticipants: this.remoteParticipants,
+                        remoteParticipants: this.remoteParticipants.map(
+                            convertRemoteParticipantToRemoteParticipantState
+                        ),
                         waitingParticipants: knockers.map((knocker) => {
                             return { id: knocker.clientId, displayName: knocker.displayName } as WaitingParticipant;
                         }),
