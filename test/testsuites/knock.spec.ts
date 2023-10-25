@@ -29,14 +29,14 @@ roomModes.forEach((roomMode) => {
             await joinRoom({ page: guest, roomUrl, expectLockScreen: true });
 
             await guest.getByRole("button", { name: "Knock" }).click();
-            await expect(guest.getByTestId("roomConnectionStatus")).toContainText("knocking");
+            await expect(guest.getByTestId("connectionStatus")).toContainText("knocking");
             await expect(host.getByTestId("knockRequest")).toHaveCount(1);
 
             await host.getByTestId("knockRequest").getByRole("button", { name: "Let in" }).click();
             await expect(host.getByTestId("knockRequest")).toHaveCount(0);
             await expect(host.getByTestId("remoteParticipantVideo")).toHaveCount(1);
 
-            await expect(guest.getByTestId("roomConnectionStatus")).toContainText("connected");
+            await expect(guest.getByTestId("connectionStatus")).toContainText("connected");
             await expect(guest.getByTestId("remoteParticipantVideo")).toHaveCount(1);
         });
 
@@ -45,7 +45,7 @@ roomModes.forEach((roomMode) => {
             await joinRoom({ page: guest, roomUrl, expectLockScreen: true });
 
             await guest.getByRole("button", { name: "Knock" }).click();
-            await expect(guest.getByTestId("roomConnectionStatus")).toContainText("knocking");
+            await expect(guest.getByTestId("connectionStatus")).toContainText("knocking");
 
             const host = page;
             await joinRoom({ page, roomUrl: hostRoomUrl });
@@ -55,7 +55,7 @@ roomModes.forEach((roomMode) => {
             await expect(host.getByTestId("knockRequest")).toHaveCount(0);
             await expect(host.getByTestId("remoteParticipantVideo")).toHaveCount(1);
 
-            await expect(guest.getByTestId("roomConnectionStatus")).toContainText("connected");
+            await expect(guest.getByTestId("connectionStatus")).toContainText("connected");
             await expect(guest.getByTestId("remoteParticipantVideo")).toHaveCount(1);
         });
 
@@ -68,7 +68,7 @@ roomModes.forEach((roomMode) => {
             await joinRoom({ page: guest, roomUrl, expectLockScreen: true });
 
             await guest.getByRole("button", { name: "Knock" }).click();
-            await expect(guest.getByTestId("roomConnectionStatus")).toContainText("knocking");
+            await expect(guest.getByTestId("connectionStatus")).toContainText("knocking");
             await expect(host.getByTestId("knockRequest")).toHaveCount(1);
 
             await host.getByTestId("knockRequest").getByRole("button", { name: "Reject" }).click();
@@ -88,7 +88,7 @@ roomModes.forEach((roomMode) => {
             await joinRoom({ page: guest, roomUrl, expectLockScreen: true });
 
             await guest.getByRole("button", { name: "Knock" }).click();
-            await expect(guest.getByTestId("roomConnectionStatus")).toContainText("knocking");
+            await expect(guest.getByTestId("connectionStatus")).toContainText("knocking");
             await expect(host.getByTestId("knockRequest")).toHaveCount(1);
 
             await guest.close();

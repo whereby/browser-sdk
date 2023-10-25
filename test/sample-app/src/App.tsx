@@ -53,7 +53,7 @@ const Room = ({ roomUrl, localMedia, displayName, isHost }: RoomProps) => {
         waitingParticipants,
         remoteParticipants,
         localParticipant,
-        roomConnectionStatus,
+        connectionStatus,
         chatMessages,
         cloudRecording,
         liveStream,
@@ -79,11 +79,11 @@ const Room = ({ roomUrl, localMedia, displayName, isHost }: RoomProps) => {
         setIsMicrophoneEnabled(localParticipant?.isAudioEnabled || false);
     }, [localParticipant?.isAudioEnabled]);
 
-    if (roomConnectionStatus === "room_locked") {
+    if (connectionStatus === "room_locked") {
         return <WaitingArea knock={knock} />;
     }
 
-    if (roomConnectionStatus === "knock_rejected") {
+    if (connectionStatus === "knock_rejected") {
         return <p data-testid="knockRejectedMessage">You have been rejected access</p>;
     }
 
@@ -91,8 +91,8 @@ const Room = ({ roomUrl, localMedia, displayName, isHost }: RoomProps) => {
         <div>
             <h1>Room</h1>
             <dl>
-                <dt>Room Connection Status</dt>
-                <dd data-testid="roomConnectionStatus">{roomConnectionStatus}</dd>
+                <dt>Connection Status</dt>
+                <dd data-testid="connectionStatus">{connectionStatus}</dd>
                 <dt>Local client ID</dt>
                 <dd data-testid="localClientId">{localParticipant?.id || "N/A"}</dd>
                 <dt>Cloud recording status</dt>

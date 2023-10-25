@@ -5,7 +5,7 @@ import RoomConnection, {
     ChatMessage,
     CloudRecordingState,
     RoomConnectionOptions,
-    RoomConnectionStatus,
+    ConnectionStatus,
     RoomEventsMap,
     LiveStreamState,
 } from "../RoomConnection";
@@ -20,7 +20,7 @@ export interface RoomConnectionState {
     mostRecentChatMessage?: ChatMessage;
     remoteParticipants: RemoteParticipantState[];
     screenshares: Screenshare[];
-    roomConnectionStatus: RoomConnectionStatus;
+    connectionStatus: ConnectionStatus;
     liveStream?: LiveStreamState;
     waitingParticipants: WaitingParticipant[];
 }
@@ -29,7 +29,7 @@ const initialState: RoomConnectionState = {
     chatMessages: [],
     isStartingScreenshare: false,
     remoteParticipants: [],
-    roomConnectionStatus: "initializing",
+    connectionStatus: "initializing",
     screenshares: [],
     waitingParticipants: [],
 };
@@ -55,9 +55,9 @@ type RoomConnectionEvent =
           };
       }
     | {
-          type: "ROOM_CONNECTION_STATUS_CHANGED";
+          type: "CONNECTION_STATUS_CHANGED";
           payload: {
-              roomConnectionStatus: RoomConnectionStatus;
+              connectionStatus: ConnectionStatus;
           };
       }
     | {
@@ -215,12 +215,12 @@ function reducer(state: RoomConnectionState, action: RoomConnectionEvent): RoomC
                 localParticipant: action.payload.localParticipant,
                 remoteParticipants: action.payload.remoteParticipants,
                 waitingParticipants: action.payload.waitingParticipants,
-                roomConnectionStatus: "connected",
+                connectionStatus: "connected",
             };
-        case "ROOM_CONNECTION_STATUS_CHANGED":
+        case "CONNECTION_STATUS_CHANGED":
             return {
                 ...state,
-                roomConnectionStatus: action.payload.roomConnectionStatus,
+                connectionStatus: action.payload.connectionStatus,
             };
         case "PARTICIPANT_AUDIO_ENABLED":
             return {
@@ -444,11 +444,11 @@ export function useRoomConnection(roomUrl: string, roomConnectionOptions: UseRoo
                 const { participantId, isVideoEnabled } = e.detail;
                 dispatch({ type: "PARTICIPANT_VIDEO_ENABLED", payload: { participantId, isVideoEnabled } });
             }),
-            createEventListener("room_connection_status_changed", (e) => {
-                const { roomConnectionStatus } = e.detail;
+            createEventListener("connection_status_changed", (e) => {
+                const { connectionStatus } = e.detail;
                 dispatch({
-                    type: "ROOM_CONNECTION_STATUS_CHANGED",
-                    payload: { roomConnectionStatus },
+                    type: "CONNECTION_STATUS_CHANGED",
+                    payload: { connectionStatus },
                 });
             }),
             createEventListener("room_joined", (e) => {

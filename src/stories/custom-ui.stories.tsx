@@ -52,7 +52,7 @@ export const LocalMediaOnly = () => {
 function CanvasInRoom({ localMedia, roomUrl }: { localMedia: LocalMediaRef; roomUrl: string }) {
     const { state } = useRoomConnection(roomUrl, { localMedia });
 
-    return <div>Room connection status: {state.roomConnectionStatus}</div>;
+    return <div>Room connection status: {state.connectionStatus}</div>;
 }
 
 function LocalMediaWithCanvasStream_({ canvasStream, roomUrl }: { canvasStream: MediaStream; roomUrl: string }) {

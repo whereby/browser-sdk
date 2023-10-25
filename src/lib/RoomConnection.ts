@@ -47,7 +47,7 @@ export interface RoomConnectionOptions {
 }
 
 export type ChatMessage = Pick<SignalChatMessage, "senderId" | "timestamp" | "text">;
-export type RoomConnectionStatus =
+export type ConnectionStatus =
     | "initializing"
     | "connecting"
     | "connected"
@@ -73,8 +73,8 @@ export type RoomJoinedEvent = {
     waitingParticipants: WaitingParticipant[];
 };
 
-export type RoomConnectionStatusChangedEvent = {
-    roomConnectionStatus: RoomConnectionStatus;
+export type ConnectionStatusChangedEvent = {
+    connectionStatus: ConnectionStatus;
 };
 
 export type ParticipantJoinedEvent = {
@@ -147,7 +147,7 @@ export interface RoomEventsMap {
     participant_metadata_changed: (e: CustomEvent<ParticipantMetadataChangedEvent>) => void;
     participant_stream_added: (e: CustomEvent<ParticipantStreamAddedEvent>) => void;
     participant_video_enabled: (e: CustomEvent<ParticipantVideoEnabledEvent>) => void;
-    room_connection_status_changed: (e: CustomEvent<RoomConnectionStatusChangedEvent>) => void;
+    connection_status_changed: (e: CustomEvent<ConnectionStatusChangedEvent>) => void;
     room_joined: (e: CustomEvent<RoomJoinedEvent>) => void;
     screenshare_started: (e: CustomEvent<ScreenshareStartedEvent>) => void;
     screenshare_stopped: (e: CustomEvent<ScreenshareStoppedEvent>) => void;
@@ -258,7 +258,7 @@ export default class RoomConnection extends TypedEventTarget {
     private signalSocketManager: SocketManager;
     private rtcManagerDispatcher?: RtcManagerDispatcher;
     private rtcManager?: RtcManager;
-    private roomConnectionStatus: RoomConnectionStatus;
+    private connectionStatus: ConnectionStatus;
     private selfId: string | null;
     private logger: Logger;
     private _ownsLocalMedia = false;
@@ -272,7 +272,7 @@ export default class RoomConnection extends TypedEventTarget {
     ) {
         super();
         this.organizationId = "";
-        this.roomConnectionStatus = "initializing";
+        this.connectionStatus = "initializing";
         this.selfId = null;
         this.roomUrl = new URL(roomUrl); // Throw if invalid Whereby room url
         const searchParams = new URLSearchParams(this.roomUrl.search);
@@ -489,12 +489,12 @@ export default class RoomConnection extends TypedEventTarget {
             this._roomKey = payload.metadata.roomKey;
             this._joinRoom();
         } else if (resolution === "rejected") {
-            this.roomConnectionStatus = "knock_rejected";
+            this.connectionStatus = "knock_rejected";
 
             this.dispatchEvent(
-                new CustomEvent("room_connection_status_changed", {
+                new CustomEvent("connection_status_changed", {
                     detail: {
-                        roomConnectionStatus: this.roomConnectionStatus,
+                        connectionStatus: this.connectionStatus,
                     },
                 })
             );
@@ -515,11 +515,11 @@ export default class RoomConnection extends TypedEventTarget {
         const { error, isLocked, room, selfId } = event;
         this.selfId = selfId;
         if (error === "room_locked" && isLocked) {
-            this.roomConnectionStatus = "room_locked";
+            this.connectionStatus = "room_locked";
             this.dispatchEvent(
-                new CustomEvent("room_connection_status_changed", {
+                new CustomEvent("connection_status_changed", {
                     detail: {
-                        roomConnectionStatus: this.roomConnectionStatus,
+                        connectionStatus: this.connectionStatus,
                     },
                 })
             );
@@ -555,7 +555,7 @@ export default class RoomConnection extends TypedEventTarget {
                 .filter((c) => !NON_PERSON_ROLES.includes(c.role.roleName))
                 .map((c) => new RemoteParticipant({ ...c, newJoiner: false }));
 
-            this.roomConnectionStatus = "connected";
+            this.connectionStatus = "connected";
             this.dispatchEvent(
                 new CustomEvent("room_joined", {
                     detail: {
@@ -590,11 +590,11 @@ export default class RoomConnection extends TypedEventTarget {
     }
 
     private _handleDisconnect() {
-        this.roomConnectionStatus = "disconnected";
+        this.connectionStatus = "disconnected";
         this.dispatchEvent(
-            new CustomEvent("room_connection_status_changed", {
+            new CustomEvent("connection_status_changed", {
                 detail: {
-                    roomConnectionStatus: this.roomConnectionStatus,
+                    connectionStatus: this.connectionStatus,
                 },
             })
         );
@@ -780,17 +780,17 @@ export default class RoomConnection extends TypedEventTarget {
     }
 
     public async join() {
-        if (["connected", "connecting"].includes(this.roomConnectionStatus)) {
-            console.warn(`Trying to join when room state is already ${this.roomConnectionStatus}`);
+        if (["connected", "connecting"].includes(this.connectionStatus)) {
+            console.warn(`Trying to join when room state is already ${this.connectionStatus}`);
             return;
         }
 
         this.signalSocket.connect();
-        this.roomConnectionStatus = "connecting";
+        this.connectionStatus = "connecting";
         this.dispatchEvent(
-            new CustomEvent("room_connection_status_changed", {
+            new CustomEvent("connection_status_changed", {
                 detail: {
-                    roomConnectionStatus: this.roomConnectionStatus,
+                    connectionStatus: this.connectionStatus,
                 },
             })
         );
@@ -817,11 +817,11 @@ export default class RoomConnection extends TypedEventTarget {
     }
 
     public knock() {
-        this.roomConnectionStatus = "knocking";
+        this.connectionStatus = "knocking";
         this.dispatchEvent(
-            new CustomEvent("room_connection_status_changed", {
+            new CustomEvent("connection_status_changed", {
                 detail: {
-                    roomConnectionStatus: this.roomConnectionStatus,
+                    connectionStatus: this.connectionStatus,
                 },
             })
         );
@@ -839,7 +839,7 @@ export default class RoomConnection extends TypedEventTarget {
     }
 
     public leave() {
-        this.roomConnectionStatus = "disconnecting";
+        this.connectionStatus = "disconnecting";
         if (this._ownsLocalMedia) {
             this.localMedia.stop();
         }
@@ -856,7 +856,7 @@ export default class RoomConnection extends TypedEventTarget {
 
         this.signalSocket.emit("leave_room");
         this.signalSocket.disconnect();
-        this.roomConnectionStatus = "disconnected";
+        this.connectionStatus = "disconnected";
     }
 
     public sendChatMessage(text: string): void {
