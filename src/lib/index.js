@@ -149,11 +149,18 @@ define("WherebyEmbed", {
                 this.roomUrl.searchParams.set(k, v);
             }
         });
+
+        const isLocalRecordingEnabled = this.roomUrl.searchParams.has("recording");
+
+        if (isLocalRecordingEnabled)
+            this.iframe.sandbox = "allow-downloads allow-same-origin allow-forms allow-scripts allow-popups";
+
         this.html`
       <iframe
         ref=${this.iframe}
         src=${this.roomUrl}
-        allow="autoplay; camera; microphone; fullscreen; display-capture" sandbox="allow-downloads allow-same-origin allow-forms allow-scripts" />
+        allow="autoplay; camera; microphone; fullscreen; display-capture"
+        />
       `;
     },
 });
