@@ -10,6 +10,7 @@ interface WherebyEmbedAttributes {
     chat: boolean;
     displayName: string;
     emptyRoomInvitation: string;
+    externalId: string;
     floatSelf: boolean;
     help: boolean;
     leaveButton: boolean;
@@ -34,6 +35,7 @@ export default {
         displayName: { control: "text", description: "The name to use for the local participant" },
         embed: { control: "boolean" },
         emptyRoomInvitation: { control: "boolean" },
+        externalId: { control: "text", description: "An external id to use for the local participant" },
         floatSelf: { control: "boolean" },
         help: { control: "boolean" },
         leaveButton: { control: "boolean" },
@@ -60,6 +62,7 @@ const WherebyEmbed = ({
     chat,
     displayName,
     emptyRoomInvitation,
+    externalId,
     floatSelf,
     help,
     leaveButton,
@@ -82,6 +85,7 @@ const WherebyEmbed = ({
                 chat={offOn(chat)}
                 displayName={displayName}
                 emptyRoomInvitation={emptyRoomInvitation}
+                externalId={externalId}
                 floatSelf={offOn(floatSelf)}
                 help={offOn(help)}
                 leaveButton={offOn(leaveButton)}
@@ -110,6 +114,7 @@ WherebyEmbedElement.args = {
     chat: true,
     displayName: "Your name",
     emptyRoomInvitation: "true",
+    externalId: null,
     floatSelf: false,
     help: true,
     leaveButton: true,
