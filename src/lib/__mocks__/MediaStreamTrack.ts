@@ -1,7 +1,14 @@
 import { jest } from "@jest/globals";
 
 const MockMediaStreamTrack = jest.fn(function (this: MediaStreamTrack, kind = "audio"): MediaStreamTrack {
-    Object.assign(this, { kind, stop: jest.fn() });
+    Object.assign(this, {
+        enabled: true,
+        kind,
+        stop: jest.fn(),
+        getSettings: jest.fn(() => ({
+            deviceId: "<device_id>",
+        })),
+    });
     return this;
 });
 

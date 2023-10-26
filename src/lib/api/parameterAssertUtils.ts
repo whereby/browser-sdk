@@ -51,7 +51,7 @@ export function assertString(value: unknown, parameterName: string): string {
  * @param type - The type that value should be.
  * @param {string} [parameterName] - The name of the parameter.
  */
-export function assertInstanceOf<T>(value: unknown, type: new (any: any) => T, parameterName?: string): T {
+export function assertInstanceOf<T>(value: unknown, type: new (any: unknown) => T, parameterName?: string): T {
     const resolvedParameterName = parameterName || type.name[0].toLowerCase() + type.name.substring(1);
     assert.ok(value instanceof type, `${resolvedParameterName}<${type.name}> is required`);
     return value;

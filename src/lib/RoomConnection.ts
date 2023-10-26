@@ -48,7 +48,7 @@ export interface RoomConnectionOptions {
 
 export type ChatMessage = Pick<SignalChatMessage, "senderId" | "timestamp" | "text">;
 export type RoomConnectionStatus =
-    | ""
+    | "initializing"
     | "connecting"
     | "connected"
     | "room_locked"
@@ -59,13 +59,13 @@ export type RoomConnectionStatus =
     | "rejected";
 
 export type CloudRecordingState = {
-    status: "" | "recording";
-    startedAt: number | null;
+    status: "recording";
+    startedAt: number;
 };
 
-export type StreamingState = {
-    status: "" | "streaming";
-    startedAt: number | null;
+export type LiveStreamState = {
+    status: "streaming";
+    startedAt: number;
 };
 
 export type RoomJoinedEvent = {
@@ -128,10 +128,20 @@ export type WaitingParticipantLeftEvent = {
     participantId: string;
 };
 
+export type LocalCameraEnabledEvent = {
+    enabled: boolean;
+};
+
+export type LocalMicrophoneEnabledEvent = {
+    enabled: boolean;
+};
+
 export interface RoomEventsMap {
     chat_message: (e: CustomEvent<ChatMessage>) => void;
     cloud_recording_started: (e: CustomEvent<CloudRecordingState>) => void;
     cloud_recording_stopped: (e: CustomEvent<CloudRecordingState>) => void;
+    local_camera_enabled: (e: CustomEvent<LocalCameraEnabledEvent>) => void;
+    local_microphone_enabled: (e: CustomEvent<LocalMicrophoneEnabledEvent>) => void;
     participant_audio_enabled: (e: CustomEvent<ParticipantAudioEnabledEvent>) => void;
     participant_joined: (e: CustomEvent<ParticipantJoinedEvent>) => void;
     participant_left: (e: CustomEvent<ParticipantLeftEvent>) => void;
@@ -142,8 +152,8 @@ export interface RoomEventsMap {
     room_joined: (e: CustomEvent<RoomJoinedEvent>) => void;
     screenshare_started: (e: CustomEvent<ScreenshareStartedEvent>) => void;
     screenshare_stopped: (e: CustomEvent<ScreenshareStoppedEvent>) => void;
-    streaming_started: (e: CustomEvent<StreamingState>) => void;
-    streaming_stopped: (e: CustomEvent<StreamingState>) => void;
+    streaming_started: (e: CustomEvent<LiveStreamState>) => void;
+    streaming_stopped: (e: CustomEvent<LiveStreamState>) => void;
     waiting_participant_joined: (e: CustomEvent<WaitingParticipantJoinedEvent>) => void;
     waiting_participant_left: (e: CustomEvent<WaitingParticipantLeftEvent>) => void;
 }
@@ -158,20 +168,13 @@ const reportedStreamResolutions = new Map<string, { width: number; height: numbe
 
 function createSocket() {
     const parsedUrl = new URL(SIGNAL_BASE_URL);
-    const path = `${parsedUrl.pathname.replace(/^\/$/, "")}/protocol/socket.io/v4`;
-    const SOCKET_HOST = parsedUrl.origin;
+    const socketHost = parsedUrl.origin;
 
-    const socketConf = {
+    const socketOverrides = {
         autoConnect: false,
-        host: SOCKET_HOST,
-        path,
-        reconnectionDelay: 5000,
-        reconnectionDelayMax: 30000,
-        timeout: 10000,
-        withCredentials: true,
     };
 
-    return new ServerSocket(SOCKET_HOST, socketConf);
+    return new ServerSocket(socketHost, socketOverrides);
 }
 
 export function handleStreamAdded(
@@ -236,7 +239,7 @@ const noop = () => {
 const TypedEventTarget = EventTarget as { new (): RoomEventTarget };
 export default class RoomConnection extends TypedEventTarget {
     public localMedia: LocalMedia;
-    public localParticipant: LocalParticipant | null = null;
+    public localParticipant?: LocalParticipant;
     public roomUrl: URL;
     public remoteParticipants: RemoteParticipant[] = [];
     public screenshares: Screenshare[] = [];
@@ -270,7 +273,7 @@ export default class RoomConnection extends TypedEventTarget {
     ) {
         super();
         this.organizationId = "";
-        this.roomConnectionStatus = "";
+        this.roomConnectionStatus = "initializing";
         this.selfId = null;
         this.roomUrl = new URL(roomUrl); // Throw if invalid Whereby room url
         const searchParams = new URLSearchParams(this.roomUrl.search);
@@ -343,10 +346,12 @@ export default class RoomConnection extends TypedEventTarget {
         this.localMedia.addEventListener("camera_enabled", (e) => {
             const { enabled } = e.detail;
             this.signalSocket.emit("enable_video", { enabled });
+            this.dispatchEvent(new CustomEvent("local_camera_enabled", { detail: { enabled } }));
         });
         this.localMedia.addEventListener("microphone_enabled", (e) => {
             const { enabled } = e.detail;
             this.signalSocket.emit("enable_audio", { enabled });
+            this.dispatchEvent(new CustomEvent("local_microphone_enabled", { detail: { enabled } }));
         });
 
         const webrtcProvider = {
@@ -905,6 +910,18 @@ export default class RoomConnection extends TypedEventTarget {
 
     public async startScreenshare() {
         const screenshareStream = this.localMedia.screenshareStream || (await this.localMedia.startScreenshare());
+        const onEnded = () => {
+            this.stopScreenshare();
+        };
+
+        if ("oninactive" in screenshareStream) {
+            // Chrome
+            screenshareStream.addEventListener("inactive", onEnded);
+        } else {
+            // FF
+            screenshareStream.getVideoTracks()[0]?.addEventListener("ended", onEnded);
+        }
+
         this.rtcManager?.addNewStream(screenshareStream.id, screenshareStream, false, true);
         this.screenshares = [
             ...this.screenshares,

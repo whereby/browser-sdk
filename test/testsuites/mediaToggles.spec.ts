@@ -8,14 +8,14 @@ roomModes.forEach((roomMode) => {
         let meetingId: string;
         let roomUrl: string;
 
-        test.beforeEach(async () => {
+        test.beforeAll(async () => {
             ({ meetingId, roomUrl } = await createTransientRoom({
                 isLocked: false,
                 roomMode,
             }));
         });
 
-        test.afterEach(async () => {
+        test.afterAll(async () => {
             await deleteTransientRoom(meetingId);
         });
 
@@ -55,10 +55,10 @@ roomModes.forEach((roomMode) => {
 
         test("can toggle video", async ({ page }) => {
             const participant1 = page;
-            await joinRoom({ page, roomUrl });
+            await joinRoom({ page, roomUrl, withFakeAudioStream: true });
 
             const participant2 = await page.context().newPage();
-            await joinRoom({ page: participant2, roomUrl });
+            await joinRoom({ page: participant2, roomUrl, withFakeAudioStream: true });
 
             await expect(participant1.getByTestId("remoteParticipantVideo")).toHaveCount(1);
             await expect(participant2.getByTestId("remoteParticipantVideo")).toHaveCount(1);

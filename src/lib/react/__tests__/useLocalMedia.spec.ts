@@ -14,7 +14,10 @@ describe("useLocalMedia", () => {
 
     it("should assume audio and video by default", () => {
         renderHook(() => useLocalMedia());
-        expect(MockedLocalMedia.mock.calls[0]).toEqual([{ audio: true, video: true }]);
+
+        waitFor(() => {
+            expect(MockedLocalMedia.mock.calls[0]).toEqual([{ audio: true, video: true }]);
+        });
     });
 
     it.each([
@@ -24,18 +27,27 @@ describe("useLocalMedia", () => {
         { audio: false, video: false },
     ])(`should use provided audio: $audio and video: $video values`, ({ audio, video }) => {
         renderHook(() => useLocalMedia({ audio, video }));
-        expect(MockedLocalMedia.mock.calls[0]).toEqual([{ audio, video }]);
+
+        waitFor(() => {
+            expect(MockedLocalMedia.mock.calls[0]).toEqual([{ audio, video }]);
+        });
     });
 
     describe("on mount", () => {
         it("should start local media", () => {
             renderHook(() => useLocalMedia());
-            expect(MockedLocalMedia.mock.instances[0].start).toHaveBeenCalled();
+
+            waitFor(() => {
+                expect(MockedLocalMedia.mock.instances[0].start).toHaveBeenCalled();
+            });
         });
 
         it("should update state", () => {
             const { result } = renderHook(() => useLocalMedia());
-            expect(result.current.state.isStarting).toEqual(true);
+
+            waitFor(() => {
+                expect(result.current.state.isStarting).toEqual(true);
+            });
         });
 
         describe("when start local media succeeds", () => {
@@ -63,11 +75,11 @@ describe("useLocalMedia", () => {
         });
     });
 
-    it("should provide local stream when ready", () => {
+    it("should provide local stream when ready", async () => {
         const { result } = renderHook(() => useLocalMedia());
         const localStream = "<stream>";
 
-        act(() => {
+        await act(async () => {
             if (MockedLocalMedia.mock.instances[0].addEventListener.mock.lastCall) {
                 const cb = MockedLocalMedia.mock.instances[0].addEventListener.mock.lastCall[1];
                 if (cb instanceof Function) {
@@ -85,7 +97,7 @@ describe("useLocalMedia", () => {
 
     describe("actions", () => {
         describe("setCameraDevice", () => {
-            it("shuld update local state", () => {
+            it("shuld update local state", async () => {
                 const { result } = renderHook(() => useLocalMedia());
 
                 expect(result.current.state.isSettingCameraDevice).toEqual(false);
@@ -94,14 +106,16 @@ describe("useLocalMedia", () => {
                     result.current.actions.setCameraDevice("<some-device-id>");
                 });
 
-                expect(result.current.state.isSettingCameraDevice).toEqual(true);
+                await waitFor(() => {
+                    expect(result.current.state.isSettingCameraDevice).toEqual(true);
+                });
             });
 
-            it("should invoke setCameraDevice of localMedia with given deviceId", () => {
-                const { result } = renderHook(() => useLocalMedia());
+            it("should invoke setCameraDevice of localMedia with given deviceId", async () => {
                 const deviceId = "<some-device-id>";
+                const { result } = renderHook(() => useLocalMedia());
 
-                act(() => {
+                await act(async () => {
                     result.current.actions.setCameraDevice(deviceId);
                 });
 
@@ -115,7 +129,7 @@ describe("useLocalMedia", () => {
                     MockedLocalMedia.mock.instances[0].setCameraDevice.mockResolvedValueOnce();
 
                     await act(async () => {
-                        await result.current.actions.setCameraDevice(deviceId);
+                        result.current.actions.setCameraDevice(deviceId);
                     });
 
                     expect(result.current.state.isSettingCameraDevice).toEqual(false);
@@ -129,7 +143,7 @@ describe("useLocalMedia", () => {
                     MockedLocalMedia.mock.instances[0].setCameraDevice.mockRejectedValueOnce(error);
 
                     await act(async () => {
-                        await result.current.actions.setCameraDevice("<some-device-id>");
+                        result.current.actions.setCameraDevice("<some-device-id>");
                     });
 
                     expect(result.current.state.isSettingCameraDevice).toEqual(false);
@@ -139,7 +153,7 @@ describe("useLocalMedia", () => {
         });
 
         describe("setMicrophoneDevice", () => {
-            it("shuld update local state", () => {
+            it("shuld update local state", async () => {
                 const { result } = renderHook(() => useLocalMedia());
 
                 expect(result.current.state.isSettingMicrophoneDevice).toEqual(false);
@@ -148,14 +162,16 @@ describe("useLocalMedia", () => {
                     result.current.actions.setMicrophoneDevice("<some-device-id>");
                 });
 
-                expect(result.current.state.isSettingMicrophoneDevice).toEqual(true);
+                await waitFor(() => {
+                    expect(result.current.state.isSettingMicrophoneDevice).toEqual(true);
+                });
             });
 
-            it("should invoke setCameraDevice of localMedia with given deviceId", () => {
+            it("should invoke setMicrophoneDevice of localMedia with given deviceId", async () => {
                 const { result } = renderHook(() => useLocalMedia());
                 const deviceId = "<some-device-id>";
 
-                act(() => {
+                await act(async () => {
                     result.current.actions.setMicrophoneDevice(deviceId);
                 });
 

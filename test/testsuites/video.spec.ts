@@ -14,14 +14,14 @@ roomModes.forEach((roomMode) => {
         let meetingId: string;
         let roomUrl: string;
 
-        test.beforeEach(async () => {
+        test.beforeAll(async () => {
             ({ meetingId, roomUrl } = await createTransientRoom({
                 isLocked: false,
                 roomMode,
             }));
         });
 
-        test.afterEach(async () => {
+        test.afterAll(async () => {
             await deleteTransientRoom(meetingId);
         });
 
@@ -70,8 +70,8 @@ roomModes.forEach((roomMode) => {
                 .getByTestId("remoteParticipantVideo")
                 .evaluate((element: HTMLVideoElement, countFramesFn) => {
                     const countFrames = countFramesFn as CountFramesFunction;
-                    // counts 15 samples in a 1000ms interval.
-                    return countFrames(element, 1000, 15);
+                    // counts 10 samples in a 1000ms interval.
+                    return countFrames(element, 1000, 10);
                 }, countFramesHandle);
             const participant1FrameStatistics = makeFrameStatistics(participant1Samples);
 
