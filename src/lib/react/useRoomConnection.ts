@@ -9,7 +9,12 @@ import RoomConnection, {
     RoomEventsMap,
     LiveStreamState,
 } from "../RoomConnection";
-import { LocalParticipantState, RemoteParticipantState, Screenshare, WaitingParticipant } from "../RoomParticipant";
+import { LocalParticipantState, RemoteParticipant, Screenshare, WaitingParticipant } from "../RoomParticipant";
+
+export type RemoteParticipantState = Omit<
+    RemoteParticipant,
+    "updateStreamState" | "newJoiner" | "streams" | "addStream" | "removeStream"
+>;
 
 type LocalScreenshareStatus = "starting" | "active";
 
