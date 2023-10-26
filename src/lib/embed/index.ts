@@ -8,6 +8,7 @@ interface WherebyEmbedAttributes {
     chat: string;
     displayName: string;
     emptyRoomInvitation: string;
+    externalId: string;
     floatSelf: string;
     help: string;
     leaveButton: string;
@@ -76,6 +77,7 @@ define("WherebyEmbed", {
         "groups",
         "virtualBackgroundUrl",
         "avatarUrl",
+        "externalId",
         ...boolAttrs,
     ].map((a) => a.toLowerCase()),
     onattributechanged({ attributeName, oldValue }: { attributeName: string; oldValue: string | boolean }) {
@@ -125,6 +127,7 @@ define("WherebyEmbed", {
         const {
             avatarurl: avatarUrl,
             displayname: displayName,
+            externalId: externalId,
             lang,
             metadata,
             minimal,
@@ -153,6 +156,7 @@ define("WherebyEmbed", {
             ...(displayName && { displayName }),
             ...(lang && { lang }),
             ...(metadata && { metadata }),
+            ...(externalId && { externalId }),
             ...(groups && { groups }),
             ...(virtualBackgroundUrl && { virtualBackgroundUrl }),
             ...(avatarUrl && { avatarUrl }),

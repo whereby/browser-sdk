@@ -10,6 +10,7 @@ interface WherebyEmbedAttributes {
     chat: boolean;
     displayName: string;
     emptyRoomInvitation: string;
+    externalId: string;
     floatSelf: boolean;
     help: boolean;
     leaveButton: boolean;
@@ -85,6 +86,7 @@ const WherebyEmbed = ({
                 chat={offOn(chat)}
                 displayName={displayName}
                 emptyRoomInvitation={emptyRoomInvitation}
+                externalId={externalId}
                 floatSelf={offOn(floatSelf)}
                 help={offOn(help)}
                 leaveButton={offOn(leaveButton)}
@@ -113,6 +115,7 @@ WherebyEmbedElement.args = {
     chat: true,
     displayName: "Your name",
     emptyRoomInvitation: "true",
+    externalId: null,
     floatSelf: false,
     help: true,
     leaveButton: true,
