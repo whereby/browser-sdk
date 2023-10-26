@@ -15,14 +15,7 @@ import {
     RoomService,
 } from "./api";
 
-import {
-    LocalParticipant,
-    RemoteParticipant,
-    RemoteParticipantState,
-    Screenshare,
-    StreamState,
-    WaitingParticipant,
-} from "./RoomParticipant";
+import { LocalParticipant, RemoteParticipant, Screenshare, StreamState, WaitingParticipant } from "./RoomParticipant";
 
 import ServerSocket, {
     ChatMessage as SignalChatMessage,
@@ -41,6 +34,7 @@ import ServerSocket, {
 } from "@whereby/jslib-media/src/utils/ServerSocket";
 import { sdkVersion } from "./index";
 import LocalMedia from "./LocalMedia";
+import { RemoteParticipantState } from "./react/useRoomConnection";
 
 type Logger = Pick<Console, "debug" | "error" | "log" | "warn">;
 
