@@ -187,6 +187,18 @@ function updateParticipant(
     ];
 }
 
+// omit the internal props
+function convertRemoteParticipantToRemoteParticipantState(p: RemoteParticipant): RemoteParticipantState {
+    return {
+        displayName: p.displayName,
+        id: p.id,
+        isAudioEnabled: p.isAudioEnabled,
+        isLocalParticipant: p.isLocalParticipant,
+        isVideoEnabled: p.isVideoEnabled,
+        stream: p.stream,
+    };
+}
+
 function addScreenshare(screenshares: Screenshare[], screenshare: Screenshare): Screenshare[] {
     const existingScreenshare = screenshares.find((ss) => ss.id === screenshare.id);
     if (existingScreenshare) {
@@ -447,7 +459,12 @@ export function useRoomConnection(
             }),
             createEventListener("participant_joined", (e) => {
                 const { remoteParticipant } = e.detail;
-                dispatch({ type: "PARTICIPANT_JOINED", payload: { paritipant: remoteParticipant } });
+                dispatch({
+                    type: "PARTICIPANT_JOINED",
+                    payload: {
+                        paritipant: convertRemoteParticipantToRemoteParticipantState(remoteParticipant),
+                    },
+                });
             }),
             createEventListener("participant_left", (e) => {
                 const { participantId } = e.detail;
@@ -476,7 +493,11 @@ export function useRoomConnection(
                 const { localParticipant, remoteParticipants, waitingParticipants } = e.detail;
                 dispatch({
                     type: "ROOM_JOINED",
-                    payload: { localParticipant, remoteParticipants, waitingParticipants },
+                    payload: {
+                        localParticipant,
+                        remoteParticipants: remoteParticipants.map(convertRemoteParticipantToRemoteParticipantState),
+                        waitingParticipants,
+                    },
                 });
             }),
             createEventListener("screenshare_started", (e) => {
