@@ -34,7 +34,6 @@ import ServerSocket, {
 } from "@whereby/jslib-media/src/utils/ServerSocket";
 import { sdkVersion } from "./index";
 import LocalMedia from "./LocalMedia";
-import { RemoteParticipantState } from "./react/useRoomConnection";
 
 type Logger = Pick<Console, "debug" | "error" | "log" | "warn">;
 
@@ -203,18 +202,6 @@ export function handleStreamAdded(
     return new CustomEvent("screenshare_started", {
         detail: { participantId: clientId, stream, id: streamId, isLocal: false },
     });
-}
-
-// omit the internal props
-function convertRemoteParticipantToRemoteParticipantState(p: RemoteParticipant): RemoteParticipantState {
-    return {
-        displayName: p.displayName,
-        id: p.id,
-        isAudioEnabled: p.isAudioEnabled,
-        isLocalParticipant: p.isLocalParticipant,
-        isVideoEnabled: p.isVideoEnabled,
-        stream: p.stream,
-    };
 }
 
 /*
@@ -444,7 +431,7 @@ export default class RoomConnection extends TypedEventTarget {
         this._handleAcceptStreams([remoteParticipant]);
         this.dispatchEvent(
             new CustomEvent("participant_joined", {
-                detail: { remoteParticipant: convertRemoteParticipantToRemoteParticipantState(remoteParticipant) },
+                detail: { remoteParticipant },
             })
         );
     }
@@ -577,9 +564,7 @@ export default class RoomConnection extends TypedEventTarget {
                 new CustomEvent("room_joined", {
                     detail: {
                         localParticipant: this.localParticipant,
-                        remoteParticipants: this.remoteParticipants.map(
-                            convertRemoteParticipantToRemoteParticipantState
-                        ),
+                        remoteParticipants: this.remoteParticipants,
                         waitingParticipants: knockers.map((knocker) => {
                             return { id: knocker.clientId, displayName: knocker.displayName } as WaitingParticipant;
                         }),
