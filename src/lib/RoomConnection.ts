@@ -88,6 +88,7 @@ export type ParticipantLeftEvent = {
 export type ParticipantStreamAddedEvent = {
     participantId: string;
     stream: MediaStream;
+    streamId: string;
 };
 
 export type ParticipantAudioEnabledEvent = {
@@ -211,7 +212,13 @@ export function handleStreamAdded(
     }
     // screenshare
     return new RoomEvent("screenshare_started", {
-        detail: { participantId: clientId, stream, id: streamId, isLocal: false },
+        detail: {
+            participantId: clientId,
+            stream,
+            id: streamId,
+            isLocal: false,
+            hasAudioTrack: stream.getAudioTracks().length > 0,
+        },
     });
 }
 
@@ -966,7 +973,9 @@ export default class RoomConnection extends TypedEventTarget {
 
             this.rtcManager?.removeStream(id, this.localMedia.screenshareStream, null);
             this.screenshares = this.screenshares.filter((s) => s.id !== id);
-            this.dispatchEvent(new RoomEvent("screenshare_stopped", { detail: { participantId: this.selfId, id } }));
+            this.dispatchEvent(
+                new RoomEvent("screenshare_stopped", { detail: { participantId: this.selfId || "", id } })
+            );
             this.localMedia.stopScreenshare();
         }
     }
