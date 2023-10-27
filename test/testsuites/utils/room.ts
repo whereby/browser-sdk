@@ -129,7 +129,7 @@ async function joinRoom({
         await expect(page.locator("h1")).toContainText(/Room locked/);
     } else {
         await expect(page.locator("h1")).toContainText(/Room/);
-        await expect(page.locator("dd[data-testid='roomConnectionStatus']")).toContainText("connected");
+        await expect(page.locator("dd[data-testid='connectionStatus']")).toContainText("connected");
     }
 }
 

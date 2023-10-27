@@ -5,31 +5,46 @@ import RoomConnection, {
     ChatMessage,
     CloudRecordingState,
     RoomConnectionOptions,
-    RoomConnectionStatus,
+    ConnectionStatus,
     RoomEventsMap,
     LiveStreamState,
 } from "../RoomConnection";
-import { LocalParticipantState, RemoteParticipantState, Screenshare, WaitingParticipant } from "../RoomParticipant";
+import { LocalParticipant, RemoteParticipant, Screenshare, WaitingParticipant } from "../RoomParticipant";
+
+export type RemoteParticipantState = Omit<
+    RemoteParticipant,
+    "updateStreamState" | "newJoiner" | "streams" | "addStream" | "removeStream"
+>;
+export type LocalParticipantState = LocalParticipant;
+export interface WaitingParticipantState {
+    id: string;
+    displayName: string | null;
+}
+export interface ChatMessageState {
+    senderId: string;
+    timestamp: string;
+    text: string;
+}
+export type ScreenshareState = Screenshare;
+
+type LocalScreenshareStatus = "starting" | "active";
 
 export interface RoomConnectionState {
     chatMessages: ChatMessage[];
     cloudRecording?: CloudRecordingState;
-    isStartingScreenshare: boolean;
-    startScreenshareError?: unknown;
+    localScreenshareStatus?: LocalScreenshareStatus;
     localParticipant?: LocalParticipantState;
-    mostRecentChatMessage?: ChatMessage;
     remoteParticipants: RemoteParticipantState[];
     screenshares: Screenshare[];
-    roomConnectionStatus: RoomConnectionStatus;
+    connectionStatus: ConnectionStatus;
     liveStream?: LiveStreamState;
-    waitingParticipants: WaitingParticipant[];
+    waitingParticipants: WaitingParticipantState[];
 }
 
 const initialState: RoomConnectionState = {
     chatMessages: [],
-    isStartingScreenshare: false,
     remoteParticipants: [],
-    roomConnectionStatus: "initializing",
+    connectionStatus: "initializing",
     screenshares: [],
     waitingParticipants: [],
 };
@@ -55,9 +70,9 @@ type RoomConnectionEvent =
           };
       }
     | {
-          type: "ROOM_CONNECTION_STATUS_CHANGED";
+          type: "CONNECTION_STATUS_CHANGED";
           payload: {
-              roomConnectionStatus: RoomConnectionStatus;
+              connectionStatus: ConnectionStatus;
           };
       }
     | {
@@ -138,6 +153,9 @@ type RoomConnectionEvent =
           type: "LOCAL_SCREENSHARE_STARTING";
       }
     | {
+          type: "LOCAL_SCREENSHARE_STARTED";
+      }
+    | {
           type: "LOCAL_SCREENSHARE_STOPPED";
       }
     | {
@@ -180,6 +198,18 @@ function updateParticipant(
     ];
 }
 
+// omit the internal props
+function convertRemoteParticipantToRemoteParticipantState(p: RemoteParticipant): RemoteParticipantState {
+    return {
+        displayName: p.displayName,
+        id: p.id,
+        isAudioEnabled: p.isAudioEnabled,
+        isLocalParticipant: p.isLocalParticipant,
+        isVideoEnabled: p.isVideoEnabled,
+        stream: p.stream,
+    };
+}
+
 function addScreenshare(screenshares: Screenshare[], screenshare: Screenshare): Screenshare[] {
     const existingScreenshare = screenshares.find((ss) => ss.id === screenshare.id);
     if (existingScreenshare) {
@@ -194,7 +224,6 @@ function reducer(state: RoomConnectionState, action: RoomConnectionEvent): RoomC
             return {
                 ...state,
                 chatMessages: [...state.chatMessages, action.payload],
-                mostRecentChatMessage: action.payload,
             };
         case "CLOUD_RECORDING_STARTED":
             return {
@@ -215,12 +244,12 @@ function reducer(state: RoomConnectionState, action: RoomConnectionEvent): RoomC
                 localParticipant: action.payload.localParticipant,
                 remoteParticipants: action.payload.remoteParticipants,
                 waitingParticipants: action.payload.waitingParticipants,
-                roomConnectionStatus: "connected",
+                connectionStatus: "connected",
             };
-        case "ROOM_CONNECTION_STATUS_CHANGED":
+        case "CONNECTION_STATUS_CHANGED":
             return {
                 ...state,
-                roomConnectionStatus: action.payload.roomConnectionStatus,
+                connectionStatus: action.payload.connectionStatus,
             };
         case "PARTICIPANT_AUDIO_ENABLED":
             return {
@@ -287,17 +316,22 @@ function reducer(state: RoomConnectionState, action: RoomConnectionEvent): RoomC
         case "LOCAL_SCREENSHARE_START_ERROR":
             return {
                 ...state,
-                isStartingScreenshare: false,
-                startScreenshareError: action.payload,
+                localScreenshareStatus: undefined,
             };
         case "LOCAL_SCREENSHARE_STARTING":
             return {
                 ...state,
-                isStartingScreenshare: true,
+                localScreenshareStatus: "starting",
+            };
+        case "LOCAL_SCREENSHARE_STARTED":
+            return {
+                ...state,
+                localScreenshareStatus: "active",
             };
         case "LOCAL_SCREENSHARE_STOPPED":
             return {
                 ...state,
+                localScreenshareStatus: undefined,
                 screenshares: state.screenshares.filter((ss) => !ss.isLocal),
             };
         case "LOCAL_CAMERA_ENABLED":
@@ -372,7 +406,17 @@ export type RoomConnectionRef = {
     _ref: RoomConnection;
 };
 
-export function useRoomConnection(roomUrl: string, roomConnectionOptions: UseRoomConnectionOptions): RoomConnectionRef {
+const defaultRoomConnectionOptions: UseRoomConnectionOptions = {
+    localMediaConstraints: {
+        audio: true,
+        video: true,
+    },
+};
+
+export function useRoomConnection(
+    roomUrl: string,
+    roomConnectionOptions = defaultRoomConnectionOptions
+): RoomConnectionRef {
     const [roomConnection] = useState<RoomConnection>(
         () =>
             new RoomConnection(roomUrl, {
@@ -426,7 +470,12 @@ export function useRoomConnection(roomUrl: string, roomConnectionOptions: UseRoo
             }),
             createEventListener("participant_joined", (e) => {
                 const { remoteParticipant } = e.detail;
-                dispatch({ type: "PARTICIPANT_JOINED", payload: { paritipant: remoteParticipant } });
+                dispatch({
+                    type: "PARTICIPANT_JOINED",
+                    payload: {
+                        paritipant: convertRemoteParticipantToRemoteParticipantState(remoteParticipant),
+                    },
+                });
             }),
             createEventListener("participant_left", (e) => {
                 const { participantId } = e.detail;
@@ -444,18 +493,22 @@ export function useRoomConnection(roomUrl: string, roomConnectionOptions: UseRoo
                 const { participantId, isVideoEnabled } = e.detail;
                 dispatch({ type: "PARTICIPANT_VIDEO_ENABLED", payload: { participantId, isVideoEnabled } });
             }),
-            createEventListener("room_connection_status_changed", (e) => {
-                const { roomConnectionStatus } = e.detail;
+            createEventListener("connection_status_changed", (e) => {
+                const { connectionStatus } = e.detail;
                 dispatch({
-                    type: "ROOM_CONNECTION_STATUS_CHANGED",
-                    payload: { roomConnectionStatus },
+                    type: "CONNECTION_STATUS_CHANGED",
+                    payload: { connectionStatus },
                 });
             }),
             createEventListener("room_joined", (e) => {
                 const { localParticipant, remoteParticipants, waitingParticipants } = e.detail;
                 dispatch({
                     type: "ROOM_JOINED",
-                    payload: { localParticipant, remoteParticipants, waitingParticipants },
+                    payload: {
+                        localParticipant,
+                        remoteParticipants: remoteParticipants.map(convertRemoteParticipantToRemoteParticipantState),
+                        waitingParticipants,
+                    },
                 });
             }),
             createEventListener("screenshare_started", (e) => {
@@ -471,6 +524,12 @@ export function useRoomConnection(roomUrl: string, roomConnectionOptions: UseRoo
                     type: "SCREENSHARE_STOPPED",
                     payload: { participantId, id },
                 });
+                // dispach LOCAL_SCREENSHARE_STOPPED here because the exposed
+                // stopScreenshare method is not called when the screenshare is
+                // stopped by the browser's native stop screenshare button
+                if (participantId === state.localParticipant?.id) {
+                    dispatch({ type: "LOCAL_SCREENSHARE_STOPPED" });
+                }
             }),
             createEventListener("streaming_started", (e) => {
                 const { status, startedAt } = e.detail;
@@ -542,6 +601,7 @@ export function useRoomConnection(roomUrl: string, roomConnectionOptions: UseRoo
 
                 try {
                     await roomConnection.startScreenshare();
+                    dispatch({ type: "LOCAL_SCREENSHARE_STARTED" });
                 } catch (error) {
                     dispatch({ type: "LOCAL_SCREENSHARE_START_ERROR", payload: error });
                 }

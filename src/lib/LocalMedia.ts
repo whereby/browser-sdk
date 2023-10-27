@@ -17,6 +17,10 @@ type DeviceListUpdateErrorEvent = {
 type StreamUpdatedEvent = {
     stream: MediaStream;
 };
+type StopResumeVideoEvent = {
+    track: MediaStreamTrack;
+    enable: boolean;
+};
 
 interface LocalMediaEventsMap {
     camera_enabled: CustomEvent<CameraEnabledEvent>;
@@ -24,6 +28,17 @@ interface LocalMediaEventsMap {
     device_list_update_error: CustomEvent<DeviceListUpdateErrorEvent>;
     microphone_enabled: CustomEvent<MicrophoneEnabledEvent>;
     stream_updated: CustomEvent<StreamUpdatedEvent>;
+    stopresumevideo: CustomEvent<StopResumeVideoEvent>;
+}
+type LocalMediaEventKey = keyof LocalMediaEventsMap;
+type LocalMediaEventType<T extends LocalMediaEventKey> = LocalMediaEventsMap[T];
+type LocalMediaEventPayload<T extends LocalMediaEventKey> = LocalMediaEventType<T> extends CustomEvent<infer U>
+    ? U
+    : never;
+class LocalMediaEvent<T extends LocalMediaEventKey> extends CustomEvent<LocalMediaEventPayload<T>> {
+    constructor(eventType: T, eventInitDict?: CustomEventInit<LocalMediaEventPayload<T>>) {
+        super(eventType, eventInitDict);
+    }
 }
 
 interface LocalMediaEventTarget extends EventTarget {
@@ -112,7 +127,7 @@ export default class LocalMedia extends TypedLocalMediaEventTarget {
         }
 
         this._cameraEnabled = newValue;
-        this.dispatchEvent(new CustomEvent("camera_enabled", { detail: { enabled: this._cameraEnabled } }));
+        this.dispatchEvent(new LocalMediaEvent("camera_enabled", { detail: { enabled: this._cameraEnabled } }));
 
         // Only stop tracks if we fully own the media stream
         const shouldStopTrack = !!this._constraints;
@@ -152,7 +167,7 @@ export default class LocalMedia extends TypedLocalMediaEventTarget {
 
             // Dispatch event on stream to allow RTC layer effects
             this.stream.dispatchEvent(
-                new CustomEvent("stopresumevideo", { detail: { track, enable: this._cameraEnabled } })
+                new LocalMediaEvent("stopresumevideo", { detail: { track, enable: this._cameraEnabled } })
             );
         } catch (error) {
             // TODO: Update error state
@@ -169,7 +184,7 @@ export default class LocalMedia extends TypedLocalMediaEventTarget {
 
         // Update internal state and dispatch event early
         this._microphoneEnabled = enabled ?? !audioTrack.enabled;
-        this.dispatchEvent(new CustomEvent("microphone_enabled", { detail: { enabled: this._microphoneEnabled } }));
+        this.dispatchEvent(new LocalMediaEvent("microphone_enabled", { detail: { enabled: this._microphoneEnabled } }));
 
         audioTrack.enabled = this._microphoneEnabled;
     }
@@ -207,7 +222,7 @@ export default class LocalMedia extends TypedLocalMediaEventTarget {
         }
 
         this.dispatchEvent(
-            new CustomEvent("stream_updated", {
+            new LocalMediaEvent("stream_updated", {
                 detail: { stream: this.stream },
             })
         );
@@ -231,7 +246,7 @@ export default class LocalMedia extends TypedLocalMediaEventTarget {
         this.stream.addTrack(newAudioTrack);
 
         this.dispatchEvent(
-            new CustomEvent("stream_updated", {
+            new LocalMediaEvent("stream_updated", {
                 detail: { stream: this.stream },
             })
         );
@@ -241,7 +256,7 @@ export default class LocalMedia extends TypedLocalMediaEventTarget {
         try {
             const devices = await navigator.mediaDevices.enumerateDevices();
             this.dispatchEvent(
-                new CustomEvent("device_list_updated", {
+                new LocalMediaEvent("device_list_updated", {
                     detail: {
                         cameraDevices: devices.filter((d) => d.kind === "videoinput"),
                         microphoneDevices: devices.filter((d) => d.kind === "audioinput"),
@@ -251,7 +266,7 @@ export default class LocalMedia extends TypedLocalMediaEventTarget {
             );
         } catch (error) {
             this.dispatchEvent(
-                new CustomEvent("device_list_update_error", {
+                new LocalMediaEvent("device_list_update_error", {
                     detail: {
                         error,
                     },
@@ -283,7 +298,7 @@ export default class LocalMedia extends TypedLocalMediaEventTarget {
         this._updateDeviceList();
 
         this.dispatchEvent(
-            new CustomEvent("stream_updated", {
+            new LocalMediaEvent("stream_updated", {
                 detail: { stream: this.stream },
             })
         );

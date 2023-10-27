@@ -25,9 +25,8 @@ export default function VideoExperience({
 
     const {
         localParticipant,
-        mostRecentChatMessage,
         remoteParticipants,
-        roomConnectionStatus,
+        connectionStatus,
         waitingParticipants,
         screenshares,
     } = state;
@@ -44,19 +43,18 @@ export default function VideoExperience({
 
     return (
         <div>
-            {roomConnectionStatus === "connecting" && <span>Connecting...</span>}
-            {roomConnectionStatus === "room_locked" && (
+            {connectionStatus === "connecting" && <span>Connecting...</span>}
+            {connectionStatus === "room_locked" && (
                 <div style={{ color: "red" }}>
                     <span>Room locked, please knock....</span>
                     <button onClick={() => knock()}>Knock</button>
                 </div>
             )}
-            {roomConnectionStatus === "knocking" && <span>Knocking...</span>}
-            {roomConnectionStatus === "rejected" && <span>Rejected :(</span>}
-            {roomConnectionStatus === "connected" && (
+            {connectionStatus === "knocking" && <span>Knocking...</span>}
+            {connectionStatus === "knock_rejected" && <span>Rejected :(</span>}
+            {connectionStatus === "connected" && (
                 <>
                     <div className="chat">
-                        <div className="last_message">{mostRecentChatMessage?.text}</div>
                         <form
                             onSubmit={(e) => {
                                 e.preventDefault();

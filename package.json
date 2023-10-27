@@ -1,6 +1,6 @@
 {
     "name": "@whereby.com/browser-sdk",
-    "version": "2.0.0-alpha31",
+    "version": "2.0.0-beta1",
     "description": "Modules for integration Whereby video in web apps",
     "author": "Whereby AS",
     "license": "MIT",
@@ -10,14 +10,16 @@
     },
     "browserslist": "> 0.5%, last 2 versions, not dead",
     "source": "src/index.js",
-    "main": "./dist/index.js",
-    "module": "./dist/index.js",
-    "types": "./dist/index.d.ts",
     "exports": {
-        ".": {
-            "types": "./dist/index.d.ts",
-            "import": "./dist/index.js",
-            "require": "./dist/index.js"
+        "./react":  "./dist/react/index.js",
+        "./embed":  "./dist/embed/index.js",
+        "./utils":  "./dist/utils/index.js"
+    },
+    "typesVersions": {
+        "*": {
+            "react": ["dist/react/index.d.ts"],
+            "embed": ["dist/embed/index.d.ts"],
+            "utils": ["dist/utils/index.d.ts"]
         }
     },
     "files": [
@@ -83,7 +85,7 @@
     },
     "dependencies": {
         "@swc/helpers": "^0.3.13",
-        "@whereby/jslib-media": "whereby/jslib-media.git#1.3.2",
+        "@whereby/jslib-media": "whereby/jslib-media.git#1.3.3",
         "assert": "^2.0.0",
         "axios": "^1.2.3",
         "btoa": "^1.2.1",
