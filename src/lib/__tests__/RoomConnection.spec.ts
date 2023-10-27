@@ -99,6 +99,12 @@ describe("handleStreamAdded", () => {
         });
 
         expect(res?.type).toEqual("screenshare_started");
-        expect(res?.detail).toEqual({ participantId: clientId, stream, id: streamId, isLocal: false });
+        expect(res?.detail).toEqual({
+            participantId: clientId,
+            stream,
+            id: streamId,
+            isLocal: false,
+            hasAudioTrack: false,
+        });
     });
 });
