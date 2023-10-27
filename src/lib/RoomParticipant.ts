@@ -87,8 +87,6 @@ export class LocalParticipant extends RoomParticipant {
     }
 }
 
-export type LocalParticipantState = LocalParticipant;
-
 export interface WaitingParticipant {
     id: string;
     displayName: string | null;
