@@ -9,12 +9,23 @@ import RoomConnection, {
     RoomEventsMap,
     LiveStreamState,
 } from "../RoomConnection";
-import { LocalParticipantState, RemoteParticipant, Screenshare, WaitingParticipant } from "../RoomParticipant";
+import { LocalParticipant, RemoteParticipant, Screenshare, WaitingParticipant } from "../RoomParticipant";
 
 export type RemoteParticipantState = Omit<
     RemoteParticipant,
     "updateStreamState" | "newJoiner" | "streams" | "addStream" | "removeStream"
 >;
+export type LocalParticipantState = LocalParticipant;
+export interface WaitingParticipantState {
+    id: string;
+    displayName: string | null;
+}
+export interface ChatMessageState {
+    senderId: string;
+    timestamp: string;
+    text: string;
+}
+export type ScreenshareState = Screenshare;
 
 type LocalScreenshareStatus = "starting" | "active";
 
@@ -27,7 +38,7 @@ export interface RoomConnectionState {
     screenshares: Screenshare[];
     connectionStatus: ConnectionStatus;
     liveStream?: LiveStreamState;
-    waitingParticipants: WaitingParticipant[];
+    waitingParticipants: WaitingParticipantState[];
 }
 
 const initialState: RoomConnectionState = {

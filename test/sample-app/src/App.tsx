@@ -1,5 +1,5 @@
 import React, { useEffect, useRef, useState } from "react";
-import { useRoomConnection, useLocalMedia } from "@whereby.com/browser-sdk/react";
+import { useRoomConnection, useLocalMedia, UseLocalMediaResult } from "@whereby.com/browser-sdk/react";
 import { fakeAudioStream, fakeWebcamFrame } from "@whereby.com/browser-sdk/utils";
 
 import "./App.css";
@@ -33,11 +33,9 @@ const ChatInput = ({ sendChatMessage }: { sendChatMessage: (message: string) => 
     );
 };
 
-type LocalMediaRef = ReturnType<typeof useLocalMedia>;
-
 type RoomProps = {
     roomUrl: string;
-    localMedia: LocalMediaRef;
+    localMedia: UseLocalMediaResult;
     displayName: string;
     isHost: boolean;
 };
