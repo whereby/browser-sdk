@@ -1,5 +1,7 @@
 import React, { useEffect, useRef, useState } from "react";
-import { useRoomConnection, useLocalMedia, fakeAudioStream, fakeWebcamFrame } from "@whereby.com/browser-sdk";
+import { useRoomConnection, useLocalMedia } from "@whereby.com/browser-sdk/react";
+import { fakeAudioStream, fakeWebcamFrame } from "@whereby.com/browser-sdk/utils";
+
 import "./App.css";
 
 const WaitingArea = ({ knock }: { knock: () => void }) => {
