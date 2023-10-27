@@ -10,14 +10,16 @@
     },
     "browserslist": "> 0.5%, last 2 versions, not dead",
     "source": "src/index.js",
-    "main": "./dist/index.js",
-    "module": "./dist/index.js",
-    "types": "./dist/index.d.ts",
     "exports": {
-        ".": {
-            "types": "./dist/index.d.ts",
-            "import": "./dist/index.js",
-            "require": "./dist/index.js"
+        "./react":  "./dist/react/index.js",
+        "./embed":  "./dist/embed/index.js",
+        "./utils":  "./dist/utils/index.js"
+    },
+    "typesVersions": {
+        "*": {
+            "react": ["dist/react/index.d.ts"],
+            "embed": ["dist/embed/index.d.ts"],
+            "utils": ["dist/utils/index.d.ts"]
         }
     },
     "files": [

@@ -1,4 +1,5 @@
 import { define, ref } from "heresy";
+export { sdkVersion } from "../version";
 
 interface WherebyEmbedAttributes {
     audio: string;
