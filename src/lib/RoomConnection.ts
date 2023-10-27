@@ -32,7 +32,7 @@ import ServerSocket, {
     ScreenshareStartedEvent as SignalScreenshareStartedEvent,
     ScreenshareStoppedEvent as SignalScreenshareStoppedEvent,
 } from "@whereby/jslib-media/src/utils/ServerSocket";
-import { sdkVersion } from "./index";
+import { sdkVersion } from "./version";
 import LocalMedia from "./LocalMedia";
 
 type Logger = Pick<Console, "debug" | "error" | "log" | "warn">;

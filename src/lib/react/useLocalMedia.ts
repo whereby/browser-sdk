@@ -1,5 +1,5 @@
 import { useEffect, useReducer, useState } from "react";
-import LocalMedia from "../LocalMedia";
+import { LocalMedia } from "./";
 
 interface LocalMediaState {
     currentCameraDeviceId?: string;
