@@ -163,7 +163,7 @@ type RoomEventKey = keyof RoomEventsMap;
 type RoomEventHandler<T extends RoomEventKey> = RoomEventsMap[T];
 type RoomEventType<T extends RoomEventKey> = ArgType<RoomEventHandler<T>>;
 type RoomEventPayload<T extends RoomEventKey> = RoomEventType<T> extends CustomEvent<infer U> ? U : never;
-class RoomEvent<T extends RoomEventKey> extends CustomEvent<RoomEventPayload<T>> {
+class RoomConnectionEvent<T extends RoomEventKey> extends CustomEvent<RoomEventPayload<T>> {
     constructor(eventType: T, eventInitDict?: CustomEventInit<RoomEventPayload<T>>) {
         super(eventType, eventInitDict);
     }
@@ -208,10 +208,12 @@ export function handleStreamAdded(
         (!remoteParticipant.stream && streamType === "webcam") ||
         (!remoteParticipant.stream && !streamType && remoteParticipant.streams.indexOf(remoteParticipantStream) < 1)
     ) {
-        return new RoomEvent("participant_stream_added", { detail: { participantId: clientId, stream, streamId } });
+        return new RoomConnectionEvent("participant_stream_added", {
+            detail: { participantId: clientId, stream, streamId },
+        });
     }
     // screenshare
-    return new RoomEvent("screenshare_started", {
+    return new RoomConnectionEvent("screenshare_started", {
         detail: {
             participantId: clientId,
             stream,
@@ -363,12 +365,12 @@ export default class RoomConnection extends TypedEventTarget {
         this.localMedia.addEventListener("camera_enabled", (e) => {
             const { enabled } = e.detail;
             this.signalSocket.emit("enable_video", { enabled });
-            this.dispatchEvent(new RoomEvent("local_camera_enabled", { detail: { enabled } }));
+            this.dispatchEvent(new RoomConnectionEvent("local_camera_enabled", { detail: { enabled } }));
         });
         this.localMedia.addEventListener("microphone_enabled", (e) => {
             const { enabled } = e.detail;
             this.signalSocket.emit("enable_audio", { enabled });
-            this.dispatchEvent(new RoomEvent("local_microphone_enabled", { detail: { enabled } }));
+            this.dispatchEvent(new RoomConnectionEvent("local_microphone_enabled", { detail: { enabled } }));
         });
 
         const webrtcProvider = {
@@ -403,12 +405,12 @@ export default class RoomConnection extends TypedEventTarget {
     }
 
     private _handleNewChatMessage(message: SignalChatMessage) {
-        this.dispatchEvent(new RoomEvent("chat_message", { detail: message }));
+        this.dispatchEvent(new RoomConnectionEvent("chat_message", { detail: message }));
     }
 
     private _handleCloudRecordingStarted({ client }: { client: SignalClient }) {
         this.dispatchEvent(
-            new RoomEvent("cloud_recording_started", {
+            new RoomConnectionEvent("cloud_recording_started", {
                 detail: {
                     status: "recording",
                     startedAt: client.startedCloudRecordingAt
@@ -421,7 +423,7 @@ export default class RoomConnection extends TypedEventTarget {
 
     private _handleStreamingStarted() {
         this.dispatchEvent(
-            new RoomEvent("streaming_started", {
+            new RoomConnectionEvent("streaming_started", {
                 detail: {
                     status: "streaming",
                     // We don't have the streaming start time stored on the
@@ -448,7 +450,7 @@ export default class RoomConnection extends TypedEventTarget {
         this.remoteParticipants = [...this.remoteParticipants, remoteParticipant];
         this._handleAcceptStreams([remoteParticipant]);
         this.dispatchEvent(
-            new RoomEvent("participant_joined", {
+            new RoomConnectionEvent("participant_joined", {
                 detail: { remoteParticipant },
             })
         );
@@ -460,7 +462,9 @@ export default class RoomConnection extends TypedEventTarget {
         if (!remoteParticipant) {
             return;
         }
-        this.dispatchEvent(new RoomEvent("participant_left", { detail: { participantId: remoteParticipant.id } }));
+        this.dispatchEvent(
+            new RoomConnectionEvent("participant_left", { detail: { participantId: remoteParticipant.id } })
+        );
     }
 
     private _handleClientAudioEnabled({ clientId, isAudioEnabled }: { clientId: string; isAudioEnabled: boolean }) {
@@ -469,7 +473,7 @@ export default class RoomConnection extends TypedEventTarget {
             return;
         }
         this.dispatchEvent(
-            new RoomEvent("participant_audio_enabled", {
+            new RoomConnectionEvent("participant_audio_enabled", {
                 detail: { participantId: remoteParticipant.id, isAudioEnabled },
             })
         );
@@ -481,7 +485,7 @@ export default class RoomConnection extends TypedEventTarget {
             return;
         }
         this.dispatchEvent(
-            new RoomEvent("participant_video_enabled", {
+            new RoomConnectionEvent("participant_video_enabled", {
                 detail: { participantId: remoteParticipant.id, isVideoEnabled },
             })
         );
@@ -493,7 +497,7 @@ export default class RoomConnection extends TypedEventTarget {
             return;
         }
         this.dispatchEvent(
-            new RoomEvent("participant_metadata_changed", {
+            new RoomConnectionEvent("participant_metadata_changed", {
                 detail: { participantId: remoteParticipant.id, displayName },
             })
         );
@@ -514,7 +518,7 @@ export default class RoomConnection extends TypedEventTarget {
             this.connectionStatus = "knock_rejected";
 
             this.dispatchEvent(
-                new RoomEvent("connection_status_changed", {
+                new RoomConnectionEvent("connection_status_changed", {
                     detail: {
                         connectionStatus: this.connectionStatus,
                     },
@@ -527,7 +531,7 @@ export default class RoomConnection extends TypedEventTarget {
         const { clientId } = payload;
 
         this.dispatchEvent(
-            new RoomEvent("waiting_participant_left", {
+            new RoomConnectionEvent("waiting_participant_left", {
                 detail: { participantId: clientId },
             })
         );
@@ -539,7 +543,7 @@ export default class RoomConnection extends TypedEventTarget {
         if (error === "room_locked" && isLocked) {
             this.connectionStatus = "room_locked";
             this.dispatchEvent(
-                new RoomEvent("connection_status_changed", {
+                new RoomConnectionEvent("connection_status_changed", {
                     detail: {
                         connectionStatus: this.connectionStatus,
                     },
@@ -580,7 +584,7 @@ export default class RoomConnection extends TypedEventTarget {
             this.connectionStatus = "connected";
 
             this.dispatchEvent(
-                new RoomEvent("room_joined", {
+                new RoomConnectionEvent("room_joined", {
                     detail: {
                         localParticipant: this.localParticipant,
                         remoteParticipants: this.remoteParticipants,
@@ -597,7 +601,7 @@ export default class RoomConnection extends TypedEventTarget {
         const { clientId, displayName } = event;
 
         this.dispatchEvent(
-            new RoomEvent("waiting_participant_joined", {
+            new RoomConnectionEvent("waiting_participant_joined", {
                 detail: { participantId: clientId, displayName },
             })
         );
@@ -615,7 +619,7 @@ export default class RoomConnection extends TypedEventTarget {
     private _handleDisconnect() {
         this.connectionStatus = "disconnected";
         this.dispatchEvent(
-            new RoomEvent("connection_status_changed", {
+            new RoomConnectionEvent("connection_status_changed", {
                 detail: {
                     connectionStatus: this.connectionStatus,
                 },
@@ -624,11 +628,11 @@ export default class RoomConnection extends TypedEventTarget {
     }
 
     private _handleCloudRecordingStopped() {
-        this.dispatchEvent(new RoomEvent("cloud_recording_stopped"));
+        this.dispatchEvent(new RoomConnectionEvent("cloud_recording_stopped"));
     }
 
     private _handleStreamingStopped() {
-        this.dispatchEvent(new RoomEvent("streaming_stopped"));
+        this.dispatchEvent(new RoomConnectionEvent("streaming_stopped"));
     }
 
     private _handleScreenshareStarted(screenshare: SignalScreenshareStartedEvent) {
@@ -666,7 +670,7 @@ export default class RoomConnection extends TypedEventTarget {
 
         remoteParticipant.removeStream(id);
         this.screenshares = this.screenshares.filter((s) => !(s.participantId === participantId && s.id === id));
-        this.dispatchEvent(new RoomEvent("screenshare_stopped", { detail: { participantId, id } }));
+        this.dispatchEvent(new RoomConnectionEvent("screenshare_stopped", { detail: { participantId, id } }));
     }
 
     private _handleRtcEvent<K extends keyof RtcEvents>(eventName: K, data: RtcEvents[K]) {
@@ -811,7 +815,7 @@ export default class RoomConnection extends TypedEventTarget {
         this.signalSocket.connect();
         this.connectionStatus = "connecting";
         this.dispatchEvent(
-            new RoomEvent("connection_status_changed", {
+            new RoomConnectionEvent("connection_status_changed", {
                 detail: {
                     connectionStatus: this.connectionStatus,
                 },
@@ -842,7 +846,7 @@ export default class RoomConnection extends TypedEventTarget {
     public knock() {
         this.connectionStatus = "knocking";
         this.dispatchEvent(
-            new RoomEvent("connection_status_changed", {
+            new RoomConnectionEvent("connection_status_changed", {
                 detail: {
                     connectionStatus: this.connectionStatus,
                 },
@@ -956,7 +960,7 @@ export default class RoomConnection extends TypedEventTarget {
         ];
 
         this.dispatchEvent(
-            new RoomEvent("screenshare_started", {
+            new RoomConnectionEvent("screenshare_started", {
                 detail: {
                     participantId: this.selfId || "",
                     id: screenshareStream.id,
@@ -974,7 +978,7 @@ export default class RoomConnection extends TypedEventTarget {
             this.rtcManager?.removeStream(id, this.localMedia.screenshareStream, null);
             this.screenshares = this.screenshares.filter((s) => s.id !== id);
             this.dispatchEvent(
-                new RoomEvent("screenshare_stopped", { detail: { participantId: this.selfId || "", id } })
+                new RoomConnectionEvent("screenshare_stopped", { detail: { participantId: this.selfId || "", id } })
             );
             this.localMedia.stopScreenshare();
         }
