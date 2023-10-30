@@ -12,6 +12,12 @@ commands to the room from the host application.
 
 ## Usage
 
+### React Hooks (Beta)
+
+We're currently working on a library for use within React applications for a more customizable experience. Take a look at [the development branch](https://github.com/whereby/browser-sdk/tree/development) if you'd like to test it out.
+
+Disclaimer: This is a beta release, and we recommend using it with caution in production environments. Your feedback and contributions are greatly appreciated.
+
 ### React + a bundler (webpack, rollup, parcel etc)
 
 ```js
@@ -45,3 +51,4 @@ export default MyComponent
 Although we have just higlighted two combinations of how to load and use the
 web component, it should be possible to use this library with all the major
 frontend frameworks.
+
