@@ -1,6 +1,6 @@
 import * as React from "react";
 import "./App.css";
-import { useRoomConnection } from "@whereby.com/browser-sdk";
+import { useRoomConnection } from "@whereby.com/browser-sdk/react";
 import IconButton from "./IconButton";
 import ChatInput from "./ChatInput";
 
