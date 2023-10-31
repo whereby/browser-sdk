@@ -32,7 +32,6 @@ export function createServices(roomUrl: string) {
     });
     const roomService = new RoomService({ organizationApiClient });
     return {
-        roomUrl,
         credentialsService,
         apiClient,
         organizationService,

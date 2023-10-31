@@ -1,9 +1,8 @@
-import { createAsyncThunk, createSlice } from "@reduxjs/toolkit";
-import { RootState } from "../store";
+import { createSlice } from "@reduxjs/toolkit";
+import { RootState, createAppAsyncThunk } from "../store";
 import { startAppListening } from "../listenerMiddleware";
 import { selectAppWantsToJoin } from "./app";
 import { Credentials } from "~/lib/api";
-import { createServices } from "~/lib/services";
 
 export interface DeviceCredentialsState {
     isFetching: boolean;
@@ -15,21 +14,18 @@ const initialState: DeviceCredentialsState = {
     data: null,
 };
 
-export const doGetDeviceCredentials = createAsyncThunk<
-    Credentials | null | undefined,
-    undefined,
-    {
-        extra: ReturnType<typeof createServices>;
-    }
->("deviceCredentials/doGetDeviceCredentials", async (payload, { extra }) => {
-    try {
-        const deviceCredentials = await extra.credentialsService.getCredentials();
+export const doGetDeviceCredentials = createAppAsyncThunk(
+    "deviceCredentials/doGetDeviceCredentials",
+    async (payload, { extra }) => {
+        try {
+            const deviceCredentials = await extra.services.credentialsService.getCredentials();
 
-        return deviceCredentials;
-    } catch (error) {
-        console.error(error);
+            return deviceCredentials;
+        } catch (error) {
+            console.error(error);
+        }
     }
-});
+);
 
 export const deviceCredentialsSlice = createSlice({
     name: "deviceCredentials",
@@ -62,7 +58,7 @@ export const deviceCredentialsSlice = createSlice({
 export const selectDeviceCredentialsRaw = (state: RootState) => state.deviceCredentials;
 
 startAppListening({
-    predicate: (action, currentState, previousState) => {
+    predicate: (action, currentState) => {
         const wantsToJoin = selectAppWantsToJoin(currentState);
         const deviceCredentialsRaw = selectDeviceCredentialsRaw(currentState);
 
@@ -71,7 +67,7 @@ startAppListening({
         }
         return false;
     },
-    effect: (action, listenerApi) => {
-        listenerApi.dispatch(doGetDeviceCredentials());
+    effect: (action, { dispatch }) => {
+        dispatch(doGetDeviceCredentials());
     },
 });
