@@ -1,114 +1,32 @@
-import { createAsyncThunk, createSlice } from "@reduxjs/toolkit";
-import { RootState } from "../store";
-import {
-    ApiClient,
-    Credentials,
-    CredentialsService,
-    OrganizationApiClient,
-    OrganizationService,
-    OrganizationServiceCache,
-    RoomService,
-} from "../../api";
-import ServerSocket, {
-    ChatMessage as SignalChatMessage,
-    ClientLeftEvent,
-    ClientMetadataReceivedEvent,
-    KnockerLeftEvent,
-    KnockAcceptedEvent,
-    KnockRejectedEvent,
-    NewClientEvent,
-    RoomJoinedEvent as SignalRoomJoinedEvent,
-    RoomKnockedEvent as SignalRoomKnockedEvent,
-    SignalClient,
-    SocketManager,
-    ScreenshareStartedEvent as SignalScreenshareStartedEvent,
-    ScreenshareStoppedEvent as SignalScreenshareStoppedEvent,
-} from "@whereby/jslib-media/src/utils/ServerSocket";
-import Organization from "../../api/models/Organization";
-import { createServices } from "~/lib/services";
+import { PayloadAction, createSlice } from "@reduxjs/toolkit";
 
-export type InteralRoomConnectionStatus = "" | "joining" | "joined" | "leaving" | "reconnect" | "queued" | "error";
+import { ConnectionStatus } from "~/lib/RoomConnection";
+import { RootState } from "../store";
 
 export interface RoomConnectionState {
-    localMedia: {
-        isStarted: boolean;
-        isStarting: boolean;
-    };
-    organization: {
-        data: Organization | null | undefined;
-        isFetching: boolean;
-        error: unknown;
-    };
-    roomConnection: {
-        status: InteralRoomConnectionStatus;
-        error: unknown;
-    };
+    status: ConnectionStatus;
+    error: unknown;
 }
 
 const initialState: RoomConnectionState = {
-    localMedia: {
-        isStarted: false,
-        isStarting: false,
-    },
-    organization: {
-        data: null,
-        isFetching: false,
-        error: null,
-    },
-    roomConnection: {
-        status: "",
-        error: null,
-    },
+    status: "initializing",
+    error: null,
 };
-
-export const doOrganizationFetch = createAsyncThunk<
-    Organization | null | undefined,
-    undefined,
-    {
-        extra: ReturnType<typeof createServices>;
-    }
->("roomConnection/doOrganizationFetch", async (payload, { extra }) => {
-    try {
-        const organization = await extra.organizationServiceCache.fetchOrganization();
-        return organization;
-    } catch (error) {
-        console.error(error);
-    }
-});
 
 export const roomConnectionSlice = createSlice({
     initialState,
     name: "roomConnection",
-    reducers: {},
-    extraReducers: (builder) => {
-        builder.addCase(doOrganizationFetch.pending, (state) => {
+    reducers: {
+        doRoomConnectionStatusChanged: (state, action: PayloadAction<{ status: ConnectionStatus }>) => {
             return {
                 ...state,
-                organization: {
-                    ...state.organization,
-                    isFetching: true,
-                },
+                status: action.payload.status,
             };
-        });
-        builder.addCase(doOrganizationFetch.fulfilled, (state, action) => {
-            return {
-                ...state,
-                organization: {
-                    ...state.organization,
-                    isFetching: false,
-                    data: action.payload,
-                },
-            };
-        });
-        builder.addCase(doOrganizationFetch.rejected, (state, action) => {
-            return {
-                ...state,
-                organization: {
-                    ...state.organization,
-                    isFetching: false,
-                    error: action.error,
-                },
-            };
-        });
+        },
     },
 });
+
+export const { doRoomConnectionStatusChanged } = roomConnectionSlice.actions;
+
+export const selectRoomConnectionRaw = (state: RootState) => state.roomConnection;
+export const selectRoomConnectionStatus = (state: RootState) => state.roomConnection.status;

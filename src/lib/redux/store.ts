@@ -1,33 +1,42 @@
-import { PreloadedState, combineReducers, configureStore } from "@reduxjs/toolkit";
+import { PreloadedState, combineReducers, configureStore, createAsyncThunk } from "@reduxjs/toolkit";
 import { listenerMiddleware } from "./listenerMiddleware";
-import { signalConnectionSlice } from "./slices/signalConnection";
-import { deviceCredentialsSlice } from "./slices/deviceCredentials";
-import { appSlice } from "./slices/app";
 import { createServices } from "../services";
+
+import { appSlice } from "./slices/app";
+import { deviceCredentialsSlice } from "./slices/deviceCredentials";
+import { organizationSlice } from "./slices/organization";
+import { roomSlice } from "./slices/room";
+import { roomConnectionSlice } from "./slices/roomConnection";
+import { signalConnectionSlice } from "./slices/signalConnection";
+import { rtcConnectionSlice } from "./slices/rtcConnection";
+import { localMediaSlice } from "./slices/localMedia";
 
 export const rootReducer = combineReducers({
     app: appSlice.reducer,
     deviceCredentials: deviceCredentialsSlice.reducer,
+    localMedia: localMediaSlice.reducer,
+    organization: organizationSlice.reducer,
+    room: roomSlice.reducer,
+    roomConnection: roomConnectionSlice.reducer,
+    rtcConnection: rtcConnectionSlice.reducer,
     signalConnection: signalConnectionSlice.reducer,
 });
 
-export const create = ({
+export const createStore = ({
     preloadedState,
     injectServices,
+    dispatchEvent,
 }: {
     preloadedState?: PreloadedState<RootState>;
     injectServices: ReturnType<typeof createServices>;
+    dispatchEvent: (event: CustomEvent) => void;
 }) => {
     return configureStore({
-        reducer: {
-            app: appSlice.reducer,
-            deviceCredentials: deviceCredentialsSlice.reducer,
-            signalConnection: signalConnectionSlice.reducer,
-        },
+        reducer: rootReducer,
         middleware: (getDefaultMiddleware) =>
             getDefaultMiddleware({
                 thunk: {
-                    extraArgument: injectServices,
+                    extraArgument: { services: injectServices, dispatchEvent },
                 },
                 serializableCheck: false,
             }).prepend(listenerMiddleware.middleware),
@@ -36,10 +45,15 @@ export const create = ({
 };
 
 export type RootState = ReturnType<typeof rootReducer>;
-export type AppDispatch = ReturnType<typeof create>["dispatch"];
+export type AppDispatch = ReturnType<typeof createStore>["dispatch"];
+export type ThunkConfig = {
+    state: RootState;
+    dispatch: AppDispatch;
+    extra: { services: ReturnType<typeof createServices>; dispatchEvent: (event: CustomEvent) => void };
+};
 
-// export const createAppAsyncThunk = createAsyncThunk.withTypes<{
-//     state: RootState;
-//     dispatch: AppDispatch;
-//     extra: ReturnType<typeof createServices>;
-// }>();
+export const createAppAsyncThunk = createAsyncThunk.withTypes<{
+    state: RootState;
+    dispatch: AppDispatch;
+    extra: { services: ReturnType<typeof createServices>; dispatchEvent: (event: CustomEvent) => void };
+}>();
