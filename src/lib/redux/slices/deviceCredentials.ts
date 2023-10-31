@@ -62,7 +62,7 @@ export const deviceCredentialsSlice = createSlice({
 export const selectDeviceCredentialsRaw = (state: RootState) => state.deviceCredentials;
 
 startAppListening({
-    predicate: (action, currentState, previousState) => {
+    predicate: (action, currentState) => {
         const wantsToJoin = selectAppWantsToJoin(currentState);
         const deviceCredentialsRaw = selectDeviceCredentialsRaw(currentState);
 

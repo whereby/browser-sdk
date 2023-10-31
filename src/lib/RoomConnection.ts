@@ -37,6 +37,11 @@ import { sdkVersion } from "./version";
 import LocalMedia, { LocalMediaOptions } from "./LocalMedia";
 
 type Logger = Pick<Console, "debug" | "error" | "log" | "warn" | "info">;
+// new
+import { RootState, createStore } from "./redux/store";
+import { createServices } from "./services";
+import { doAppJoin } from "./redux/slices/app";
+import { selectSignalStatus } from "./redux/slices/signalConnection";
 
 export interface RoomConnectionOptions {
     displayName?: string; // Might not be needed at all
@@ -290,6 +295,10 @@ export default class RoomConnection extends TypedEventTarget {
     private externalId?: string;
     private _roomKey: string | null;
 
+    // Redux
+    private _store: ReturnType<typeof createStore>;
+    private _state: RootState;
+
     constructor(
         roomUrl: string,
         {
@@ -302,6 +311,33 @@ export default class RoomConnection extends TypedEventTarget {
         }: RoomConnectionOptions
     ) {
         super();
+        // redux
+        this._store = createStore({
+            injectServices: createServices(roomUrl),
+        });
+        this._state = this._store.getState();
+
+        // subscribe to redux store changes
+        this._store.subscribe(() => {
+            const state = this._store.getState();
+            // const connectionStatus = selectSignalStatus(state);
+
+            // if (connectionStatus !== this.connectionStatus) {
+            //     this.connectionStatus = connectionStatus;
+            //     this.dispatchEvent(
+            //         new RoomConnectionEvent("connection_status_changed", {
+            //             detail: {
+            //                 connectionStatus: this.connectionStatus,
+            //             },
+            //         })
+            //     );
+            // }
+
+            if (state !== this._state) {
+                this._state = state;
+            }
+        });
+
         this.organizationId = "";
         this.connectionStatus = "initializing";
         this.selfId = null;
@@ -833,40 +869,41 @@ export default class RoomConnection extends TypedEventTarget {
     }
 
     public async join() {
-        if (["connected", "connecting"].includes(this.connectionStatus)) {
-            console.warn(`Trying to join when room state is already ${this.connectionStatus}`);
-            return;
-        }
+        this._store.dispatch(doAppJoin());
+        // if (["connected", "connecting"].includes(this.connectionStatus)) {
+        //     console.warn(`Trying to join when room state is already ${this.connectionStatus}`);
+        //     return;
+        // }
 
-        this.signalSocket.connect();
-        this.connectionStatus = "connecting";
-        this.dispatchEvent(
-            new RoomConnectionEvent("connection_status_changed", {
-                detail: {
-                    connectionStatus: this.connectionStatus,
-                },
-            })
-        );
+        // this.signalSocket.connect();
+        // this.connectionStatus = "connecting";
+        // this.dispatchEvent(
+        //     new RoomConnectionEvent("connection_status_changed", {
+        //         detail: {
+        //             connectionStatus: this.connectionStatus,
+        //         },
+        //     })
+        // );
 
-        const organization = await this.organizationServiceCache.fetchOrganization();
-        if (!organization) {
-            throw new Error("Invalid room url");
-        }
-        this.organizationId = organization.organizationId;
+        // const organization = await this.organizationServiceCache.fetchOrganization();
+        // if (!organization) {
+        //     throw new Error("Invalid room url");
+        // }
+        // this.organizationId = organization.organizationId;
 
-        if (this._ownsLocalMedia) {
-            await this.localMedia.start();
-        }
+        // if (this._ownsLocalMedia) {
+        //     await this.localMedia.start();
+        // }
 
-        // Identify device on signal connection
-        this._deviceCredentials = await this.credentialsService.getCredentials();
+        // // Identify device on signal connection
+        // this._deviceCredentials = await this.credentialsService.getCredentials();
 
-        this.logger.log("Connected to signal socket");
-        this.signalSocket.emit("identify_device", { deviceCredentials: this._deviceCredentials });
+        // this.logger.log("Connected to signal socket");
+        // this.signalSocket.emit("identify_device", { deviceCredentials: this._deviceCredentials });
 
-        this.signalSocket.once("device_identified", () => {
-            this._joinRoom();
-        });
+        // this.signalSocket.once("device_identified", () => {
+        //     this._joinRoom();
+        // });
     }
 
     public knock() {

@@ -77,7 +77,7 @@ export const selectSignalConnectionRaw = (state: RootState) => state.signalConne
 export const selectSignalStatus = (state: RootState) => state.signalConnection.status;
 
 startAppListening({
-    predicate: (action, currentState, previousState) => {
+    predicate: (action, currentState) => {
         const wantsToJoin = selectAppWantsToJoin(currentState);
         const signalConnectionStatus = selectSignalStatus(currentState);
 
@@ -92,7 +92,7 @@ startAppListening({
 });
 
 startAppListening({
-    predicate: (action, currentState, previousState) => {
+    predicate: (action, currentState) => {
         const deviceCredentialsRaw = selectDeviceCredentialsRaw(currentState);
         const signalConnectionRaw = selectSignalConnectionRaw(currentState);
 
