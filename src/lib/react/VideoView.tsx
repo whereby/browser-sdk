@@ -64,7 +64,7 @@ export default ({ muted, mirror = false, stream, onResize, ...rest }: VideoViewP
             autoPlay
             playsInline
             {...rest}
-            style={{ transform: mirror ? "scaleX(-1)" : "none", ...rest.style }}
+            style={{ transform: mirror ? "scaleX(-1)" : "none", width: "100%", height: "100%", ...rest.style }}
         />
     );
 };
