@@ -1,11 +1,14 @@
 # `@whereby.com/browser-sdk`
 
+> [!WARNING]
 > This is a pre-release of the v2 version of this library, adding support for
 > more custom integration using React hooks and plain JavaScript classes in
 > addition to the web component for embedding.
 
 Whereby browser SDK is a library for seamless integration of Whereby
 (https://whereby.com) video calls into your web application.
+
+**For a more detailed set of instructions, including the building of a [simple telehealth app](https://docs.whereby.com/whereby-101/create-your-video-experience/in-a-web-page/using-whereby-react-hooks-build-a-telehealth-app), please see our [documentation](https://docs.whereby.com/reference/react-hooks-reference).**
 
 ## Installation
 
@@ -20,7 +23,7 @@ yarn add @whereby.com/browser-sdk
 ```
 
 ## Usage
-
+> [!IMPORTANT]
 > In order to make use of this functionality, you must have a Whereby account
 > from which you can create room urls, either [manually or through our
 > API](https://docs.whereby.com/creating-and-deleting-rooms).
@@ -36,7 +39,7 @@ their device selection up-front. This hook works seamlessly with the
 `useRoomConnection` hook described below.
 
 ```js
-import { useLocalMedia, VideoView } from "@whereby.com/browser-sdk";
+import { useLocalMedia, VideoView } from "@whereby.com/browser-sdk/react";
 
 function MyPreCallUX() {
     const localMedia = useLocalMedia({ audio: false, video: true });
@@ -71,7 +74,7 @@ room, subscribe to state updates, and perform actions on the connection, like
 toggling camera or microphone.
 
 ```js
-import { useRoomConnection } from "@whereby.com/browser-sdk";
+import { useRoomConnection } from "@whereby.com/browser-sdk/react";
 
 function MyCallUX( { roomUrl, localStream }) {
     const { state, actions, components } = useRoomConnection(
@@ -99,7 +102,7 @@ function MyCallUX( { roomUrl, localStream }) {
 
 ```
 
-### Usage with Vite development environment
+#### Usage with Vite development environment
 
 There is a [known Vite issue](https://github.com/vitejs/vite/issues/1973) where modules trying to access `process.env` throw `Uncaught ReferenceError: process is not defined`.
 This can be solved in `vite.config.js` with the following line:
@@ -123,7 +126,7 @@ client";` to the top of component, like in the following example:
 ```js
 "use client";
 
-import { VideoView, useLocalMedia } from "@whereby.com/browser-sdk";
+import { VideoView, useLocalMedia } from "@whereby.com/browser-sdk/react";
 
 export default function MyNextVideoExperience() {
   const { state, actions } = useLocalMedia({ audio: false, video: true });
@@ -145,7 +148,7 @@ to learn which attributes are supported.
 #### React
 
 ```js
-import "@whereby.com/browser-sdk";
+import "@whereby.com/browser-sdk/embed";
 
 const MyComponent = ({ roomUrl }) => {
     return <whereby-embed chat="off" room={roomUrl} />;
@@ -169,8 +172,7 @@ export default MyComponent;
 </html>
 ```
 
-**Note**
-
-Although we have just higlighted two combinations of how to load and use the
-web component, it should be possible to use this library with all the major
-frontend frameworks.
+> [!NOTE]
+> Although we have just higlighted two combinations of how to load and use the
+> web component, it should be possible to use this library with all the major
+> frontend frameworks.
