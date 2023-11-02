@@ -71,7 +71,7 @@ startAppListening({
         }
         return false;
     },
-    effect: (action, listenerApi) => {
-        listenerApi.dispatch(doGetDeviceCredentials());
+    effect: (action, { dispatch }) => {
+        dispatch(doGetDeviceCredentials());
     },
 });
