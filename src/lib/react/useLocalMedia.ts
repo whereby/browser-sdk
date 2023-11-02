@@ -1,5 +1,5 @@
 import { useEffect, useReducer, useState } from "react";
-import LocalMedia from "../LocalMedia";
+import LocalMedia, { LocalMediaOptions } from "../LocalMedia";
 
 interface LocalMediaState {
     currentCameraDeviceId?: string;
@@ -130,10 +130,12 @@ function reducer(state: LocalMediaState, action: LocalMediaEvents): LocalMediaSt
     }
 }
 
+export type UseLocalMediaOptions = LocalMediaOptions;
+
 export default function useLocalMedia(
-    constraintsOrStream: MediaStreamConstraints | MediaStream = { audio: true, video: true }
+    optionsOrStream: UseLocalMediaOptions | MediaStream = { audio: true, video: true }
 ): LocalMediaRef {
-    const [localMedia] = useState<LocalMedia>(() => new LocalMedia(constraintsOrStream));
+    const [localMedia] = useState<LocalMedia>(() => new LocalMedia(optionsOrStream));
     const [state, dispatch] = useReducer(reducer, initialState);
 
     useEffect(() => {

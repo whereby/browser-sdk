@@ -15,7 +15,7 @@ export default function VideoExperience({
     const [chatMessage, setChatMessage] = useState("");
     const { state, actions, components } = useRoomConnection(roomName, {
         displayName,
-        localMediaConstraints: {
+        localMediaOptions: {
             audio: true,
             video: true,
         },
@@ -23,13 +23,7 @@ export default function VideoExperience({
         logger: console,
     });
 
-    const {
-        localParticipant,
-        remoteParticipants,
-        connectionStatus,
-        waitingParticipants,
-        screenshares,
-    } = state;
+    const { localParticipant, remoteParticipants, connectionStatus, waitingParticipants, screenshares } = state;
     const {
         knock,
         sendChatMessage,

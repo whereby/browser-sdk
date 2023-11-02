@@ -431,7 +431,7 @@ export type RoomConnectionRef = {
 };
 
 const defaultRoomConnectionOptions: UseRoomConnectionOptions = {
-    localMediaConstraints: {
+    localMediaOptions: {
         audio: true,
         video: true,
     },

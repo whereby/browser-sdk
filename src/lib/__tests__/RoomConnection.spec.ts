@@ -24,7 +24,7 @@ describe("RoomConnection", () => {
             const roomKey = "abc";
 
             const roomConnection = new RoomConnection(`https://subdomain.whereby.com/<some-room>?roomKey=${roomKey}`, {
-                localMediaConstraints: { audio: true, video: true },
+                localMediaOptions: { audio: true, video: true },
             });
 
             expect(roomConnection.roomKey).toEqual(roomKey);
@@ -34,7 +34,7 @@ describe("RoomConnection", () => {
             const roomKey = "abc";
 
             const roomConnection = new RoomConnection(`https://subdomain.whereby.com/<some-room>?roomKey=urlKey`, {
-                localMediaConstraints: { audio: true, video: true },
+                localMediaOptions: { audio: true, video: true },
                 roomKey,
             });
 
