@@ -11,15 +11,21 @@
     "browserslist": "> 0.5%, last 2 versions, not dead",
     "source": "src/index.js",
     "exports": {
-        "./react":  "./dist/react/index.js",
-        "./embed":  "./dist/embed/index.js",
-        "./utils":  "./dist/utils/index.js"
+        "./react": "./dist/react/index.js",
+        "./embed": "./dist/embed/index.js",
+        "./utils": "./dist/utils/index.js"
     },
     "typesVersions": {
         "*": {
-            "react": ["dist/react/index.d.ts"],
-            "embed": ["dist/embed/index.d.ts"],
-            "utils": ["dist/utils/index.d.ts"]
+            "react": [
+                "dist/react/index.d.ts"
+            ],
+            "embed": [
+                "dist/embed/index.d.ts"
+            ],
+            "utils": [
+                "dist/utils/index.d.ts"
+            ]
         }
     },
     "files": [
@@ -30,8 +36,8 @@
         "prebuild": "rimraf dist",
         "build": "node build.js",
         "postbuild": "tsc --project tsconfig.build.json",
-        "build:storybook": "build-storybook",
-        "dev": "start-storybook -p 6006",
+        "build:storybook": "storybook build",
+        "dev": "storybook dev -p 6006",
         "install:e2e-sample-app": "cd test/sample-app && yarn custom_install",
         "start:e2e-sample-app": "cd test/sample-app && yarn start",
         "test": "yarn test:lint && yarn test:unit",
@@ -39,23 +45,25 @@
         "test:unit": "node --experimental-vm-modules node_modules/jest/bin/jest.js",
         "test:unit:watch": "node --experimental-vm-modules node_modules/jest/bin/jest.js --watch",
         "test:e2e": "playwright test",
-        "storybook": "start-storybook -p 6006",
-        "build-storybook": "build-storybook"
+        "storybook": "storybook dev -p 6006",
+        "build-storybook": "storybook build"
     },
     "devDependencies": {
         "@babel/core": "^7.18.5",
         "@babel/plugin-proposal-optional-chaining": "^7.18.9",
+        "@babel/preset-env": "^7.23.2",
+        "@babel/preset-react": "^7.22.15",
+        "@babel/preset-typescript": "^7.23.2",
         "@playwright/test": "^1.38.1",
         "@rollup/plugin-commonjs": "^24.0.0",
         "@rollup/plugin-json": "^6.0.0",
         "@rollup/plugin-node-resolve": "^13.3.0",
         "@rollup/plugin-replace": "^4.0.0",
-        "@storybook/addon-actions": "^6.5.14",
-        "@storybook/addon-essentials": "^6.5.14",
-        "@storybook/addon-links": "^6.5.14",
-        "@storybook/builder-webpack5": "^6.5.14",
-        "@storybook/manager-webpack5": "^6.5.14",
-        "@storybook/react": "^6.5.14",
+        "@storybook/addon-actions": "^7.5.2",
+        "@storybook/addon-essentials": "^7.5.2",
+        "@storybook/addon-links": "^7.5.2",
+        "@storybook/react": "^7.5.2",
+        "@storybook/react-webpack5": "^7.5.2",
         "@testing-library/react": "^14.0.0",
         "@types/btoa": "^1.2.3",
         "@types/chrome": "^0.0.210",
@@ -78,6 +86,7 @@
         "react": "^18.2.0",
         "react-dom": "^18.2.0",
         "rimraf": "^3.0.2",
+        "storybook": "^7.5.2",
         "ts-jest": "29.0.5",
         "tslib": "^2.4.1",
         "typescript": "^4.9.4",
@@ -95,5 +104,10 @@
     "peerDependencies": {
         "react": "^18.2.0",
         "react-dom": "^18.2.0"
+    },
+    "resolutions": {
+        "string-width": "^4",
+        "jackspeak": "2.1.1",
+        "wrap-ansi": "7.0.0"
     }
 }
