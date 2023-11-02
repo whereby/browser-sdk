@@ -287,3 +287,52 @@ declare module "@whereby/jslib-media/src/utils/ServerSocket" {
         once<K extends keyof SignalEvents>(eventName: K, callback: (args: SignalEvents[K]) => void);
     }
 }
+
+declare module "@whereby/jslib-media/src/webrtc/mediaConstraints" {
+    type GetMediaConstraintsOptions = {
+        disableAEC: boolean;
+        disableAGC: boolean;
+        hd: boolean;
+        lax: boolean;
+        lowDataMode: boolean;
+        preferredDeviceIds: {
+            audioId?: string;
+            videoId?: string;
+        };
+        resolution?: string;
+        simulcast: boolean;
+        widescreen: boolean;
+    };
+
+    export function getMediaConstraints(options: GetMediaConstraintsOptions): MediaStreamConstraints;
+
+    export type GetConstraintsOptions = {
+        devices: MediaDeviceInfo[];
+        audioId?: boolean | string;
+        videoId?: boolean | string;
+        type?: "ideal" | "exact";
+        options: Omit<GetMediaConstraintsOptions, "preferredDeviceIds">;
+    };
+
+    export default function getConstraints(options: GetMediaConstraintsOptions);
+}
+
+declare module "@whereby/jslib-media/src/webrtc/MediaDevices" {
+    import type { GetConstraintsOptions } from "@whereby/jslib-media/src/webrtc/mediaConstraints";
+
+    type GetStreamOptions = {
+        replaceStream?: MediaStream;
+        fallback?: boolean;
+    };
+
+    type GetStreamResult = {
+        error?: unknown;
+        replacedTracks?: MediaStreamTrack[];
+        stream: MediaStream;
+    };
+
+    export function getStream(
+        constraintOpt: GetConstraintsOptions,
+        getStreamOptions: GetStreamOptions
+    ): Promise<GetStreamResult>;
+}
