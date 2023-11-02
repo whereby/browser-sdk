@@ -66,6 +66,7 @@ export const organizationSlice = createSlice({
 });
 
 export const selectOrganizationRaw = (state: RootState) => state.organization;
+export const selectOrganizationId = (state: RootState) => state.organization.data?.organizationId;
 
 startAppListening({
     predicate: (action, currentState) => {
@@ -77,7 +78,7 @@ startAppListening({
         }
         return false;
     },
-    effect: (action, listenerApi) => {
-        listenerApi.dispatch(doOrganizationFetch());
+    effect: (action, { dispatch }) => {
+        dispatch(doOrganizationFetch());
     },
 });

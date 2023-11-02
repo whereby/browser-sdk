@@ -869,7 +869,15 @@ export default class RoomConnection extends TypedEventTarget {
     }
 
     public async join() {
-        this._store.dispatch(doAppJoin());
+        console.log("join");
+        this._store.dispatch(
+            doAppJoin({
+                roomName: this.roomName,
+                roomKey: this._roomKey,
+                displayName: this.displayName || "Guest",
+                sdkVersion: sdkVersion || "unknown",
+            })
+        );
         // if (["connected", "connecting"].includes(this.connectionStatus)) {
         //     console.warn(`Trying to join when room state is already ${this.connectionStatus}`);
         //     return;
