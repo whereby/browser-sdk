@@ -3875,9 +3875,9 @@
     "@webassemblyjs/wast-parser" "1.9.0"
     "@xtuc/long" "4.2.2"
 
-"@whereby/jslib-media@whereby/jslib-media.git#1.3.5":
-  version "1.3.5"
-  resolved "https://codeload.github.com/whereby/jslib-media/tar.gz/9b2215f39e2d255843cce28d42ae7352b25916bc"
+"@whereby/jslib-media@whereby/jslib-media.git#1.3.6":
+  version "1.3.6"
+  resolved "https://codeload.github.com/whereby/jslib-media/tar.gz/bc8f3efd48e9e5b23b886bc8ea181b33f1d62719"
   dependencies:
     assert "^2.0.0"
     events "^3.3.0"
