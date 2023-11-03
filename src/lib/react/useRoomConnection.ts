@@ -59,6 +59,9 @@ type RoomConnectionEvent =
           payload: CloudRecordingState;
       }
     | {
+          type: "CLOUD_RECORDING_REQUEST_STARTED";
+      }
+    | {
           type: "CLOUD_RECORDING_STOPPED";
       }
     | {
@@ -225,6 +228,13 @@ function reducer(state: RoomConnectionState, action: RoomConnectionEvent): RoomC
                 ...state,
                 chatMessages: [...state.chatMessages, action.payload],
             };
+        case "CLOUD_RECORDING_REQUEST_STARTED":
+            return {
+                ...state,
+                cloudRecording: {
+                    status: "requested",
+                },
+            };
         case "CLOUD_RECORDING_STARTED":
             return {
                 ...state,
@@ -389,7 +399,9 @@ interface RoomConnectionActions {
     toggleMicrophone(enabled?: boolean): void;
     acceptWaitingParticipant(participantId: string): void;
     rejectWaitingParticipant(participantId: string): void;
+    startCloudRecording(): void;
     startScreenshare(): void;
+    stopCloudRecording(): void;
     stopScreenshare(): void;
 }
 
@@ -448,6 +460,9 @@ export function useRoomConnection(
         (): EventListener<keyof RoomEventsMap>[] => [
             createEventListener("chat_message", (e) => {
                 dispatch({ type: "CHAT_MESSAGE", payload: e.detail });
+            }),
+            createEventListener("cloud_recording_request_started", () => {
+                dispatch({ type: "CLOUD_RECORDING_REQUEST_STARTED" });
             }),
             createEventListener("cloud_recording_started", (e) => {
                 const { status, startedAt } = e.detail;
@@ -595,6 +610,12 @@ export function useRoomConnection(
             },
             rejectWaitingParticipant: (participantId) => {
                 roomConnection.rejectWaitingParticipant(participantId);
+            },
+            startCloudRecording: () => {
+                roomConnection.startCloudRecording();
+            },
+            stopCloudRecording: () => {
+                roomConnection.stopCloudRecording();
             },
             startScreenshare: async () => {
                 dispatch({ type: "LOCAL_SCREENSHARE_STARTING" });

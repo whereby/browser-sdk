@@ -58,8 +58,8 @@ export type ConnectionStatus =
     | "knock_rejected";
 
 export type CloudRecordingState = {
-    status: "recording";
-    startedAt: number;
+    status: "recording" | "requested";
+    startedAt?: number;
 };
 
 export type LiveStreamState = {
@@ -138,6 +138,7 @@ export type LocalMicrophoneEnabledEvent = {
 
 export interface RoomEventsMap {
     chat_message: (e: CustomEvent<ChatMessage>) => void;
+    cloud_recording_request_started: (e: CustomEvent<CloudRecordingState>) => void;
     cloud_recording_started: (e: CustomEvent<CloudRecordingState>) => void;
     cloud_recording_stopped: (e: CustomEvent<CloudRecordingState>) => void;
     local_camera_enabled: (e: CustomEvent<LocalCameraEnabledEvent>) => void;
@@ -971,6 +972,7 @@ export default class RoomConnection extends TypedEventTarget {
             })
         );
     }
+
     public stopScreenshare() {
         if (this.localMedia.screenshareStream) {
             const { id } = this.localMedia.screenshareStream;
@@ -982,5 +984,16 @@ export default class RoomConnection extends TypedEventTarget {
             );
             this.localMedia.stopScreenshare();
         }
+    }
+
+    public startCloudRecording() {
+        this.signalSocket.emit("start_recording", {
+            recording: "cloud",
+        });
+        this.dispatchEvent(new RoomConnectionEvent("cloud_recording_request_started"));
+    }
+
+    public stopCloudRecording() {
+        this.signalSocket.emit("stop_recording");
     }
 }
