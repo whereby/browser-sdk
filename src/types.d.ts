@@ -256,6 +256,8 @@ declare module "@whereby/jslib-media/src/utils/ServerSocket" {
         knock_room: KnockRoomRequest;
         leave_room: void;
         send_client_metadata: { type: string; payload: { displayName?: string } };
+        start_recording: { recording: string };
+        stop_recording: void;
     }
 
     export default class ServerSocket {
