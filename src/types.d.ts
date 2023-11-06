@@ -82,6 +82,16 @@ declare module "@whereby/jslib-media/src/webrtc/RtcManager" {
     }
 }
 
+declare const assert: {
+    (value: unknown, message?: string | Error): asserts value;
+    ok(value: unknown, message?: string | Error): asserts value;
+    notEqual<T>(actual: T, expected: T, message: string): void;
+};
+
+declare module "@whereby/jslib-media/src/utils/assert" {
+    export = assert;
+}
+
 declare module "@whereby/jslib-media/src/utils/urls" {
     export function fromLocation({ host }: { host: string }): { subdomain: string };
 }

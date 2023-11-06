@@ -13,7 +13,7 @@ import {
     nullOrTransform,
     Transformer,
 } from "../extractUtils";
-import assert from "assert";
+import assert from "@whereby/jslib-media/src/utils/assert";
 import { Json } from "../Response";
 import { assertString } from "../parameterAssertUtils";
 type User = { name: string; eyeColor: string | null; age: number; dob: Date };

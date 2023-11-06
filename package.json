@@ -95,7 +95,6 @@
     "dependencies": {
         "@swc/helpers": "^0.3.13",
         "@whereby/jslib-media": "whereby/jslib-media.git#1.4.1",
-        "assert": "^2.0.0",
         "axios": "^1.2.3",
         "btoa": "^1.2.1",
         "events": "^3.3.0",

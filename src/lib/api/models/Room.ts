@@ -1,5 +1,5 @@
 // @ts-nocheck
-import assert from "assert";
+import assert from "@whereby/jslib-media/src/utils/assert";
 
 export default class Room {
     public readonly isLocked: boolean;
