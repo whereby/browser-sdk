@@ -21,6 +21,7 @@ import ServerSocket, {
     ChatMessage as SignalChatMessage,
     ClientLeftEvent,
     ClientMetadataReceivedEvent,
+    CloudRecordingStartedEvent,
     KnockerLeftEvent,
     KnockAcceptedEvent,
     KnockRejectedEvent,
@@ -58,8 +59,9 @@ export type ConnectionStatus =
     | "knock_rejected";
 
 export type CloudRecordingState = {
-    status: "recording";
-    startedAt: number;
+    error?: string;
+    status: "recording" | "requested" | "error";
+    startedAt?: number;
 };
 
 export type LiveStreamState = {
@@ -138,7 +140,9 @@ export type LocalMicrophoneEnabledEvent = {
 
 export interface RoomEventsMap {
     chat_message: (e: CustomEvent<ChatMessage>) => void;
+    cloud_recording_request_started: (e: CustomEvent<CloudRecordingState>) => void;
     cloud_recording_started: (e: CustomEvent<CloudRecordingState>) => void;
+    cloud_recording_started_error: (e: CustomEvent<CloudRecordingState>) => void;
     cloud_recording_stopped: (e: CustomEvent<CloudRecordingState>) => void;
     local_camera_enabled: (e: CustomEvent<LocalCameraEnabledEvent>) => void;
     local_microphone_enabled: (e: CustomEvent<LocalMicrophoneEnabledEvent>) => void;
@@ -351,6 +355,7 @@ export default class RoomConnection extends TypedEventTarget {
         this.signalSocket.on("knocker_left", this._handleKnockerLeft.bind(this));
         this.signalSocket.on("room_joined", this._handleRoomJoined.bind(this));
         this.signalSocket.on("room_knocked", this._handleRoomKnocked.bind(this));
+        this.signalSocket.on("cloud_recording_started", this._handleCloudRecordingStarted.bind(this));
         this.signalSocket.on("cloud_recording_stopped", this._handleCloudRecordingStopped.bind(this));
         this.signalSocket.on("screenshare_started", this._handleScreenshareStarted.bind(this));
         this.signalSocket.on("screenshare_stopped", this._handleScreenshareStopped.bind(this));
@@ -408,7 +413,19 @@ export default class RoomConnection extends TypedEventTarget {
         this.dispatchEvent(new RoomConnectionEvent("chat_message", { detail: message }));
     }
 
-    private _handleCloudRecordingStarted({ client }: { client: SignalClient }) {
+    private _handleCloudRecordingStarted(event: CloudRecordingStartedEvent) {
+        // Only handle the start failure event here. The recording is
+        // considered started when the recorder client joins.
+        if (event.error) {
+            this.dispatchEvent(
+                new RoomConnectionEvent("cloud_recording_started_error", {
+                    detail: { error: event.error, status: "error" },
+                })
+            );
+        }
+    }
+
+    private _handleRecorderClientJoined({ client }: { client: SignalClient }) {
         this.dispatchEvent(
             new RoomConnectionEvent("cloud_recording_started", {
                 detail: {
@@ -438,7 +455,7 @@ export default class RoomConnection extends TypedEventTarget {
 
     private _handleNewClient({ client }: NewClientEvent) {
         if (client.role.roleName === "recorder") {
-            this._handleCloudRecordingStarted({ client });
+            this._handleRecorderClientJoined({ client });
         }
         if (client.role.roleName === "streamer") {
             this._handleStreamingStarted();
@@ -568,7 +585,7 @@ export default class RoomConnection extends TypedEventTarget {
 
             const recorderClient = clients.find((c) => c.role.roleName === "recorder");
             if (recorderClient) {
-                this._handleCloudRecordingStarted({ client: recorderClient });
+                this._handleRecorderClientJoined({ client: recorderClient });
             }
 
             const streamerClient = clients.find((c) => c.role.roleName === "streamer");
@@ -971,6 +988,7 @@ export default class RoomConnection extends TypedEventTarget {
             })
         );
     }
+
     public stopScreenshare() {
         if (this.localMedia.screenshareStream) {
             const { id } = this.localMedia.screenshareStream;
@@ -982,5 +1000,16 @@ export default class RoomConnection extends TypedEventTarget {
             );
             this.localMedia.stopScreenshare();
         }
+    }
+
+    public startCloudRecording() {
+        this.signalSocket.emit("start_recording", {
+            recording: "cloud",
+        });
+        this.dispatchEvent(new RoomConnectionEvent("cloud_recording_request_started"));
+    }
+
+    public stopCloudRecording() {
+        this.signalSocket.emit("stop_recording");
     }
 }

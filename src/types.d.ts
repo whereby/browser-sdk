@@ -139,6 +139,11 @@ declare module "@whereby/jslib-media/src/utils/ServerSocket" {
         userId: string;
     }
 
+    interface CloudRecordingStartedEvent {
+        error?: string;
+        startedAt?: string;
+    }
+
     interface ClientLeftEvent {
         clientId: string;
     }
@@ -207,6 +212,7 @@ declare module "@whereby/jslib-media/src/utils/ServerSocket" {
         chat_message: ChatMessage;
         client_left: ClientLeftEvent;
         client_metadata_received: ClientMetadataReceivedEvent;
+        cloud_recording_started: CloudRecordingStartedEvent;
         cloud_recording_stopped: void;
         chat_message: ChatMessage;
         connect: void;
@@ -256,6 +262,8 @@ declare module "@whereby/jslib-media/src/utils/ServerSocket" {
         knock_room: KnockRoomRequest;
         leave_room: void;
         send_client_metadata: { type: string; payload: { displayName?: string } };
+        start_recording: { recording: string };
+        stop_recording: void;
     }
 
     export default class ServerSocket {

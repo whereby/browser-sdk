@@ -59,6 +59,13 @@ type RoomConnectionEvent =
           payload: CloudRecordingState;
       }
     | {
+          type: "CLOUD_RECORDING_REQUEST_STARTED";
+      }
+    | {
+          type: "CLOUD_RECORDING_STARTED_ERROR";
+          payload: CloudRecordingState;
+      }
+    | {
           type: "CLOUD_RECORDING_STOPPED";
       }
     | {
@@ -225,12 +232,27 @@ function reducer(state: RoomConnectionState, action: RoomConnectionEvent): RoomC
                 ...state,
                 chatMessages: [...state.chatMessages, action.payload],
             };
+        case "CLOUD_RECORDING_REQUEST_STARTED":
+            return {
+                ...state,
+                cloudRecording: {
+                    status: "requested",
+                },
+            };
         case "CLOUD_RECORDING_STARTED":
             return {
                 ...state,
                 cloudRecording: {
                     status: action.payload.status,
                     startedAt: action.payload.startedAt,
+                },
+            };
+        case "CLOUD_RECORDING_STARTED_ERROR":
+            return {
+                ...state,
+                cloudRecording: {
+                    status: action.payload.status,
+                    error: action.payload.error,
                 },
             };
         case "CLOUD_RECORDING_STOPPED":
@@ -389,7 +411,9 @@ interface RoomConnectionActions {
     toggleMicrophone(enabled?: boolean): void;
     acceptWaitingParticipant(participantId: string): void;
     rejectWaitingParticipant(participantId: string): void;
+    startCloudRecording(): void;
     startScreenshare(): void;
+    stopCloudRecording(): void;
     stopScreenshare(): void;
 }
 
@@ -449,9 +473,15 @@ export function useRoomConnection(
             createEventListener("chat_message", (e) => {
                 dispatch({ type: "CHAT_MESSAGE", payload: e.detail });
             }),
+            createEventListener("cloud_recording_request_started", () => {
+                dispatch({ type: "CLOUD_RECORDING_REQUEST_STARTED" });
+            }),
             createEventListener("cloud_recording_started", (e) => {
                 const { status, startedAt } = e.detail;
                 dispatch({ type: "CLOUD_RECORDING_STARTED", payload: { status, startedAt } });
+            }),
+            createEventListener("cloud_recording_started_error", (e) => {
+                dispatch({ type: "CLOUD_RECORDING_STARTED_ERROR", payload: e.detail });
             }),
             createEventListener("cloud_recording_stopped", () => {
                 dispatch({ type: "CLOUD_RECORDING_STOPPED" });
@@ -595,6 +625,16 @@ export function useRoomConnection(
             },
             rejectWaitingParticipant: (participantId) => {
                 roomConnection.rejectWaitingParticipant(participantId);
+            },
+            startCloudRecording: () => {
+                // don't start recording if it's already started or requested
+                if (state.cloudRecording && ["recording", "requested"].includes(state.cloudRecording?.status)) {
+                    return;
+                }
+                roomConnection.startCloudRecording();
+            },
+            stopCloudRecording: () => {
+                roomConnection.stopCloudRecording();
             },
             startScreenshare: async () => {
                 dispatch({ type: "LOCAL_SCREENSHARE_STARTING" });
