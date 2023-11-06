@@ -10,7 +10,6 @@ export interface IHttpClient {
 }
 
 function _getAbsoluteUrl({ baseUrl, url }: { baseUrl?: string; url: string }): string {
-    assert.ok(typeof url === "string", "url<String> is required");
     return baseUrl ? baseUrl + url : url;
 }
 

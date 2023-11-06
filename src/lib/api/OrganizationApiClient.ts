@@ -18,8 +18,9 @@ export default class OrganizationApiClient {
     /**
      * Create an OrganizationApiClient instance.
      *
-     * @param {ApiClient} [apiClient] - The apiClient to use.
-     * @param {Function} [fetchOrganization] - function that returns a promise with the organization.
+     * @param {Object} options - The options for the OrganizationApiClient.
+     * @param {ApiClient} [options.apiClient] - The apiClient to use.
+     * @param {Function} [options.fetchOrganization] - function that returns a promise with the organization.
      */
     constructor({
         apiClient,
@@ -29,8 +30,6 @@ export default class OrganizationApiClient {
         fetchOrganization?: FetchOrganizationFunction;
     }) {
         this._apiClient = apiClient;
-        assert.ok(typeof fetchOrganization === "function", "fetchOrganization<Function> is required");
-
         this._fetchOrganization = fetchOrganization;
         this._apiClient = apiClient;
     }
