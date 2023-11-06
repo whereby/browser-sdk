@@ -74,9 +74,6 @@ export default class ApiClient {
         baseUrl = "https://api.appearin.net",
         fetchDeviceCredentials = noCredentials,
     }: ApiClientOptions = {}) {
-        assertString(baseUrl, "baseUrl");
-        assert.ok(typeof fetchDeviceCredentials === "function", "fetchDeviceCredentials<Function> is required");
-
         this.authenticatedHttpClient = new AuthenticatedHttpClient({
             httpClient: new HttpClient({
                 baseUrl,
