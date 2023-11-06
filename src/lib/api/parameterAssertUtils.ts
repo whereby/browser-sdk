@@ -1,4 +1,4 @@
-import assert from "assert";
+import assert from "@whereby/jslib-media/src/utils/assert";
 
 /**
  * Asserts that value is truthy.
@@ -65,7 +65,7 @@ export function assertInstanceOf<T>(value: unknown, type: new (any: unknown) => 
  */
 export function assertRoomName(roomName: unknown, parameterName = "roomName"): string {
     assertString(roomName, parameterName);
-    assert.equal(typeof roomName === "string" && roomName[0], "/", `${parameterName} must begin with a '/'`);
+    assert.ok(typeof roomName === "string" && roomName[0] === "/", `${parameterName} must begin with a '/'`);
     return roomName as string;
 }
 

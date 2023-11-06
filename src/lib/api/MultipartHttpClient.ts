@@ -1,4 +1,4 @@
-import assert from "assert";
+import assert from "@whereby/jslib-media/src/utils/assert";
 import { HttpClientRequestConfig, IHttpClient } from "./HttpClient";
 import Response from "./Response";
 

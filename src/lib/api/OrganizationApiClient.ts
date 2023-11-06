@@ -1,5 +1,5 @@
+import assert from "@whereby/jslib-media/src/utils/assert";
 import ApiClient from "./ApiClient";
-import assert from "assert";
 import { assertString } from "./parameterAssertUtils";
 import { HttpClientRequestConfig } from "./HttpClient";
 import Response from "./Response";
@@ -41,7 +41,7 @@ export default class OrganizationApiClient {
         options: HttpClientRequestConfig
     ): Promise<Response> {
         assertString(url, "url");
-        assert.equal(url[0], "/", 'url<String> only accepts relative URLs beginning with "/".');
+        assert.ok(url[0] === "/", 'url<String> only accepts relative URLs beginning with "/".');
         assert.ok(options, "options are required");
         return this._fetchOrganization().then((organization) => {
             if (!organization) {
