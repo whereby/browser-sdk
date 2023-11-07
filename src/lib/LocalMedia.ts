@@ -1,4 +1,6 @@
 import RtcManager from "@whereby/jslib-media/src/webrtc/RtcManager";
+import type { GetConstraintsOptions } from "@whereby/jslib-media/src/webrtc/mediaConstraints";
+import { getStream } from "@whereby/jslib-media/src/webrtc/MediaDevices";
 
 type CameraEnabledEvent = {
     enabled: boolean;
@@ -56,10 +58,15 @@ interface LocalMediaEventTarget extends EventTarget {
 
 const TypedLocalMediaEventTarget = EventTarget as { new (): LocalMediaEventTarget };
 
+export interface LocalMediaOptions {
+    audio: boolean;
+    video: boolean;
+}
 export default class LocalMedia extends TypedLocalMediaEventTarget {
-    private _constraints: MediaStreamConstraints | null = null;
+    private _options: LocalMediaOptions | null = null;
     public _rtcManagers: RtcManager[];
 
+    private _devices: MediaDeviceInfo[] = [];
     public stream: MediaStream;
     public screenshareStream?: MediaStream;
 
@@ -72,13 +79,13 @@ export default class LocalMedia extends TypedLocalMediaEventTarget {
     private _microphoneEnabled: boolean;
     private _currentMicrophoneDeviceId: string | undefined;
 
-    constructor(constraintsOrStream: MediaStreamConstraints | MediaStream) {
+    constructor(optionsOrStream: LocalMediaOptions | MediaStream) {
         super();
 
-        if (constraintsOrStream instanceof MediaStream) {
-            this.stream = constraintsOrStream;
+        if (optionsOrStream instanceof MediaStream) {
+            this.stream = optionsOrStream;
         } else {
-            this._constraints = constraintsOrStream;
+            this._options = optionsOrStream;
             this.stream = new MediaStream();
         }
 
@@ -130,7 +137,7 @@ export default class LocalMedia extends TypedLocalMediaEventTarget {
         this.dispatchEvent(new LocalMediaEvent("camera_enabled", { detail: { enabled: this._cameraEnabled } }));
 
         // Only stop tracks if we fully own the media stream
-        const shouldStopTrack = !!this._constraints;
+        const shouldStopTrack = !!this._options;
 
         this._isTogglingCameraEnabled = true;
 
@@ -141,16 +148,17 @@ export default class LocalMedia extends TypedLocalMediaEventTarget {
                     track.enabled = true;
                 } else {
                     // We dont have video track, get new one
-                    const newStream = await navigator.mediaDevices.getUserMedia({
-                        video: this._currentCameraDeviceId
-                            ? { deviceId: { exact: this._currentCameraDeviceId } }
-                            : true,
-                    });
+                    await getStream(
+                        {
+                            ...this._getConstraintsOptions(),
+                            audioId: false,
+                            videoId: this._currentCameraDeviceId,
+                            type: "exact",
+                        },
+                        { replaceStream: this.stream }
+                    );
 
-                    track = newStream.getVideoTracks()[0];
-                    if (track) {
-                        this.stream.addTrack(track);
-                    }
+                    track = this.stream.getVideoTracks()[0];
                 }
             } else {
                 if (!track) {
@@ -203,22 +211,41 @@ export default class LocalMedia extends TypedLocalMediaEventTarget {
         this.screenshareStream = undefined;
     }
 
-    async setCameraDevice(deviceId: string) {
-        this._currentCameraDeviceId = deviceId;
-        const newStream = await navigator.mediaDevices.getUserMedia({ video: { deviceId: { exact: deviceId } } });
-        const newVideoTrack = newStream.getVideoTracks()[0];
+    private _getConstraintsOptions(): GetConstraintsOptions {
+        return {
+            devices: this._devices,
+            options: {
+                disableAEC: false,
+                disableAGC: false,
+                hd: true,
+                lax: false,
+                lowDataMode: false,
+                simulcast: true,
+                widescreen: true,
+            },
+        };
+    }
 
-        if (newVideoTrack) {
-            const oldVideoTrack = this.stream.getVideoTracks()[0];
-            newVideoTrack.enabled = oldVideoTrack.enabled;
-            oldVideoTrack?.stop();
+    private async _setDevice({ audioId, videoId }: { audioId?: boolean | string; videoId?: boolean | string }) {
+        const { replacedTracks } = await getStream(
+            {
+                ...this._getConstraintsOptions(),
+                audioId,
+                videoId,
+                type: "exact",
+            },
+            { replaceStream: this.stream }
+        );
 
-            this._rtcManagers.forEach((rtcManager) => {
-                rtcManager.replaceTrack(oldVideoTrack, newVideoTrack);
+        if (replacedTracks) {
+            replacedTracks.forEach((oldTrack) => {
+                const newTrack =
+                    oldTrack.kind === "audio" ? this.stream.getAudioTracks()[0] : this.stream.getVideoTracks()[0];
+
+                this._rtcManagers.forEach((rtcManager) => {
+                    rtcManager.replaceTrack(oldTrack, newTrack);
+                });
             });
-
-            this.stream.removeTrack(oldVideoTrack);
-            this.stream.addTrack(newVideoTrack);
         }
 
         this.dispatchEvent(
@@ -228,28 +255,14 @@ export default class LocalMedia extends TypedLocalMediaEventTarget {
         );
     }
 
+    async setCameraDevice(deviceId: string) {
+        this._currentCameraDeviceId = deviceId;
+        await this._setDevice({ videoId: this._currentCameraDeviceId, audioId: false });
+    }
+
     async setMicrophoneDevice(deviceId: string) {
         this._currentMicrophoneDeviceId = deviceId;
-        const newStream = await navigator.mediaDevices.getUserMedia({ audio: { deviceId } });
-        const newAudioTrack = newStream.getAudioTracks()[0];
-        const oldAudioTrack = this.stream.getAudioTracks()[0];
-
-        if (oldAudioTrack) {
-            newAudioTrack.enabled = oldAudioTrack.enabled;
-            oldAudioTrack.stop();
-            this.stream.removeTrack(oldAudioTrack);
-        }
-
-        this._rtcManagers.forEach((rtcManager) => {
-            rtcManager.replaceTrack(oldAudioTrack, newAudioTrack);
-        });
-        this.stream.addTrack(newAudioTrack);
-
-        this.dispatchEvent(
-            new LocalMediaEvent("stream_updated", {
-                detail: { stream: this.stream },
-            })
-        );
+        await this._setDevice({ audioId: this._currentMicrophoneDeviceId, videoId: false });
     }
 
     private async _updateDeviceList() {
@@ -264,6 +277,7 @@ export default class LocalMedia extends TypedLocalMediaEventTarget {
                     },
                 })
             );
+            this._devices = devices;
         } catch (error) {
             this.dispatchEvent(
                 new LocalMediaEvent("device_list_update_error", {
@@ -277,25 +291,30 @@ export default class LocalMedia extends TypedLocalMediaEventTarget {
     }
 
     async start() {
-        if (this._constraints) {
-            const newStream = await navigator.mediaDevices.getUserMedia(this._constraints);
+        await this._updateDeviceList();
 
-            const cameraTrack = newStream.getVideoTracks()[0];
+        if (this._options) {
+            await getStream(
+                {
+                    ...this._getConstraintsOptions(),
+                    audioId: this._options.audio,
+                    videoId: this._options.video,
+                },
+                { replaceStream: this.stream }
+            );
+
+            const cameraTrack = this.stream.getVideoTracks()[0];
             if (cameraTrack) {
                 this._cameraEnabled = cameraTrack.enabled;
                 this._currentCameraDeviceId = cameraTrack.getSettings().deviceId;
-                this.stream.addTrack(cameraTrack);
             }
 
-            const microphoneTrack = newStream.getAudioTracks()[0];
+            const microphoneTrack = this.stream.getAudioTracks()[0];
             if (microphoneTrack) {
                 this._microphoneEnabled = microphoneTrack.enabled;
                 this._currentMicrophoneDeviceId = microphoneTrack.getSettings().deviceId;
-                this.stream.addTrack(microphoneTrack);
             }
         }
-
-        this._updateDeviceList();
 
         this.dispatchEvent(
             new LocalMediaEvent("stream_updated", {
@@ -306,7 +325,7 @@ export default class LocalMedia extends TypedLocalMediaEventTarget {
     }
 
     stop() {
-        if (this._constraints) {
+        if (this._options) {
             this.stream?.getTracks().forEach((t) => {
                 t.stop();
             });

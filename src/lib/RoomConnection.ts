@@ -34,13 +34,13 @@ import ServerSocket, {
     ScreenshareStoppedEvent as SignalScreenshareStoppedEvent,
 } from "@whereby/jslib-media/src/utils/ServerSocket";
 import { sdkVersion } from "./version";
-import LocalMedia from "./LocalMedia";
+import LocalMedia, { LocalMediaOptions } from "./LocalMedia";
 
 type Logger = Pick<Console, "debug" | "error" | "log" | "warn">;
 
 export interface RoomConnectionOptions {
     displayName?: string; // Might not be needed at all
-    localMediaConstraints?: MediaStreamConstraints;
+    localMediaOptions?: LocalMediaOptions;
     roomKey?: string;
     logger?: Logger;
     localMedia?: LocalMedia;
@@ -292,7 +292,14 @@ export default class RoomConnection extends TypedEventTarget {
 
     constructor(
         roomUrl: string,
-        { displayName, localMedia, localMediaConstraints, logger, roomKey, externalId }: RoomConnectionOptions
+        {
+            displayName,
+            localMedia,
+            localMediaOptions: localMediaConstraints,
+            logger,
+            roomKey,
+            externalId,
+        }: RoomConnectionOptions
     ) {
         super();
         this.organizationId = "";
