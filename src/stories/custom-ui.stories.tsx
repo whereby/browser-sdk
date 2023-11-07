@@ -10,8 +10,12 @@ import "./styles.css";
 export default {
     title: "Examples/Custom UI",
     argTypes: {
-        displayName: { control: "text", defaultValue: "SDK" },
-        roomUrl: { control: "text", defaultValue: process.env.STORYBOOK_ROOM, type: { required: true } },
+        displayName: { control: "text" },
+        roomUrl: { control: "text", type: { required: true } },
+    },
+    args: {
+        displayName: "SDK",
+        roomUrl: process.env.STORYBOOK_ROOM,
     },
 };
 
