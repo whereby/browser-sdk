@@ -16,7 +16,7 @@ function makeCdnFilename() {
 
 const external = Object.keys(pkg.dependencies)
     .concat(Object.keys(pkg.peerDependencies))
-    .filter((dep) => !dep.match(/jslib-media/));
+    .filter((dep) => !dep.match(/jslib-media|events/));
 
 const sharedConfig = {
     bundle: true,
