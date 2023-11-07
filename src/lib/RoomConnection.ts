@@ -36,7 +36,7 @@ import ServerSocket, {
 import { sdkVersion } from "./version";
 import LocalMedia, { LocalMediaOptions } from "./LocalMedia";
 
-type Logger = Pick<Console, "debug" | "error" | "log" | "warn">;
+type Logger = Pick<Console, "debug" | "error" | "log" | "warn" | "info">;
 
 export interface RoomConnectionOptions {
     displayName?: string; // Might not be needed at all
@@ -312,6 +312,7 @@ export default class RoomConnection extends TypedEventTarget {
         this.logger = logger || {
             debug: noop,
             error: noop,
+            info: noop,
             log: noop,
             warn: noop,
         };
@@ -409,6 +410,7 @@ export default class RoomConnection extends TypedEventTarget {
                 h264On: false,
                 simulcastScreenshareOn: false,
             },
+            logger: this.logger,
         });
     }
 

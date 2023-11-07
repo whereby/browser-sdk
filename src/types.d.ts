@@ -58,6 +58,13 @@ declare module "@whereby/jslib-media/src/webrtc/RtcManagerDispatcher" {
             h264On: boolean;
             simulcastScreenshareOn: boolean;
         };
+        logger: {
+            debug: (message: string) => void;
+            error: (message: string) => void;
+            info: (message: string) => void;
+            log: (message: string) => void;
+            warn: (message: string) => void;
+        };
     }
     export default class RtcManagerDispatcher {
         constructor(args: ConstructorArgs);
