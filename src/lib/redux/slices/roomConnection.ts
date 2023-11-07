@@ -1,4 +1,4 @@
-import { createSlice } from "@reduxjs/toolkit";
+import { PayloadAction, createSlice } from "@reduxjs/toolkit";
 
 import { ConnectionStatus } from "~/lib/RoomConnection";
 import { RootState } from "../store";
@@ -16,7 +16,17 @@ const initialState: RoomConnectionState = {
 export const roomConnectionSlice = createSlice({
     initialState,
     name: "roomConnection",
-    reducers: {},
+    reducers: {
+        doRoomConnectionStatusChanged: (state, action: PayloadAction<{ status: ConnectionStatus }>) => {
+            return {
+                ...state,
+                status: action.payload.status,
+            };
+        },
+    },
 });
 
+export const { doRoomConnectionStatusChanged } = roomConnectionSlice.actions;
+
 export const selectRoomConnectionRaw = (state: RootState) => state.roomConnection;
+export const selectRoomConnectionStatus = (state: RootState) => state.roomConnection.status;

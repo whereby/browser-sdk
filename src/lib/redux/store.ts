@@ -5,14 +5,20 @@ import { createServices } from "../services";
 import { appSlice } from "./slices/app";
 import { deviceCredentialsSlice } from "./slices/deviceCredentials";
 import { organizationSlice } from "./slices/organization";
+import { roomSlice } from "./slices/room";
 import { roomConnectionSlice } from "./slices/roomConnection";
 import { signalConnectionSlice } from "./slices/signalConnection";
+import { rtcConnectionSlice } from "./slices/rtcConnection";
+import { localMediaSlice } from "./slices/localMedia";
 
 export const rootReducer = combineReducers({
     app: appSlice.reducer,
     deviceCredentials: deviceCredentialsSlice.reducer,
+    localMedia: localMediaSlice.reducer,
     organization: organizationSlice.reducer,
+    room: roomSlice.reducer,
     roomConnection: roomConnectionSlice.reducer,
+    rtcConnection: rtcConnectionSlice.reducer,
     signalConnection: signalConnectionSlice.reducer,
 });
 

@@ -12,6 +12,8 @@ import {
 } from "./app";
 import { selectDeviceCredentialsRaw } from "./deviceCredentials";
 import { selectOrganizationId } from "./organization";
+import { doRoomConnectionStatusChanged } from "./roomConnection";
+import { doRoomJoined } from "./room";
 
 const SIGNAL_BASE_URL = process.env["REACT_APP_SIGNAL_BASE_URL"] || "wss://signal.appearin.net";
 
@@ -54,20 +56,17 @@ export const doSignalListenForEvents = createAsyncThunk(
     async (payload, { dispatch, getState }) => {
         const state = getState() as RootState;
         const socket = selectSignalConnectionRaw(state).socket;
-        console.log("doSignalListenForEvents");
-        console.log(socket);
+
         if (!socket) {
             return;
         }
 
         socket.once("device_identified", () => {
-            console.log("device_identified");
             dispatch(doSignalJoinRoom());
         });
 
         socket.on("room_joined", (payload) => {
-            console.log("room_joined");
-            console.log(payload);
+            dispatch(doRoomJoined(payload));
         });
     }
 );
@@ -136,9 +135,20 @@ export const signalConnectionSlice = createSlice({
                 isIdentifyingDevice: false,
             };
         },
+        doSignalDisconnect: (state) => {
+            state.socket?.emit("leave_room");
+            state.socket?.disconnect();
+            return {
+                ...state,
+                deviceIdentified: false,
+                isIdentifyingDevice: false,
+                socket: null,
+                status: "disconnected",
+            };
+        },
     },
     extraReducers: (builder) => {
-        builder.addCase(doSignalListenForEvents.fulfilled, (state) => {
+        builder.addCase(doSignalListenForEvents.pending, (state) => {
             return {
                 ...state,
                 isListeningForEvents: true,
@@ -153,19 +163,24 @@ export const signalConnectionSlice = createSlice({
     },
 });
 
-export const { doSignalSocketConnect, doSignalIdentifyDevice } = signalConnectionSlice.actions;
+export const { doSignalSocketConnect, doSignalIdentifyDevice, doSignalDisconnect } = signalConnectionSlice.actions;
 
 export const selectSignalConnectionRaw = (state: RootState) => state.signalConnection;
 export const selectSignalStatus = (state: RootState) => state.signalConnection.status;
 export const selectSignalIsListeningForEvents = (state: RootState) => state.signalConnection.isListeningForEvents;
 
 startAppListening({
-    actionCreator: doSignalSocketConnect,
-    effect: (action, { dispatch, getState }) => {
-        const state = getState() as RootState;
-        if (!selectSignalIsListeningForEvents(state)) {
-            dispatch(doSignalListenForEvents());
+    predicate: (action, currentState) => {
+        const signalConnectionRaw = selectSignalConnectionRaw(currentState);
+        const isListeningForEvents = selectSignalIsListeningForEvents(currentState);
+
+        if (!!signalConnectionRaw.socket && !isListeningForEvents) {
+            return true;
         }
+        return false;
+    },
+    effect: (action, { dispatch }) => {
+        dispatch(doSignalListenForEvents());
     },
 });
 
@@ -174,7 +189,7 @@ startAppListening({
         const wantsToJoin = selectAppWantsToJoin(currentState);
         const signalConnectionStatus = selectSignalStatus(currentState);
 
-        if (wantsToJoin && signalConnectionStatus === "") {
+        if ((wantsToJoin && signalConnectionStatus === "") || signalConnectionStatus === "disconnected") {
             return true;
         }
         return false;
@@ -200,6 +215,7 @@ startAppListening({
     },
     effect: (action, { dispatch, getState }) => {
         const deviceCredentialsRaw = selectDeviceCredentialsRaw(getState());
+
         dispatch(doSignalIdentifyDevice({ deviceCredentials: deviceCredentialsRaw.data }));
     },
 });
