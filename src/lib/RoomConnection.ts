@@ -26,7 +26,6 @@ import ServerSocket, {
     KnockAcceptedEvent,
     KnockRejectedEvent,
     NewClientEvent,
-    RoomJoinedEvent as SignalRoomJoinedEvent,
     RoomKnockedEvent as SignalRoomKnockedEvent,
     SignalClient,
     SocketManager,
@@ -41,7 +40,13 @@ type Logger = Pick<Console, "debug" | "error" | "log" | "warn" | "info">;
 import { RootState, createStore } from "./redux/store";
 import { createServices } from "./services";
 import { doAppJoin } from "./redux/slices/app";
-import { selectSignalStatus } from "./redux/slices/signalConnection";
+import { selectRoomConnectionStatus } from "./redux/slices/roomConnection";
+import {
+    doRoomLeft,
+    selectLocalParticipant,
+    selectRemoteParticipants,
+    selectWaitingParticipants,
+} from "./redux/slices/room";
 
 export interface RoomConnectionOptions {
     displayName?: string; // Might not be needed at all
@@ -320,18 +325,30 @@ export default class RoomConnection extends TypedEventTarget {
         // subscribe to redux store changes
         this._store.subscribe(() => {
             const state = this._store.getState();
-            // const connectionStatus = selectSignalStatus(state);
+            const connectionStatus = selectRoomConnectionStatus(state);
 
-            // if (connectionStatus !== this.connectionStatus) {
-            //     this.connectionStatus = connectionStatus;
-            //     this.dispatchEvent(
-            //         new RoomConnectionEvent("connection_status_changed", {
-            //             detail: {
-            //                 connectionStatus: this.connectionStatus,
-            //             },
-            //         })
-            //     );
-            // }
+            if (connectionStatus !== this.connectionStatus) {
+                this.connectionStatus = connectionStatus;
+                this.dispatchEvent(
+                    new RoomConnectionEvent("connection_status_changed", {
+                        detail: {
+                            connectionStatus: this.connectionStatus,
+                        },
+                    })
+                );
+
+                if (connectionStatus === "connected") {
+                    this.dispatchEvent(
+                        new RoomConnectionEvent("room_joined", {
+                            detail: {
+                                localParticipant: selectLocalParticipant(state) as LocalParticipant,
+                                remoteParticipants: selectRemoteParticipants(state),
+                                waitingParticipants: selectWaitingParticipants(state),
+                            },
+                        })
+                    );
+                }
+            }
 
             if (state !== this._state) {
                 this._state = state;
@@ -397,7 +414,7 @@ export default class RoomConnection extends TypedEventTarget {
         this.signalSocket.on("client_metadata_received", this._handleClientMetadataReceived.bind(this));
         this.signalSocket.on("knock_handled", this._handleKnockHandled.bind(this));
         this.signalSocket.on("knocker_left", this._handleKnockerLeft.bind(this));
-        this.signalSocket.on("room_joined", this._handleRoomJoined.bind(this));
+        // this.signalSocket.on("room_joined", this._handleRoomJoined.bind(this));
         this.signalSocket.on("room_knocked", this._handleRoomKnocked.bind(this));
         this.signalSocket.on("cloud_recording_started", this._handleCloudRecordingStarted.bind(this));
         this.signalSocket.on("cloud_recording_stopped", this._handleCloudRecordingStopped.bind(this));
@@ -422,32 +439,31 @@ export default class RoomConnection extends TypedEventTarget {
             this.dispatchEvent(new RoomConnectionEvent("local_microphone_enabled", { detail: { enabled } }));
         });
 
-        const webrtcProvider = {
-            getMediaConstraints: () => ({
-                audio: this.localMedia.isMicrophoneEnabled(),
-                video: this.localMedia.isCameraEnabled(),
-            }),
-            deferrable(clientId: string) {
-                return !clientId;
-            },
-        };
-        this.rtcManagerDispatcher = new RtcManagerDispatcher({
-            emitter: {
-                emit: this._handleRtcEvent.bind(this),
-            },
-            serverSocket: this.signalSocket,
-            webrtcProvider,
-            features: {
-                lowDataModeEnabled: false,
-                sfuServerOverrideHost: undefined,
-                turnServerOverrideHost: undefined,
-                useOnlyTURN: undefined,
-                vp9On: false,
-                h264On: false,
-                simulcastScreenshareOn: false,
-            },
-            logger: this.logger,
-        });
+        // const webrtcProvider = {
+        //     getMediaConstraints: () => ({
+        //         audio: this.localMedia.isMicrophoneEnabled(),
+        //         video: this.localMedia.isCameraEnabled(),
+        //     }),
+        //     deferrable(clientId: string) {
+        //         return !clientId;
+        //     },
+        // };
+        // this.rtcManagerDispatcher = new RtcManagerDispatcher({
+        //     emitter: {
+        //         emit: this._handleRtcEvent.bind(this),
+        //     },
+        //     serverSocket: this.signalSocket,
+        //     webrtcProvider,
+        //     features: {
+        //         lowDataModeEnabled: false,
+        //         sfuServerOverrideHost: undefined,
+        //         turnServerOverrideHost: undefined,
+        //         useOnlyTURN: undefined,
+        //         vp9On: false,
+        //         h264On: false,
+        //         simulcastScreenshareOn: false,
+        //     },
+        // });
     }
 
     public get roomKey(): string | null {
@@ -575,7 +591,7 @@ export default class RoomConnection extends TypedEventTarget {
 
         if (resolution === "accepted") {
             this._roomKey = payload.metadata.roomKey;
-            this._joinRoom();
+            // this._joinRoom();
         } else if (resolution === "rejected") {
             this.connectionStatus = "knock_rejected";
 
@@ -599,66 +615,6 @@ export default class RoomConnection extends TypedEventTarget {
         );
     }
 
-    private _handleRoomJoined(event: SignalRoomJoinedEvent) {
-        const { error, isLocked, room, selfId } = event;
-        this.selfId = selfId;
-        if (error === "room_locked" && isLocked) {
-            this.connectionStatus = "room_locked";
-            this.dispatchEvent(
-                new RoomConnectionEvent("connection_status_changed", {
-                    detail: {
-                        connectionStatus: this.connectionStatus,
-                    },
-                })
-            );
-            return;
-        }
-        // Check if we have an error
-        // Check if it is a room joined error
-        // Set state to connect_failed_locked
-        // Set state to connect_failed_no_host
-        if (room) {
-            const { clients, knockers } = room;
-
-            const localClient = clients.find((c) => c.id === selfId);
-            if (!localClient) throw new Error("Missing local client");
-
-            this.localParticipant = new LocalParticipant({
-                ...localClient,
-                stream: this.localMedia.stream || undefined,
-            });
-
-            const recorderClient = clients.find((c) => c.role.roleName === "recorder");
-            if (recorderClient) {
-                this._handleRecorderClientJoined({ client: recorderClient });
-            }
-
-            const streamerClient = clients.find((c) => c.role.roleName === "streamer");
-            if (streamerClient) {
-                this._handleStreamingStarted();
-            }
-
-            this.remoteParticipants = clients
-                .filter((c) => c.id !== selfId)
-                .filter((c) => !NON_PERSON_ROLES.includes(c.role.roleName))
-                .map((c) => new RemoteParticipant({ ...c, newJoiner: false }));
-
-            this.connectionStatus = "connected";
-
-            this.dispatchEvent(
-                new RoomConnectionEvent("room_joined", {
-                    detail: {
-                        localParticipant: this.localParticipant,
-                        remoteParticipants: this.remoteParticipants,
-                        waitingParticipants: knockers.map((knocker) => {
-                            return { id: knocker.clientId, displayName: knocker.displayName } as WaitingParticipant;
-                        }),
-                    },
-                })
-            );
-        }
-    }
-
     private _handleRoomKnocked(event: SignalRoomKnockedEvent) {
         const { clientId, displayName } = event;
 
@@ -674,7 +630,7 @@ export default class RoomConnection extends TypedEventTarget {
         this.signalSocket.emit("identify_device", { deviceCredentials: this._deviceCredentials });
 
         this.signalSocket.once("device_identified", () => {
-            this._joinRoom();
+            // this._joinRoom();
         });
     }
 
@@ -847,29 +803,7 @@ export default class RoomConnection extends TypedEventTarget {
         }
     }
 
-    private _joinRoom() {
-        this.signalSocket.emit("join_room", {
-            avatarUrl: null,
-            config: {
-                isAudioEnabled: this.localMedia.isMicrophoneEnabled(),
-                isVideoEnabled: this.localMedia.isCameraEnabled(),
-            },
-            deviceCapabilities: { canScreenshare: true },
-            displayName: this.displayName,
-            isCoLocated: false,
-            isDevicePermissionDenied: false,
-            kickFromOtherRooms: false,
-            organizationId: this.organizationId,
-            roomKey: this.roomKey,
-            roomName: this.roomName,
-            selfId: "",
-            userAgent: `browser-sdk:${sdkVersion || "unknown"}`,
-            externalId: this.externalId,
-        });
-    }
-
     public async join() {
-        console.log("join");
         this._store.dispatch(
             doAppJoin({
                 roomName: this.roomName,
@@ -878,40 +812,6 @@ export default class RoomConnection extends TypedEventTarget {
                 sdkVersion: sdkVersion || "unknown",
             })
         );
-        // if (["connected", "connecting"].includes(this.connectionStatus)) {
-        //     console.warn(`Trying to join when room state is already ${this.connectionStatus}`);
-        //     return;
-        // }
-
-        // this.signalSocket.connect();
-        // this.connectionStatus = "connecting";
-        // this.dispatchEvent(
-        //     new RoomConnectionEvent("connection_status_changed", {
-        //         detail: {
-        //             connectionStatus: this.connectionStatus,
-        //         },
-        //     })
-        // );
-
-        // const organization = await this.organizationServiceCache.fetchOrganization();
-        // if (!organization) {
-        //     throw new Error("Invalid room url");
-        // }
-        // this.organizationId = organization.organizationId;
-
-        // if (this._ownsLocalMedia) {
-        //     await this.localMedia.start();
-        // }
-
-        // // Identify device on signal connection
-        // this._deviceCredentials = await this.credentialsService.getCredentials();
-
-        // this.logger.log("Connected to signal socket");
-        // this.signalSocket.emit("identify_device", { deviceCredentials: this._deviceCredentials });
-
-        // this.signalSocket.once("device_identified", () => {
-        //     this._joinRoom();
-        // });
     }
 
     public knock() {
@@ -937,24 +837,22 @@ export default class RoomConnection extends TypedEventTarget {
     }
 
     public leave() {
-        this.connectionStatus = "disconnecting";
-        if (this._ownsLocalMedia) {
-            this.localMedia.stop();
-        }
-
-        if (this.rtcManager) {
-            this.localMedia.removeRtcManager(this.rtcManager);
-            this.rtcManager.disconnectAll();
-            this.rtcManager = undefined;
-        }
-
-        if (!this.signalSocket) {
-            return;
-        }
-
-        this.signalSocket.emit("leave_room");
-        this.signalSocket.disconnect();
-        this.connectionStatus = "disconnected";
+        // this.connectionStatus = "disconnecting";
+        // if (this._ownsLocalMedia) {
+        //     this.localMedia.stop();
+        // }
+        // if (this.rtcManager) {
+        //     this.localMedia.removeRtcManager(this.rtcManager);
+        //     this.rtcManager.disconnectAll();
+        //     this.rtcManager = undefined;
+        // }
+        // if (!this.signalSocket) {
+        //     return;
+        // }
+        // this.signalSocket.emit("leave_room");
+        // this.signalSocket.disconnect();
+        // this.connectionStatus = "disconnected";
+        // this._store.dispatch(doRoomLeft());
     }
 
     public sendChatMessage(text: string): void {
