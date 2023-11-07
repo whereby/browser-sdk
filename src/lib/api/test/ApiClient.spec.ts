@@ -16,11 +16,6 @@ describe("ApiClient", () => {
         it("should not throw an error if no constructor params are passed through", () => {
             expect(() => new ApiClient()).not.toThrowError();
         });
-
-        //@ts-expect-error
-        itShouldThrowIfInvalid("baseUrl", () => new ApiClient({ baseUrl: null }));
-        //@ts-expect-error
-        itShouldThrowIfInvalid("fetchDeviceCredentials", () => new ApiClient({ fetchDeviceCredentials: null }));
     });
 
     describe("request", () => {
@@ -47,9 +42,6 @@ describe("ApiClient", () => {
         it('should throw if `url` does not begin with a "/"', () => {
             expect(() => apiClient.request("some-url", {})).toThrowError();
         });
-
-        //@ts-expect-error
-        itShouldThrowIfInvalid("fetchDeviceCredentials", () => new ApiClient({ fetchDeviceCredentials: null }));
 
         it("should run `this.fetchDeviceCredentials`", () => {
             const url = "/some/path";

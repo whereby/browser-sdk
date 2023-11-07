@@ -1,5 +1,3 @@
-import assert from "assert";
-
 interface Options {
     delay?: number;
     edges?: boolean;
@@ -21,8 +19,6 @@ interface DebouncedFunction {
  * @returns {Function} Debounced function.
  */
 export default function debounce(fn: DebouncedFunction, { delay = 500, edges }: Options = {}): DebouncedFunction {
-    assert.ok(typeof fn === "function", "fn<function> is required");
-
     let timeout: NodeJS.Timeout | undefined;
     let nCalls = 0;
 

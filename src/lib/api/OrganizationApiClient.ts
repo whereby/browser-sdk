@@ -1,5 +1,5 @@
+import assert from "@whereby/jslib-media/src/utils/assert";
 import ApiClient from "./ApiClient";
-import assert from "assert";
 import { assertString } from "./parameterAssertUtils";
 import { HttpClientRequestConfig } from "./HttpClient";
 import Response from "./Response";
@@ -18,8 +18,9 @@ export default class OrganizationApiClient {
     /**
      * Create an OrganizationApiClient instance.
      *
-     * @param {ApiClient} [apiClient] - The apiClient to use.
-     * @param {Function} [fetchOrganization] - function that returns a promise with the organization.
+     * @param {Object} options - The options for the OrganizationApiClient.
+     * @param {ApiClient} [options.apiClient] - The apiClient to use.
+     * @param {Function} [options.fetchOrganization] - function that returns a promise with the organization.
      */
     constructor({
         apiClient,
@@ -29,8 +30,6 @@ export default class OrganizationApiClient {
         fetchOrganization?: FetchOrganizationFunction;
     }) {
         this._apiClient = apiClient;
-        assert.ok(typeof fetchOrganization === "function", "fetchOrganization<Function> is required");
-
         this._fetchOrganization = fetchOrganization;
         this._apiClient = apiClient;
     }
@@ -41,7 +40,7 @@ export default class OrganizationApiClient {
         options: HttpClientRequestConfig
     ): Promise<Response> {
         assertString(url, "url");
-        assert.equal(url[0], "/", 'url<String> only accepts relative URLs beginning with "/".');
+        assert.ok(url[0] === "/", 'url<String> only accepts relative URLs beginning with "/".');
         assert.ok(options, "options are required");
         return this._fetchOrganization().then((organization) => {
             if (!organization) {

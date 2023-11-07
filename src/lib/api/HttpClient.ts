@@ -1,4 +1,4 @@
-import assert from "assert";
+import assert from "@whereby/jslib-media/src/utils/assert";
 import axios, { AxiosError, AxiosRequestConfig, AxiosResponse } from "axios";
 import Response, { ErrorResponseObject } from "./Response";
 import { assertString } from "./parameterAssertUtils";
@@ -10,7 +10,6 @@ export interface IHttpClient {
 }
 
 function _getAbsoluteUrl({ baseUrl, url }: { baseUrl?: string; url: string }): string {
-    assert.ok(typeof url === "string", "url<String> is required");
     return baseUrl ? baseUrl + url : url;
 }
 
@@ -50,7 +49,7 @@ export default class HttpClient implements IHttpClient {
      */
     request(url: string, options: HttpClientRequestConfig): Promise<Response> {
         assertString(url, "url");
-        assert.equal(url[0], "/", 'url<String> only accepts relative URLs beginning with "/".');
+        assert.ok(url[0] === "/", 'url<String> only accepts relative URLs beginning with "/".');
         assert.ok(options, "options are required");
 
         return this._requestAxios(url, options)

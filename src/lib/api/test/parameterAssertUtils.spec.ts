@@ -1,4 +1,3 @@
-import assert from "assert";
 import {
     assertBoolean,
     assertRoomName,
@@ -13,8 +12,6 @@ function forEachObject(object: Record<string, unknown>, func: (value: unknown, k
 }
 describe("parameterAssertUtils", () => {
     function itShouldThrowForValues(testValues: Record<string, unknown>, test: (desc: string, value: unknown) => void) {
-        assert.ok(typeof test === "function", "test must be a function");
-
         forEachObject(testValues, (value, descriptionOfValue) => {
             it(`should throw for ${descriptionOfValue}`, () => {
                 test(descriptionOfValue, value);

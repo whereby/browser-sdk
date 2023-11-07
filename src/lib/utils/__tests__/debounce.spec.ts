@@ -16,13 +16,6 @@ describe("debounce", () => {
         jest.clearAllMocks();
     });
 
-    it("should throw if no function is provided", () => {
-        expect(() => {
-            // @ts-expect-error
-            debounce();
-        }).toThrow("fn<function> is required");
-    });
-
     it("should set the timer with the specified delay", () => {
         const delay = Math.floor(Math.random() * 2000);
 

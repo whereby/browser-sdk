@@ -1,5 +1,5 @@
-import assert from "assert";
 import nodeBtoa from "btoa";
+import assert from "@whereby/jslib-media/src/utils/assert";
 import HttpClient, { HttpClientRequestConfig } from "./HttpClient";
 import MultipartHttpClient from "./MultipartHttpClient";
 import { assertString } from "./parameterAssertUtils";
@@ -74,9 +74,6 @@ export default class ApiClient {
         baseUrl = "https://api.appearin.net",
         fetchDeviceCredentials = noCredentials,
     }: ApiClientOptions = {}) {
-        assertString(baseUrl, "baseUrl");
-        assert.ok(typeof fetchDeviceCredentials === "function", "fetchDeviceCredentials<Function> is required");
-
         this.authenticatedHttpClient = new AuthenticatedHttpClient({
             httpClient: new HttpClient({
                 baseUrl,
@@ -92,7 +89,7 @@ export default class ApiClient {
      */
     request(url: string, options: HttpClientRequestConfig): Promise<Response> {
         assertString(url, "url");
-        assert.equal(url[0], "/", 'url<String> only accepts relative URLs beginning with "/".');
+        assert.ok(url[0] === "/", 'url<String> only accepts relative URLs beginning with "/".');
         assert.ok(options, "options are required");
 
         return this.authenticatedHttpClient.request(url, options);
@@ -103,7 +100,7 @@ export default class ApiClient {
      */
     requestMultipart(url: string, options: HttpClientRequestConfig): Promise<Response> {
         assertString(url, "url");
-        assert.equal(url[0], "/", 'url<String> only accepts relative URLs beginning with "/".');
+        assert.ok(url[0] === "/", 'url<String> only accepts relative URLs beginning with "/".');
         assert.ok(options, "options are required");
 
         return this.authenticatedFormDataHttpClient.request(url, options);
