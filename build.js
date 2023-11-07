@@ -14,16 +14,16 @@ function makeCdnFilename() {
     return `v${major}${tag}.js`;
 }
 
-// embedded CDN
-build({
+const external = Object.keys(pkg.dependencies)
+    .concat(Object.keys(pkg.peerDependencies))
+    .filter((dep) => !dep.match(/jslib-media/));
+
+const sharedConfig = {
     bundle: true,
-    entryPoints: ["src/lib/embed/index.ts"],
-    external: undefined,
+    external,
     format: "esm",
     minify: process.env.NODE_ENV === "production",
-    outfile: `dist/${makeCdnFilename()}`,
     platform: "browser",
-    packages: undefined,
     plugins: [
         replace({
             __SDK_VERSION__: pkg.version,
@@ -35,4 +35,34 @@ build({
     ],
     target: ["es6"],
     treeShaking: process.env.NODE_ENV === "production",
+};
+
+// React build
+build({
+    ...sharedConfig,
+    entryPoints: ["src/lib/react/index.ts"],
+    outfile: "dist/react/index.js",
+});
+
+// Embed build
+build({
+    ...sharedConfig,
+    entryPoints: ["src/lib/embed/index.ts"],
+    outfile: "dist/embed/index.js",
+});
+
+// Utils
+build({
+    ...sharedConfig,
+    entryPoints: ["src/lib/utils/index.ts"],
+    outfile: "dist/utils/index.js",
+});
+
+// embedded CDN
+build({
+    ...sharedConfig,
+    entryPoints: ["src/lib/embed/index.ts"],
+    external: undefined,
+    outfile: `dist/${makeCdnFilename()}`,
+    packages: undefined,
 });

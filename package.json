@@ -1,6 +1,6 @@
 {
     "name": "@whereby.com/browser-sdk",
-    "version": "2.0.0-beta2",
+    "version": "2.0.0-alpha27",
     "description": "Modules for integration Whereby video in web apps",
     "author": "Whereby AS",
     "license": "MIT",
@@ -35,7 +35,7 @@
     "scripts": {
         "prebuild": "rimraf dist",
         "build": "node build.js",
-        "postbuild": "tsc --project tsconfig.build.json",
+        "postbuild": "tsc --emitDeclarationOnly --declaration --project tsconfig.build.json",
         "build:storybook": "storybook build",
         "dev": "storybook dev -p 6006",
         "install:e2e-sample-app": "cd test/sample-app && yarn custom_install",
