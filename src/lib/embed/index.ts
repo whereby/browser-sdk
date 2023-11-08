@@ -14,6 +14,7 @@ interface WherebyEmbedAttributes {
     help: string;
     leaveButton: string;
     logo: string;
+    minimal: string;
     people: string;
     precallReview: string;
     recording: string;
