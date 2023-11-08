@@ -6,7 +6,7 @@ import ChromeStorageStore from "../modules/ChromeStorageStore";
 import LocalStorageStore from "../modules/LocalStorageStore";
 import ApiClient from "../ApiClient";
 import localStorage from "../localStorageWrapper";
-import { Credentials } from "..";
+import Credentials from "../Credentials";
 
 /**
  * Events triggered by this service
