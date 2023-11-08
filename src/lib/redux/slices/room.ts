@@ -1,5 +1,5 @@
 import { createAsyncThunk, createSlice } from "@reduxjs/toolkit";
-import { RootState } from "../store";
+import { RootState, ThunkConfig } from "../store";
 import { RoomJoinedEvent } from "@whereby/jslib-media/src/utils/ServerSocket";
 import { doRoomConnectionStatusChanged } from "./roomConnection";
 import { RemoteParticipant, WaitingParticipant, LocalParticipant } from "../../RoomParticipant";
@@ -20,7 +20,16 @@ const initialState: RoomState = {
     waitingParticipants: [],
 };
 
-export const doRoomJoined = createAsyncThunk("room/doRoomJoined", async (payload: RoomJoinedEvent, { dispatch }) => {
+export const doRoomJoined = createAsyncThunk<
+    | {
+          localParticipant: LocalParticipant;
+          remoteParticipants: RemoteParticipant[];
+          waitingParticipants: WaitingParticipant[];
+      }
+    | undefined,
+    RoomJoinedEvent,
+    ThunkConfig
+>("room/doRoomJoined", async (payload, { dispatch }) => {
     const { error, isLocked, room, selfId } = payload;
 
     if (error === "room_locked" && isLocked) {
@@ -61,20 +70,23 @@ export const doRoomJoined = createAsyncThunk("room/doRoomJoined", async (payload
     }
 });
 
-export const doRoomLeft = createAsyncThunk("room/doRoomLeft", async (payload, { dispatch, getState }) => {
-    dispatch(doRoomConnectionStatusChanged({ status: "disconnecting" }));
-    const state = getState() as RootState;
-    const rtcManager = selectRtcConnectionRaw(state).rtcManager;
-    const socket = selectSignalConnectionRaw(state).socket;
+export const doRoomLeft = createAsyncThunk<void, undefined, ThunkConfig>(
+    "room/doRoomLeft",
+    async (payload, { dispatch, getState }) => {
+        dispatch(doRoomConnectionStatusChanged({ status: "disconnecting" }));
+        const state = getState();
+        const rtcManager = selectRtcConnectionRaw(state).rtcManager;
+        const socket = selectSignalConnectionRaw(state).socket;
 
-    rtcManager?.disconnectAll();
-    dispatch(doRtcManagerDestroyed());
+        rtcManager?.disconnectAll();
+        dispatch(doRtcManagerDestroyed());
 
-    if (socket) {
-        dispatch(doRoomConnectionStatusChanged({ status: "disconnected" }));
-        dispatch(doSignalDisconnect());
+        if (socket) {
+            dispatch(doRoomConnectionStatusChanged({ status: "disconnected" }));
+            dispatch(doSignalDisconnect());
+        }
     }
-});
+);
 
 export const roomSlice = createSlice({
     name: "room",

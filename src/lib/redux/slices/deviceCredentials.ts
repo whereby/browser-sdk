@@ -1,9 +1,8 @@
 import { createAsyncThunk, createSlice } from "@reduxjs/toolkit";
-import { RootState } from "../store";
+import { RootState, ThunkConfig } from "../store";
 import { startAppListening } from "../listenerMiddleware";
 import { selectAppWantsToJoin } from "./app";
 import { Credentials } from "~/lib/api";
-import { createServices } from "~/lib/services";
 
 export interface DeviceCredentialsState {
     isFetching: boolean;
@@ -15,21 +14,18 @@ const initialState: DeviceCredentialsState = {
     data: null,
 };
 
-export const doGetDeviceCredentials = createAsyncThunk<
-    Credentials | null | undefined,
-    undefined,
-    {
-        extra: ReturnType<typeof createServices>;
-    }
->("deviceCredentials/doGetDeviceCredentials", async (payload, { extra }) => {
-    try {
-        const deviceCredentials = await extra.credentialsService.getCredentials();
+export const doGetDeviceCredentials = createAsyncThunk<Credentials | null | undefined, undefined, ThunkConfig>(
+    "deviceCredentials/doGetDeviceCredentials",
+    async (payload, { extra }) => {
+        try {
+            const deviceCredentials = await extra.services.credentialsService.getCredentials();
 
-        return deviceCredentials;
-    } catch (error) {
-        console.error(error);
+            return deviceCredentials;
+        } catch (error) {
+            console.error(error);
+        }
     }
-});
+);
 
 export const deviceCredentialsSlice = createSlice({
     name: "deviceCredentials",

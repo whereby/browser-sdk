@@ -1,7 +1,6 @@
 import { createAsyncThunk, createSlice } from "@reduxjs/toolkit";
-import { RootState } from "../store";
+import { RootState, ThunkConfig } from "../store";
 import Organization from "../../api/models/Organization";
-import { createServices } from "~/lib/services";
 import { startAppListening } from "../listenerMiddleware";
 import { selectAppWantsToJoin } from "./app";
 
@@ -17,25 +16,22 @@ const initialState: OrganizationState = {
     error: null,
 };
 
-export const doOrganizationFetch = createAsyncThunk<
-    Organization | null | undefined,
-    undefined,
-    {
-        extra: ReturnType<typeof createServices>;
-    }
->("organization/doOrganizationFetch", async (payload, { extra }) => {
-    try {
-        const organization = await extra.organizationServiceCache.fetchOrganization();
+export const doOrganizationFetch = createAsyncThunk<Organization | null | undefined, undefined, ThunkConfig>(
+    "organization/doOrganizationFetch",
+    async (payload, { extra }) => {
+        try {
+            const organization = await extra.services.organizationServiceCache.fetchOrganization();
 
-        if (!organization) {
-            throw new Error("Invalid room url");
+            if (!organization) {
+                throw new Error("Invalid room url");
+            }
+
+            return organization;
+        } catch (error) {
+            console.error(error);
         }
-
-        return organization;
-    } catch (error) {
-        console.error(error);
     }
-});
+);
 
 export const organizationSlice = createSlice({
     initialState,
