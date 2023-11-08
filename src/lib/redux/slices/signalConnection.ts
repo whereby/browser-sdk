@@ -1,5 +1,5 @@
-import { PayloadAction, createAsyncThunk, createSlice } from "@reduxjs/toolkit";
-import { RootState, ThunkConfig } from "../store";
+import { PayloadAction, createSlice } from "@reduxjs/toolkit";
+import { RootState, createAppAsyncThunk } from "../store";
 import ServerSocket from "@whereby/jslib-media/src/utils/ServerSocket";
 import { Credentials } from "~/lib/api";
 import { startAppListening } from "../listenerMiddleware";
@@ -50,7 +50,7 @@ const initialState: SignalConnectionState = {
     isListeningForEvents: false,
 };
 
-export const doSignalListenForEvents = createAsyncThunk<void, undefined, ThunkConfig>(
+export const doSignalListenForEvents = createAppAsyncThunk(
     "signalConnection/doSignalListenForEvents",
     async (payload, { dispatch, getState }) => {
         const state = getState();
@@ -70,7 +70,7 @@ export const doSignalListenForEvents = createAsyncThunk<void, undefined, ThunkCo
     }
 );
 
-export const doSignalJoinRoom = createAsyncThunk<void, undefined, ThunkConfig>(
+export const doSignalJoinRoom = createAppAsyncThunk(
     "signalConnection/doSignalJoinRoom",
     async (payload, { getState }) => {
         const state = getState();
@@ -181,7 +181,7 @@ startAppListening({
         }
         return false;
     },
-    effect: (action, { dispatch }) => {
+    effect: (action, { dispatch, extra }) => {
         dispatch(doSignalListenForEvents());
     },
 });

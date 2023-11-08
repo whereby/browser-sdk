@@ -1,5 +1,5 @@
-import { createAsyncThunk, createSlice } from "@reduxjs/toolkit";
-import { RootState, ThunkConfig } from "../store";
+import { createSlice } from "@reduxjs/toolkit";
+import { RootState, createAppAsyncThunk } from "../store";
 import Organization from "../../api/models/Organization";
 import { startAppListening } from "../listenerMiddleware";
 import { selectAppWantsToJoin } from "./app";
@@ -16,7 +16,7 @@ const initialState: OrganizationState = {
     error: null,
 };
 
-export const doOrganizationFetch = createAsyncThunk<Organization | null | undefined, undefined, ThunkConfig>(
+export const doOrganizationFetch = createAppAsyncThunk(
     "organization/doOrganizationFetch",
     async (payload, { extra }) => {
         try {

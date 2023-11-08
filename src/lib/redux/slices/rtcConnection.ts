@@ -1,5 +1,5 @@
-import { createAsyncThunk, createSlice } from "@reduxjs/toolkit";
-import { AppDispatch, RootState, ThunkConfig } from "../store";
+import { createSlice } from "@reduxjs/toolkit";
+import { AppDispatch, RootState, createAppAsyncThunk } from "../store";
 import RtcManager from "@whereby/jslib-media/src/webrtc/RtcManager";
 import { selectSignalConnectionRaw } from "./signalConnection";
 import RtcManagerDispatcher, {
@@ -8,7 +8,7 @@ import RtcManagerDispatcher, {
     RtcStreamAddedPayload,
 } from "@whereby/jslib-media/src/webrtc/RtcManagerDispatcher";
 import { startAppListening } from "../listenerMiddleware";
-import { RoomConnectionEvent } from "~/lib/RoomConnection";
+import { RoomConnectionEvent } from "../../../lib/RoomConnection";
 import { StreamState } from "~/lib/RoomParticipant";
 import { selectRemoteParticipants } from "./room";
 
@@ -56,7 +56,7 @@ export const createWebRtcEmitter = (dispatch: AppDispatch) => {
     };
 };
 
-export const doRtcManagerCreated = createAsyncThunk(
+export const doRtcManagerCreated = createAppAsyncThunk(
     "rtcConnection/doRtcManagerCreated",
     async (payload: RtcManagerCreatedPayload) => {
         const { rtcManager } = payload;
@@ -65,7 +65,7 @@ export const doRtcManagerCreated = createAsyncThunk(
     }
 );
 
-export const doStreamAdded = createAsyncThunk<void, RtcStreamAddedPayload, ThunkConfig>(
+export const doStreamAdded = createAppAsyncThunk(
     "rtcConnection/doStreamAdded",
     async (payload: RtcStreamAddedPayload, { dispatch, getState, extra }) => {
         const state = getState();
@@ -110,7 +110,7 @@ export const doStreamAdded = createAsyncThunk<void, RtcStreamAddedPayload, Thunk
     }
 );
 
-export const doHandleAcceptStreams = createAsyncThunk<void, undefined, ThunkConfig>(
+export const doHandleAcceptStreams = createAppAsyncThunk(
     "rtcConnection/doHandleAcceptStreams",
     async (payload, { dispatch, getState }) => {
         const state = getState();
@@ -186,7 +186,7 @@ export const doHandleAcceptStreams = createAsyncThunk<void, undefined, ThunkConf
     }
 );
 
-export const doConnectRtc = createAsyncThunk<RtcManagerDispatcher, undefined, ThunkConfig>(
+export const doConnectRtc = createAppAsyncThunk(
     "rtcConnection/doConnectRtc",
     async (payload, { dispatch, getState }) => {
         const state = getState();
