@@ -8,7 +8,6 @@ import RtcManagerDispatcher, {
     RtcStreamAddedPayload,
 } from "@whereby/jslib-media/src/webrtc/RtcManagerDispatcher";
 import { startAppListening } from "../listenerMiddleware";
-import { RoomConnectionEvent } from "../../../lib/RoomConnection";
 import { StreamState } from "~/lib/RoomParticipant";
 import { selectRemoteParticipants } from "./room";
 
@@ -90,23 +89,23 @@ export const doStreamAdded = createAppAsyncThunk(
             (!remoteParticipant.stream && streamType === "webcam") ||
             (!remoteParticipant.stream && !streamType && remoteParticipant.streams.indexOf(remoteParticipantStream) < 1)
         ) {
-            return extra.dispatchEvent(
-                new RoomConnectionEvent("participant_stream_added", {
-                    detail: { participantId: clientId, stream, streamId: streamId || "" },
-                })
-            );
+            // return extra.dispatchEvent(
+            //     new RoomConnectionEvent("participant_stream_added", {
+            //         detail: { participantId: clientId, stream, streamId: streamId || "" },
+            //     })
+            // );
         }
-        return extra.dispatchEvent(
-            new RoomConnectionEvent("screenshare_started", {
-                detail: {
-                    participantId: clientId,
-                    stream,
-                    id: streamId || "",
-                    isLocal: false,
-                    hasAudioTrack: stream.getAudioTracks().length > 0,
-                },
-            })
-        );
+        // return extra.dispatchEvent(
+        //     new RoomConnectionEvent("screenshare_started", {
+        //         detail: {
+        //             participantId: clientId,
+        //             stream,
+        //             id: streamId || "",
+        //             isLocal: false,
+        //             hasAudioTrack: stream.getAudioTracks().length > 0,
+        //         },
+        //     })
+        // );
     }
 );
 
