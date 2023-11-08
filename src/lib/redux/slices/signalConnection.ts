@@ -1,5 +1,5 @@
 import { PayloadAction, createAsyncThunk, createSlice } from "@reduxjs/toolkit";
-import { RootState } from "../store";
+import { RootState, ThunkConfig } from "../store";
 import ServerSocket from "@whereby/jslib-media/src/utils/ServerSocket";
 import { Credentials } from "~/lib/api";
 import { startAppListening } from "../listenerMiddleware";
@@ -12,7 +12,6 @@ import {
 } from "./app";
 import { selectDeviceCredentialsRaw } from "./deviceCredentials";
 import { selectOrganizationId } from "./organization";
-import { doRoomConnectionStatusChanged } from "./roomConnection";
 import { doRoomJoined } from "./room";
 
 const SIGNAL_BASE_URL = process.env["REACT_APP_SIGNAL_BASE_URL"] || "wss://signal.appearin.net";
@@ -51,10 +50,10 @@ const initialState: SignalConnectionState = {
     isListeningForEvents: false,
 };
 
-export const doSignalListenForEvents = createAsyncThunk(
+export const doSignalListenForEvents = createAsyncThunk<void, undefined, ThunkConfig>(
     "signalConnection/doSignalListenForEvents",
     async (payload, { dispatch, getState }) => {
-        const state = getState() as RootState;
+        const state = getState();
         const socket = selectSignalConnectionRaw(state).socket;
 
         if (!socket) {
@@ -71,34 +70,37 @@ export const doSignalListenForEvents = createAsyncThunk(
     }
 );
 
-export const doSignalJoinRoom = createAsyncThunk("signalConnection/doSignalJoinRoom", async (payload, { getState }) => {
-    const state = getState() as RootState;
-    const socket = selectSignalConnectionRaw(state).socket;
-    const roomName = selectAppRoomName(state);
-    const roomKey = selectAppRoomKey(state);
-    const displayName = selectAppDisplayName(state);
-    const sdkVersion = selectAppSdkVersion(state);
-    const organizationId = selectOrganizationId(state);
+export const doSignalJoinRoom = createAsyncThunk<void, undefined, ThunkConfig>(
+    "signalConnection/doSignalJoinRoom",
+    async (payload, { getState }) => {
+        const state = getState();
+        const socket = selectSignalConnectionRaw(state).socket;
+        const roomName = selectAppRoomName(state);
+        const roomKey = selectAppRoomKey(state);
+        const displayName = selectAppDisplayName(state);
+        const sdkVersion = selectAppSdkVersion(state);
+        const organizationId = selectOrganizationId(state);
 
-    socket?.emit("join_room", {
-        avatarUrl: null,
-        config: {
-            isAudioEnabled: true,
-            isVideoEnabled: true,
-        },
-        deviceCapabilities: { canScreenshare: true },
-        displayName: displayName,
-        isCoLocated: false,
-        isDevicePermissionDenied: false,
-        kickFromOtherRooms: false,
-        organizationId: organizationId,
-        roomKey: roomKey,
-        roomName: roomName,
-        selfId: "",
-        userAgent: `browser-sdk:${sdkVersion || "unknown"}`,
-        externalId: null,
-    });
-});
+        socket?.emit("join_room", {
+            avatarUrl: null,
+            config: {
+                isAudioEnabled: true,
+                isVideoEnabled: true,
+            },
+            deviceCapabilities: { canScreenshare: true },
+            displayName: displayName,
+            isCoLocated: false,
+            isDevicePermissionDenied: false,
+            kickFromOtherRooms: false,
+            organizationId: organizationId,
+            roomKey: roomKey,
+            roomName: roomName,
+            selfId: "",
+            userAgent: `browser-sdk:${sdkVersion || "unknown"}`,
+            externalId: null,
+        });
+    }
+);
 
 export const signalConnectionSlice = createSlice({
     name: "signalConnection",

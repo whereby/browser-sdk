@@ -1,5 +1,5 @@
 import { createAsyncThunk, createSlice } from "@reduxjs/toolkit";
-import { AppDispatch, RootState } from "../store";
+import { AppDispatch, RootState, ThunkConfig } from "../store";
 import RtcManager from "@whereby/jslib-media/src/webrtc/RtcManager";
 import { selectSignalConnectionRaw } from "./signalConnection";
 import RtcManagerDispatcher, {
@@ -8,6 +8,7 @@ import RtcManagerDispatcher, {
     RtcStreamAddedPayload,
 } from "@whereby/jslib-media/src/webrtc/RtcManagerDispatcher";
 import { startAppListening } from "../listenerMiddleware";
+import { RoomConnectionEvent } from "~/lib/RoomConnection";
 import { StreamState } from "~/lib/RoomParticipant";
 import { selectRemoteParticipants } from "./room";
 
@@ -64,10 +65,10 @@ export const doRtcManagerCreated = createAsyncThunk(
     }
 );
 
-export const doStreamAdded = createAsyncThunk(
+export const doStreamAdded = createAsyncThunk<void, RtcStreamAddedPayload, ThunkConfig>(
     "rtcConnection/doStreamAdded",
-    async (payload: RtcStreamAddedPayload, { dispatch, getState }) => {
-        const state = getState() as RootState;
+    async (payload: RtcStreamAddedPayload, { dispatch, getState, extra }) => {
+        const state = getState();
         const remoteParticipants = selectRemoteParticipants(state);
 
         const { clientId, stream, streamId, streamType } = payload;
@@ -89,18 +90,30 @@ export const doStreamAdded = createAsyncThunk(
             (!remoteParticipant.stream && streamType === "webcam") ||
             (!remoteParticipant.stream && !streamType && remoteParticipant.streams.indexOf(remoteParticipantStream) < 1)
         ) {
-            console.log(`Setting stream for ${clientId} to ${streamId}`);
-            return;
+            return extra.dispatchEvent(
+                new RoomConnectionEvent("participant_stream_added", {
+                    detail: { participantId: clientId, stream, streamId: streamId || "" },
+                })
+            );
         }
-        console.log(`Adding stream screen share ${streamId} for ${clientId}`);
-        return;
+        return extra.dispatchEvent(
+            new RoomConnectionEvent("screenshare_started", {
+                detail: {
+                    participantId: clientId,
+                    stream,
+                    id: streamId || "",
+                    isLocal: false,
+                    hasAudioTrack: stream.getAudioTracks().length > 0,
+                },
+            })
+        );
     }
 );
 
-export const doHandleAcceptStreams = createAsyncThunk(
+export const doHandleAcceptStreams = createAsyncThunk<void, undefined, ThunkConfig>(
     "rtcConnection/doHandleAcceptStreams",
     async (payload, { dispatch, getState }) => {
-        const state = getState() as RootState;
+        const state = getState();
         const rtcManager = selectRtcConnectionRaw(state).rtcManager;
         const remoteParticipants = selectRemoteParticipants(state);
 
@@ -173,33 +186,35 @@ export const doHandleAcceptStreams = createAsyncThunk(
     }
 );
 
-export const doConnectRtc = createAsyncThunk("rtcConnection/doConnectRtc", async (payload, { dispatch, getState }) => {
-    const state = getState() as RootState;
-    const appDispatch = dispatch as AppDispatch;
-    const socket = selectSignalConnectionRaw(state).socket;
-    const dispatcher = selectRtcConnectionRaw(state).rtcManagerDispatcher;
+export const doConnectRtc = createAsyncThunk<RtcManagerDispatcher, undefined, ThunkConfig>(
+    "rtcConnection/doConnectRtc",
+    async (payload, { dispatch, getState }) => {
+        const state = getState();
+        const socket = selectSignalConnectionRaw(state).socket;
+        const dispatcher = selectRtcConnectionRaw(state).rtcManagerDispatcher;
 
-    if (dispatcher) {
-        throw new Error("RTC dispatcher already exists");
+        if (dispatcher) {
+            throw new Error("RTC dispatcher already exists");
+        }
+
+        const rtcManagerDispatcher = new RtcManagerDispatcher({
+            emitter: createWebRtcEmitter(dispatch),
+            serverSocket: socket,
+            webrtcProvider,
+            features: {
+                lowDataModeEnabled: false,
+                sfuServerOverrideHost: undefined,
+                turnServerOverrideHost: undefined,
+                useOnlyTURN: undefined,
+                vp9On: false,
+                h264On: false,
+                simulcastScreenshareOn: false,
+            },
+        });
+
+        return rtcManagerDispatcher;
     }
-
-    const rtcManagerDispatcher = new RtcManagerDispatcher({
-        emitter: createWebRtcEmitter(appDispatch),
-        serverSocket: socket,
-        webrtcProvider,
-        features: {
-            lowDataModeEnabled: false,
-            sfuServerOverrideHost: undefined,
-            turnServerOverrideHost: undefined,
-            useOnlyTURN: undefined,
-            vp9On: false,
-            h264On: false,
-            simulcastScreenshareOn: false,
-        },
-    });
-
-    return rtcManagerDispatcher;
-});
+);
 
 export const rtcConnectionSlice = createSlice({
     name: "rtcConnection",

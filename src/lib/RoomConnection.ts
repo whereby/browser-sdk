@@ -1,8 +1,4 @@
-import RtcManagerDispatcher, {
-    RtcEvents,
-    RtcManagerCreatedPayload,
-    RtcStreamAddedPayload,
-} from "@whereby/jslib-media/src/webrtc/RtcManagerDispatcher";
+import RtcManagerDispatcher, { RtcStreamAddedPayload } from "@whereby/jslib-media/src/webrtc/RtcManagerDispatcher";
 import RtcManager from "@whereby/jslib-media/src/webrtc/RtcManager";
 import { fromLocation } from "@whereby/jslib-media/src/utils/urls";
 import {
@@ -15,9 +11,9 @@ import {
     RoomService,
 } from "./api";
 
-import { LocalParticipant, RemoteParticipant, Screenshare, StreamState, WaitingParticipant } from "./RoomParticipant";
+import { LocalParticipant, RemoteParticipant, Screenshare, WaitingParticipant } from "./RoomParticipant";
 
-import ServerSocket, {
+import {
     ChatMessage as SignalChatMessage,
     ClientLeftEvent,
     ClientMetadataReceivedEvent,
@@ -28,7 +24,6 @@ import ServerSocket, {
     NewClientEvent,
     RoomKnockedEvent as SignalRoomKnockedEvent,
     SignalClient,
-    SocketManager,
     ScreenshareStartedEvent as SignalScreenshareStartedEvent,
     ScreenshareStoppedEvent as SignalScreenshareStoppedEvent,
 } from "@whereby/jslib-media/src/utils/ServerSocket";
@@ -180,7 +175,6 @@ type RoomEventPayload<T extends RoomEventKey> = RoomEventType<T> extends CustomE
 
 export class RoomConnectionEvent<T extends RoomEventKey> extends CustomEvent<RoomEventPayload<T>> {
     constructor(eventType: T, eventInitDict?: CustomEventInit<RoomEventPayload<T>>) {
-        console.log("RoomConnectionEvent", eventType, eventInitDict);
         super(eventType, eventInitDict);
     }
 }
@@ -321,6 +315,7 @@ export default class RoomConnection extends TypedEventTarget {
         // redux
         this._store = createStore({
             injectServices: createServices(roomUrl),
+            dispatchEvent: this.dispatchEvent,
         });
         this._state = this._store.getState();
 
