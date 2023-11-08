@@ -11,9 +11,18 @@
     "browserslist": "> 0.5%, last 2 versions, not dead",
     "source": "src/index.js",
     "exports": {
-        "./react": "./dist/react/index.esm.js",
-        "./embed": "./dist/embed/index.js",
-        "./utils": "./dist/utils/index.esm.js"
+        "./react": {
+            "import": "./dist/react/index.esm.js",
+            "types": "./dist/react/index.d.ts"
+        },
+        "./embed": {
+            "import": "./dist/embed/index.esm.js",
+            "types": "./dist/embed/index.d.ts"
+        },
+        "./utils": {
+            "import": "./dist/utils/index.esm.js",
+            "types": "./dist/utils/index.d.ts"
+        }
     },
     "typesVersions": {
         "*": {
