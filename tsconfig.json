@@ -4,7 +4,7 @@
       "allowSyntheticDefaultImports": true,
       "baseUrl": "./",
       "checkJs": false,
-      "declaration": true,
+      "declaration": false,
       "downlevelIteration": true,
       "esModuleInterop": true,
       "forceConsistentCasingInFileNames": true,
