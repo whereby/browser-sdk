@@ -1,4 +1,4 @@
-import { PreloadedState, combineReducers, configureStore } from "@reduxjs/toolkit";
+import { PreloadedState, combineReducers, configureStore, createAsyncThunk } from "@reduxjs/toolkit";
 import { listenerMiddleware } from "./listenerMiddleware";
 import { createServices } from "../services";
 
@@ -51,3 +51,9 @@ export type ThunkConfig = {
     dispatch: AppDispatch;
     extra: { services: ReturnType<typeof createServices>; dispatchEvent: (event: CustomEvent) => void };
 };
+
+export const createAppAsyncThunk = createAsyncThunk.withTypes<{
+    state: RootState;
+    dispatch: AppDispatch;
+    extra: { services: ReturnType<typeof createServices>; dispatchEvent: (event: CustomEvent) => void };
+}>();

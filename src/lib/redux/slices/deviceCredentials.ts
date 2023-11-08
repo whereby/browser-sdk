@@ -1,5 +1,5 @@
-import { createAsyncThunk, createSlice } from "@reduxjs/toolkit";
-import { RootState, ThunkConfig } from "../store";
+import { createSlice } from "@reduxjs/toolkit";
+import { RootState, createAppAsyncThunk } from "../store";
 import { startAppListening } from "../listenerMiddleware";
 import { selectAppWantsToJoin } from "./app";
 import { Credentials } from "~/lib/api";
@@ -14,7 +14,7 @@ const initialState: DeviceCredentialsState = {
     data: null,
 };
 
-export const doGetDeviceCredentials = createAsyncThunk<Credentials | null | undefined, undefined, ThunkConfig>(
+export const doGetDeviceCredentials = createAppAsyncThunk(
     "deviceCredentials/doGetDeviceCredentials",
     async (payload, { extra }) => {
         try {
