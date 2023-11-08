@@ -1,0 +1,128 @@
+.App {
+    background-color: #282c34;
+    min-height: 100vh;
+    display: grid;
+    grid-template-columns: 50px 2fr 1fr;
+}
+
+.LeftSidebar {
+    background-color: #fff;
+    padding: 1.3rem;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 1.3rem;
+}
+
+.WherebyEmbed {
+    background-color: #97d7c9;
+}
+
+.RightSidebar {
+    background-color: #baf0db;
+    padding: 2rem 1rem;
+    display: grid;
+    grid-template-rows: auto 1fr 1fr auto;
+    height: calc(100vh - 4rem);
+    grid-gap: 1rem;
+}
+
+.Card {
+    background-color: #fff;
+    border-radius: 8px;
+    padding: 10px;
+    display: grid;
+    grid-template-rows: auto 1fr auto;
+}
+
+.Card:last-child {
+    margin-bottom: 0;
+}
+
+.Card__header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.Card__title {
+    display: flex;
+    align-items: center;
+}
+
+.Card__title h2 {
+    margin: 4px 0 4px 10px;
+    font-size: 1.1rem;
+    color: #080808;
+}
+
+.NoteCard .Card__body {
+    max-height: 30vh;
+}
+
+.NoteCard .Card__footer {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    border-top: 1px solid #e6e6e6;
+    /* flex: 1; */
+    padding: 0.5rem 0 0;
+}
+
+.NoteCard .Card__footer input {
+    border: none;
+    border-bottom: 1px solid #e6e6e6;
+    background-color: transparent;
+    font-size: 1rem;
+    padding: 0.2rem;
+    margin: 0 1rem 0 0.5rem;
+    flex: 1;
+}
+
+.NoteCard .Card__footer input:focus {
+    outline: none;
+    border-bottom: 1px solid #6eb5a5;
+}
+
+.NoteCard .Card__footer button {
+    border: none;
+    background-color: transparent;
+    color: #6eb5a5;
+    font-weight: 600;
+    font-size: 1rem;
+    padding: 0.2rem;
+    cursor: pointer;
+    margin: 0 0.5rem 0 0;
+}
+
+.EventLogCard .Card__body {
+    max-height: 30vh;
+    overflow-y: scroll;
+    display: flex;
+    flex-direction: column-reverse;
+}
+
+.EventLogCard__entry {
+    margin: 0.5rem 0;
+    font-size: 0.75rem;
+    padding: 0.15rem;
+}
+
+.EventLogCard__entry:nth-child(even) {
+    background-color: #f6f6f6;
+}
+
+.EventLogCard__entry__title {
+    display: flex;
+    align-items: center;
+}
+
+.EventLogCard__entry__datetime {
+    color: #6eb5a5;
+    margin: 0 0.5rem 0 0;
+}
+
+.EventLogCard__entry__data {
+    margin: 0 0 0 0.5rem;
+    color: #080808;
+}

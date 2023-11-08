@@ -3,9 +3,12 @@
     "version": "0.1.0",
     "private": true,
     "dependencies": {
+        "@coreui/icons": "^3.0.1",
+        "@coreui/icons-react": "^2.2.1",
         "@types/node": "^16.18.61",
         "@types/react": "^18.2.37",
         "@types/react-dom": "^18.2.15",
+        "@whereby.com/browser-sdk": "2.0.0-beta2",
         "react": "^18.2.0",
         "react-dom": "^18.2.0",
         "react-scripts": "5.0.1",
