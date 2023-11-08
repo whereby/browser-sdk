@@ -199,6 +199,7 @@ export const doConnectRtc = createAppAsyncThunk(
         const rtcManagerDispatcher = new RtcManagerDispatcher({
             emitter: createWebRtcEmitter(dispatch),
             serverSocket: socket,
+            logger: console,
             webrtcProvider,
             features: {
                 lowDataModeEnabled: false,
