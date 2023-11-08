@@ -848,7 +848,7 @@ export default class RoomConnection extends TypedEventTarget {
         // this.signalSocket.emit("leave_room");
         // this.signalSocket.disconnect();
         // this.connectionStatus = "disconnected";
-        this._store.dispatch(doRoomLeft());
+        // this._store.dispatch(doRoomLeft());
     }
 
     public sendChatMessage(text: string): void {
