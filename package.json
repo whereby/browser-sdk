@@ -1,6 +1,6 @@
 {
     "name": "@whereby.com/browser-sdk",
-    "version": "2.0.0-beta2",
+    "version": "2.0.0-alpha27",
     "description": "Modules for integration Whereby video in web apps",
     "author": "Whereby AS",
     "license": "MIT",
@@ -11,9 +11,18 @@
     "browserslist": "> 0.5%, last 2 versions, not dead",
     "source": "src/index.js",
     "exports": {
-        "./react": "./dist/react/index.js",
-        "./embed": "./dist/embed/index.js",
-        "./utils": "./dist/utils/index.js"
+        "./react": {
+            "import": "./dist/react/index.esm.js",
+            "types": "./dist/react/index.d.ts"
+        },
+        "./embed": {
+            "import": "./dist/embed/index.esm.js",
+            "types": "./dist/embed/index.d.ts"
+        },
+        "./utils": {
+            "import": "./dist/utils/index.esm.js",
+            "types": "./dist/utils/index.d.ts"
+        }
     },
     "typesVersions": {
         "*": {
@@ -34,8 +43,7 @@
     ],
     "scripts": {
         "prebuild": "rimraf dist",
-        "build": "node build.js",
-        "postbuild": "tsc --project tsconfig.build.json",
+        "build": "rollup -c rollup.config.js",
         "build:storybook": "storybook build",
         "dev": "storybook dev -p 6006",
         "install:e2e-sample-app": "cd test/sample-app && yarn custom_install",
@@ -55,10 +63,10 @@
         "@babel/preset-react": "^7.22.15",
         "@babel/preset-typescript": "^7.23.2",
         "@playwright/test": "^1.38.1",
-        "@rollup/plugin-commonjs": "^24.0.0",
-        "@rollup/plugin-json": "^6.0.0",
-        "@rollup/plugin-node-resolve": "^13.3.0",
-        "@rollup/plugin-replace": "^4.0.0",
+        "@rollup/plugin-commonjs": "^25.0.7",
+        "@rollup/plugin-json": "^6.0.1",
+        "@rollup/plugin-node-resolve": "^15.2.3",
+        "@rollup/plugin-replace": "^5.0.5",
         "@storybook/addon-actions": "^7.5.2",
         "@storybook/addon-essentials": "^7.5.2",
         "@storybook/addon-links": "^7.5.2",
@@ -75,8 +83,6 @@
         "babel-loader": "^8.2.5",
         "dotenv": "^16.3.1",
         "dotenv-run-script": "^0.4.1",
-        "esbuild": "^0.19.4",
-        "esbuild-plugin-replace": "^1.4.0",
         "eslint": "^8.29.0",
         "eslint-plugin-jest": "^26.5.3",
         "jest": "29.4.3",
@@ -86,6 +92,10 @@
         "react": "^18.2.0",
         "react-dom": "^18.2.0",
         "rimraf": "^3.0.2",
+        "rollup": "^4.3.0",
+        "rollup-plugin-dts": "^6.1.0",
+        "rollup-plugin-terser": "^7.0.2",
+        "rollup-plugin-typescript2": "^0.36.0",
         "storybook": "^7.5.2",
         "ts-jest": "29.0.5",
         "tslib": "^2.4.1",
