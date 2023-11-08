@@ -10,6 +10,8 @@ import RtcManagerDispatcher, {
 import { startAppListening } from "../listenerMiddleware";
 import { StreamState } from "~/lib/RoomParticipant";
 import { selectRemoteParticipants } from "./room";
+import { RoomConnectionEvent } from "~/lib/RoomConnection";
+import { selectAppLocalMedia } from "./app";
 
 export interface RtcConnectionState {
     error: unknown;
@@ -57,8 +59,25 @@ export const createWebRtcEmitter = (dispatch: AppDispatch) => {
 
 export const doRtcManagerCreated = createAppAsyncThunk(
     "rtcConnection/doRtcManagerCreated",
-    async (payload: RtcManagerCreatedPayload) => {
+    async (payload: RtcManagerCreatedPayload, { getState, dispatch }) => {
         const { rtcManager } = payload;
+        const localMedia = selectAppLocalMedia(getState());
+        const remoteParticipants = selectRemoteParticipants(getState());
+
+        localMedia?.addRtcManager(rtcManager);
+
+        if (localMedia?.stream) {
+            rtcManager.addNewStream(
+                "0",
+                localMedia.stream,
+                !localMedia.isMicrophoneEnabled(),
+                !localMedia.isCameraEnabled()
+            );
+        }
+
+        if (remoteParticipants.length > 0) {
+            dispatch(doHandleAcceptStreams());
+        }
 
         return rtcManager;
     }
@@ -89,29 +108,29 @@ export const doStreamAdded = createAppAsyncThunk(
             (!remoteParticipant.stream && streamType === "webcam") ||
             (!remoteParticipant.stream && !streamType && remoteParticipant.streams.indexOf(remoteParticipantStream) < 1)
         ) {
-            // return extra.dispatchEvent(
-            //     new RoomConnectionEvent("participant_stream_added", {
-            //         detail: { participantId: clientId, stream, streamId: streamId || "" },
-            //     })
-            // );
+            return extra.dispatchEvent(
+                new RoomConnectionEvent("participant_stream_added", {
+                    detail: { participantId: clientId, stream, streamId: streamId || "" },
+                })
+            );
         }
-        // return extra.dispatchEvent(
-        //     new RoomConnectionEvent("screenshare_started", {
-        //         detail: {
-        //             participantId: clientId,
-        //             stream,
-        //             id: streamId || "",
-        //             isLocal: false,
-        //             hasAudioTrack: stream.getAudioTracks().length > 0,
-        //         },
-        //     })
-        // );
+        return extra.dispatchEvent(
+            new RoomConnectionEvent("screenshare_started", {
+                detail: {
+                    participantId: clientId,
+                    stream,
+                    id: streamId || "",
+                    isLocal: false,
+                    hasAudioTrack: stream.getAudioTracks().length > 0,
+                },
+            })
+        );
     }
 );
 
 export const doHandleAcceptStreams = createAppAsyncThunk(
     "rtcConnection/doHandleAcceptStreams",
-    async (payload, { dispatch, getState }) => {
+    async (payload, { getState }) => {
         const state = getState();
         const rtcManager = selectRtcConnectionRaw(state).rtcManager;
         const remoteParticipants = selectRemoteParticipants(state);
@@ -199,6 +218,7 @@ export const doConnectRtc = createAppAsyncThunk(
         const rtcManagerDispatcher = new RtcManagerDispatcher({
             emitter: createWebRtcEmitter(dispatch),
             serverSocket: socket,
+            logger: console,
             webrtcProvider,
             features: {
                 lowDataModeEnabled: false,
