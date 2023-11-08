@@ -114,7 +114,7 @@ WherebyEmbedElement.args = {
     chat: true,
     displayName: "Your name",
     emptyRoomInvitation: "true",
-    externalId: null,
+    externalId: undefined,
     floatSelf: false,
     help: true,
     leaveButton: true,
