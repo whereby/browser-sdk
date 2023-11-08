@@ -50,7 +50,7 @@ const plugins = [
     nodeResolve({
         // only include @whereby/jslib-media in our bundle
         preferBuiltins: true,
-        resolveOnly: [/@whereby\/jslib-media/],
+        resolveOnly: [/@whereby\/jslib-media/, /rtcstats/],
     }),
     commonjs(),
     typescript(),
