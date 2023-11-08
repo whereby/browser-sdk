@@ -3,6 +3,7 @@ import { RootState, createAppAsyncThunk } from "../store";
 import Organization from "../../api/models/Organization";
 import { startAppListening } from "../listenerMiddleware";
 import { selectAppWantsToJoin } from "./app";
+import { selectDeviceCredentialsRaw } from "./deviceCredentials";
 
 export interface OrganizationState {
     data: Organization | null | undefined;
@@ -55,7 +56,7 @@ export const organizationSlice = createSlice({
             return {
                 ...state,
                 isFetching: false,
-                error: action.error,
+                error: { message: action.error.message, name: action.error.name },
             };
         });
     },
@@ -68,8 +69,15 @@ startAppListening({
     predicate: (action, currentState) => {
         const wantsToJoin = selectAppWantsToJoin(currentState);
         const organization = selectOrganizationRaw(currentState);
+        const deviceCredentials = selectDeviceCredentialsRaw(currentState);
 
-        if (wantsToJoin && !organization.data && !organization.isFetching && !organization.error) {
+        if (
+            wantsToJoin &&
+            !organization.data &&
+            !organization.isFetching &&
+            !organization.error &&
+            !deviceCredentials.isFetching
+        ) {
             return true;
         }
         return false;
