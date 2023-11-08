@@ -69,6 +69,16 @@ module.exports = [
         plugins,
     },
     {
+        input: "src/lib/embed/index.ts",
+        output: {
+            exports: "named",
+            file: "dist/embed/index.esm.js",
+            format: "esm",
+        },
+        external: ["heresy", ...peerDependencies],
+        plugins,
+    },
+    {
         input: "src/lib/utils/index.ts",
         output: {
             exports: "named",
@@ -78,20 +88,25 @@ module.exports = [
         external: ["heresy", ...peerDependencies],
         plugins,
     },
-    // Legacy build of lib in ESM format, bundling the dependencies
-    /*{
-        input: "src/lib/react/index.ts",
+    // Legacy build of embedded lib in ESM format, bundling the dependencies
+    {
+        input: "src/lib/embed/index.ts",
         output: {
             exports: "named",
             file: `dist/${makeCdnFilename()}`,
             format: "esm",
         },
         plugins: [nodeResolve(), commonjs(), json(), terser(), replace(replaceValues), typescript()],
-    },*/
+    },
     // Roll-up .d.ts definition files
     {
         input: "src/lib/react/index.ts",
         output: [{ file: "dist/react/index.d.ts", format: "es" }],
+        plugins: [dts()],
+    },
+    {
+        input: "src/lib/embed/index.ts",
+        output: [{ file: "dist/embed/index.d.ts", format: "es" }],
         plugins: [dts()],
     },
     {
