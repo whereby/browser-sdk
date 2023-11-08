@@ -48,9 +48,9 @@ const plugins = [
         values: { "global.navigator.mediaDevices": " navigator.mediaDevices." },
     }),
     nodeResolve({
-        // only include @whereby/jslib-media in our bundle
+        // only include @whereby/jslib-media and rtcstats in our bundle
         preferBuiltins: true,
-        resolveOnly: [/@whereby\/jslib-media/],
+        resolveOnly: [/@whereby\/jslib-media|rtcstats/],
     }),
     commonjs(),
     typescript(),
