@@ -951,13 +951,13 @@ export default class RoomConnection extends TypedEventTarget {
     }
 
     public startCloudRecording() {
-        this.signalSocket.emit("start_recording", {
-            recording: "cloud",
-        });
+        // this.signalSocket.emit("start_recording", {
+        //     recording: "cloud",
+        // });
         this.dispatchEvent(new RoomConnectionEvent("cloud_recording_request_started"));
     }
 
     public stopCloudRecording() {
-        this.signalSocket.emit("stop_recording");
+        // this.signalSocket.emit("stop_recording");
     }
 }
