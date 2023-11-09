@@ -5,6 +5,8 @@ import { doRoomConnectionStatusChanged } from "./roomConnection";
 import { RemoteParticipant, WaitingParticipant, LocalParticipant } from "../../RoomParticipant";
 import { doRtcManagerDestroyed, selectRtcConnectionRaw } from "./rtcConnection";
 import { doSignalDisconnect, selectSignalConnectionRaw } from "./signalConnection";
+import { RoomConnectionEvent } from "~/lib/RoomConnection";
+import { selectAppLocalMedia } from "./app";
 
 const NON_PERSON_ROLES = ["recorder", "streamer"];
 
@@ -20,46 +22,65 @@ const initialState: RoomState = {
     waitingParticipants: [],
 };
 
-export const doRoomJoined = createAppAsyncThunk("room/doRoomJoined", async (payload: RoomJoinedEvent, { dispatch }) => {
-    const { error, isLocked, room, selfId } = payload;
+export const doRoomJoined = createAppAsyncThunk(
+    "room/doRoomJoined",
+    async (payload: RoomJoinedEvent, { dispatch, getState }) => {
+        const { error, isLocked, room, selfId } = payload;
+        const localMedia = selectAppLocalMedia(getState());
 
-    if (error === "room_locked" && isLocked) {
-        dispatch(doRoomConnectionStatusChanged({ status: "room_locked" }));
+        if (error === "room_locked" && isLocked) {
+            dispatch(doRoomConnectionStatusChanged({ status: "room_locked" }));
+        }
+
+        if (room) {
+            const { clients, knockers } = room;
+
+            const localClient = clients.find((c) => c.id === selfId);
+            if (!localClient) throw new Error("Missing local client");
+
+            // const recorderClient = clients.find((c) => c.role.roleName === "recorder");
+            // if (recorderClient) {
+            //     this._handleCloudRecordingStarted({ client: recorderClient });
+            // }
+
+            // const streamerClient = clients.find((c) => c.role.roleName === "streamer");
+            // if (streamerClient) {
+            //     this._handleStreamingStarted();
+            // }
+
+            const remoteParticipants = clients
+                .filter((c) => c.id !== selfId)
+                .filter((c) => !NON_PERSON_ROLES.includes(c.role.roleName))
+                .map((c) => new RemoteParticipant({ ...c, newJoiner: false }));
+
+            dispatch(doRoomConnectionStatusChanged({ status: "connected" }));
+
+            const localParticipant = new LocalParticipant({ ...localClient, stream: localMedia?.stream || undefined });
+
+            // extra.dispatchEvent(
+            //     new RoomConnectionEvent("room_joined", {
+            //         detail: {
+            //             localParticipant: new LocalParticipant(localClient),
+            //             remoteParticipants,
+            //             waitingParticipants: knockers.map((knocker) => ({
+            //                 id: knocker.clientId,
+            //                 displayName: knocker.displayName,
+            //             })),
+            //         },
+            //     })
+            // );
+
+            return {
+                localParticipant,
+                remoteParticipants,
+                waitingParticipants: knockers.map((knocker) => ({
+                    id: knocker.clientId,
+                    displayName: knocker.displayName,
+                })),
+            };
+        }
     }
-
-    if (room) {
-        const { clients, knockers } = room;
-
-        const localClient = clients.find((c) => c.id === selfId);
-        if (!localClient) throw new Error("Missing local client");
-
-        // const recorderClient = clients.find((c) => c.role.roleName === "recorder");
-        // if (recorderClient) {
-        //     this._handleCloudRecordingStarted({ client: recorderClient });
-        // }
-
-        // const streamerClient = clients.find((c) => c.role.roleName === "streamer");
-        // if (streamerClient) {
-        //     this._handleStreamingStarted();
-        // }
-
-        const remoteParticipants = clients
-            .filter((c) => c.id !== selfId)
-            .filter((c) => !NON_PERSON_ROLES.includes(c.role.roleName))
-            .map((c) => new RemoteParticipant({ ...c, newJoiner: false }));
-
-        dispatch(doRoomConnectionStatusChanged({ status: "connected" }));
-
-        return {
-            localParticipant: new LocalParticipant(localClient),
-            remoteParticipants,
-            waitingParticipants: knockers.map((knocker) => ({
-                id: knocker.clientId,
-                displayName: knocker.displayName,
-            })),
-        };
-    }
-});
+);
 
 export const doRoomLeft = createAppAsyncThunk("room/doRoomLeft", async (payload, { dispatch, getState }) => {
     dispatch(doRoomConnectionStatusChanged({ status: "disconnecting" }));

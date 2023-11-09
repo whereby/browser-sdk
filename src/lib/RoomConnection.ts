@@ -1,16 +1,3 @@
-import RtcManagerDispatcher, { RtcStreamAddedPayload } from "@whereby/jslib-media/src/webrtc/RtcManagerDispatcher";
-import RtcManager from "@whereby/jslib-media/src/webrtc/RtcManager";
-import { fromLocation } from "@whereby/jslib-media/src/utils/urls";
-import {
-    ApiClient,
-    Credentials,
-    CredentialsService,
-    OrganizationApiClient,
-    OrganizationService,
-    OrganizationServiceCache,
-    RoomService,
-} from "./api";
-
 import { LocalParticipant, RemoteParticipant, Screenshare, WaitingParticipant } from "./RoomParticipant";
 
 import {
@@ -42,6 +29,7 @@ import {
     selectRemoteParticipants,
     selectWaitingParticipants,
 } from "./redux/slices/room";
+import { doSignalEnableAudio, doSignalEnableVideo } from "./redux/slices/signalConnection";
 
 export interface RoomConnectionOptions {
     displayName?: string; // Might not be needed at all
@@ -179,60 +167,10 @@ export class RoomConnectionEvent<T extends RoomEventKey> extends CustomEvent<Roo
     }
 }
 
-const API_BASE_URL = process.env.REACT_APP_API_BASE_URL || "https://api.whereby.dev";
-// const SIGNAL_BASE_URL = process.env.REACT_APP_SIGNAL_BASE_URL || "wss://signal.appearin.net";
-
 const NON_PERSON_ROLES = ["recorder", "streamer"];
 
 // cache last reported stream resolutions
 const reportedStreamResolutions = new Map<string, { width: number; height: number }>();
-
-// function createSocket() {
-//     const parsedUrl = new URL(SIGNAL_BASE_URL);
-//     const socketHost = parsedUrl.origin;
-
-//     const socketOverrides = {
-//         autoConnect: false,
-//     };
-
-//     return new ServerSocket(socketHost, socketOverrides);
-// }
-
-// export function handleStreamAdded(
-//     remoteParticipants: RemoteParticipant[],
-//     { clientId, stream, streamId, streamType }: RtcStreamAddedPayload
-// ) {
-//     if (!streamId) {
-//         streamId = stream.id;
-//     }
-//     const remoteParticipant = remoteParticipants.find((p) => p.id === clientId);
-//     if (!remoteParticipant) {
-//         return;
-//     }
-
-//     const remoteParticipantStream =
-//         remoteParticipant.streams.find((s) => s.id === streamId) || remoteParticipant.streams[0];
-
-//     if (
-//         (remoteParticipant.stream && remoteParticipant.stream.id === streamId) ||
-//         (!remoteParticipant.stream && streamType === "webcam") ||
-//         (!remoteParticipant.stream && !streamType && remoteParticipant.streams.indexOf(remoteParticipantStream) < 1)
-//     ) {
-//         return new RoomConnectionEvent("participant_stream_added", {
-//             detail: { participantId: clientId, stream, streamId },
-//         });
-//     }
-//     // screenshare
-//     return new RoomConnectionEvent("screenshare_started", {
-//         detail: {
-//             participantId: clientId,
-//             stream,
-//             id: streamId,
-//             isLocal: false,
-//             hasAudioTrack: stream.getAudioTracks().length > 0,
-//         },
-//     });
-// }
 
 /*
  * This is the topmost interface when dealing with Whereby.
@@ -276,18 +214,6 @@ export default class RoomConnection extends TypedEventTarget {
     public readonly roomName: string;
     private organizationId: string;
 
-    private credentialsService: CredentialsService;
-    private apiClient: ApiClient;
-    private organizationService: OrganizationService;
-    private organizationServiceCache: OrganizationServiceCache;
-    private organizationApiClient: OrganizationApiClient;
-    private roomService: RoomService;
-
-    private _deviceCredentials: Credentials | null = null;
-    // private signalSocket: ServerSocket;
-    // private signalSocketManager: SocketManager;
-    private rtcManagerDispatcher?: RtcManagerDispatcher;
-    private rtcManager?: RtcManager;
     private connectionStatus: ConnectionStatus;
     private selfId: string | null;
     private logger: Logger;
@@ -295,6 +221,7 @@ export default class RoomConnection extends TypedEventTarget {
     private displayName?: string;
     private externalId?: string;
     private _roomKey: string | null;
+    private _unsubscribe: () => void;
 
     // Redux
     private _store: ReturnType<typeof createStore>;
@@ -320,7 +247,7 @@ export default class RoomConnection extends TypedEventTarget {
         this._state = this._store.getState();
 
         // subscribe to redux store changes
-        this._store.subscribe(() => {
+        this._unsubscribe = this._store.subscribe(() => {
             const state = this._store.getState();
             const connectionStatus = selectRoomConnectionStatus(state);
 
@@ -333,18 +260,6 @@ export default class RoomConnection extends TypedEventTarget {
                         },
                     })
                 );
-
-                if (connectionStatus === "connected") {
-                    this.dispatchEvent(
-                        new RoomConnectionEvent("room_joined", {
-                            detail: {
-                                localParticipant: selectLocalParticipant(state) as LocalParticipant,
-                                remoteParticipants: selectRemoteParticipants(state),
-                                waitingParticipants: selectWaitingParticipants(state),
-                            },
-                        })
-                    );
-                }
             }
 
             if (state !== this._state) {
@@ -369,7 +284,6 @@ export default class RoomConnection extends TypedEventTarget {
         this.displayName = displayName;
         this.externalId = externalId;
         this.localMediaConstraints = localMediaConstraints;
-        const urls = fromLocation({ host: this.roomUrl.host });
 
         // Set up local media
         if (localMedia) {
@@ -381,85 +295,17 @@ export default class RoomConnection extends TypedEventTarget {
             throw new Error("Missing constraints");
         }
 
-        // Set up services
-        this.credentialsService = CredentialsService.create({ baseUrl: API_BASE_URL });
-        this.apiClient = new ApiClient({
-            fetchDeviceCredentials: this.credentialsService.getCredentials.bind(this.credentialsService),
-            baseUrl: API_BASE_URL,
-        });
-        this.organizationService = new OrganizationService({ apiClient: this.apiClient });
-        this.organizationServiceCache = new OrganizationServiceCache({
-            organizationService: this.organizationService,
-            subdomain: urls.subdomain,
-        });
-        this.organizationApiClient = new OrganizationApiClient({
-            apiClient: this.apiClient,
-            fetchOrganization: async () => {
-                const organization = await this.organizationServiceCache.fetchOrganization();
-                return organization || undefined;
-            },
-        });
-        this.roomService = new RoomService({ organizationApiClient: this.organizationApiClient });
-
-        // Create signal socket and set up event listeners
-        // this.signalSocket = createSocket();
-        // this.signalSocket.on("new_client", this._handleNewClient.bind(this));
-        // this.signalSocket.on("chat_message", this._handleNewChatMessage.bind(this));
-        // this.signalSocket.on("client_left", this._handleClientLeft.bind(this));
-        // this.signalSocket.on("audio_enabled", this._handleClientAudioEnabled.bind(this));
-        // this.signalSocket.on("video_enabled", this._handleClientVideoEnabled.bind(this));
-        // this.signalSocket.on("client_metadata_received", this._handleClientMetadataReceived.bind(this));
-        // this.signalSocket.on("knock_handled", this._handleKnockHandled.bind(this));
-        // this.signalSocket.on("knocker_left", this._handleKnockerLeft.bind(this));
-        // // this.signalSocket.on("room_joined", this._handleRoomJoined.bind(this));
-        // this.signalSocket.on("room_knocked", this._handleRoomKnocked.bind(this));
-        // this.signalSocket.on("cloud_recording_stopped", this._handleCloudRecordingStopped.bind(this));
-        // this.signalSocket.on("screenshare_started", this._handleScreenshareStarted.bind(this));
-        // this.signalSocket.on("screenshare_stopped", this._handleScreenshareStopped.bind(this));
-        // this.signalSocket.on("streaming_stopped", this._handleStreamingStopped.bind(this));
-        // this.signalSocket.on("disconnect", this._handleDisconnect.bind(this));
-        // this.signalSocket.on("connect_error", this._handleDisconnect.bind(this));
-
-        // this.signalSocketManager = this.signalSocket.getManager();
-        // this.signalSocketManager.on("reconnect", this._handleReconnect.bind(this));
-
         // Set up local media listeners
         this.localMedia.addEventListener("camera_enabled", (e) => {
             const { enabled } = e.detail;
-            // this.signalSocket.emit("enable_video", { enabled });
+            this._store.dispatch(doSignalEnableVideo({ enabled }));
             this.dispatchEvent(new RoomConnectionEvent("local_camera_enabled", { detail: { enabled } }));
         });
         this.localMedia.addEventListener("microphone_enabled", (e) => {
             const { enabled } = e.detail;
-            // this.signalSocket.emit("enable_audio", { enabled });
+            this._store.dispatch(doSignalEnableAudio({ enabled }));
             this.dispatchEvent(new RoomConnectionEvent("local_microphone_enabled", { detail: { enabled } }));
         });
-
-        // const webrtcProvider = {
-        //     getMediaConstraints: () => ({
-        //         audio: this.localMedia.isMicrophoneEnabled(),
-        //         video: this.localMedia.isCameraEnabled(),
-        //     }),
-        //     deferrable(clientId: string) {
-        //         return !clientId;
-        //     },
-        // };
-        // this.rtcManagerDispatcher = new RtcManagerDispatcher({
-        //     emitter: {
-        //         emit: this._handleRtcEvent.bind(this),
-        //     },
-        //     serverSocket: this.signalSocket,
-        //     webrtcProvider,
-        //     features: {
-        //         lowDataModeEnabled: false,
-        //         sfuServerOverrideHost: undefined,
-        //         turnServerOverrideHost: undefined,
-        //         useOnlyTURN: undefined,
-        //         vp9On: false,
-        //         h264On: false,
-        //         simulcastScreenshareOn: false,
-        //     },
-        // });
     }
 
     public get roomKey(): string | null {
@@ -687,118 +533,6 @@ export default class RoomConnection extends TypedEventTarget {
         this.dispatchEvent(new RoomConnectionEvent("screenshare_stopped", { detail: { participantId, id } }));
     }
 
-    // private _handleRtcEvent<K extends keyof RtcEvents>(eventName: K, data: RtcEvents[K]) {
-    //     if (eventName === "rtc_manager_created") {
-    //         return this._handleRtcManagerCreated(data as RtcManagerCreatedPayload);
-    //     } else if (eventName === "stream_added") {
-    //         return this._handleStreamAdded(data as RtcStreamAddedPayload);
-    //     } else if (eventName === "rtc_manager_destroyed") {
-    //         return this._handleRtcManagerDestroyed();
-    //     } else {
-    //         this.logger.log(`Unhandled RTC event ${eventName}`);
-    //     }
-    // }
-
-    // private _handleRtcManagerCreated({ rtcManager }: RtcManagerCreatedPayload) {
-    //     this.rtcManager = rtcManager;
-    //     this.localMedia.addRtcManager(rtcManager);
-
-    //     if (this.localMedia.stream) {
-    //         this.rtcManager?.addNewStream(
-    //             "0",
-    //             this.localMedia.stream,
-    //             !this.localMedia.isMicrophoneEnabled(),
-    //             !this.localMedia.isCameraEnabled()
-    //         );
-    //     }
-
-    //     if (this.remoteParticipants.length) {
-    //         this._handleAcceptStreams(this.remoteParticipants);
-    //     }
-    // }
-
-    // private _handleRtcManagerDestroyed() {
-    //     this.rtcManager = undefined;
-    // }
-
-    // private _handleAcceptStreams(remoteParticipants: RemoteParticipant[]) {
-    //     if (!this.rtcManager) {
-    //         this.logger.log("Unable to accept streams, no rtc manager");
-    //         return;
-    //     }
-
-    //     const shouldAcceptNewClients = this.rtcManager.shouldAcceptStreamsFromBothSides?.();
-    //     const activeBreakout = false; // TODO: Remove this once breakout is implemented
-    //     const myselfBroadcasting = false; // TODO: Remove once breakout is implemented
-
-    //     remoteParticipants.forEach((participant) => {
-    //         const { id: participantId, streams, newJoiner } = participant;
-
-    //         streams.forEach((stream) => {
-    //             const { id: streamId, state: streamState } = stream;
-    //             let newState: StreamState | undefined = undefined;
-
-    //             // Determine the new state of the client, equivalent of "reactAcceptStreams"
-    //             // TODO: Replace this with correct logic catering for breakouts etc
-
-    //             const isInSameRoomOrGroupOrClientBroadcasting = true; // TODO: Remove once breakout is implemented
-
-    //             if (isInSameRoomOrGroupOrClientBroadcasting) {
-    //                 if (streamState !== "done_accept") {
-    //                     newState = `${newJoiner && streamId === "0" ? "new" : "to"}_accept`;
-    //                 }
-    //             } else if (myselfBroadcasting) {
-    //                 if (streamState !== "done_accept") {
-    //                     newState = `${newJoiner && streamId === "0" ? "done" : "old"}_accept`;
-    //                 }
-    //             } else {
-    //                 if (streamState !== "done_unaccept") {
-    //                     newState = "to_unaccept";
-    //                 }
-    //             }
-
-    //             if (!newState) {
-    //                 return;
-    //             }
-
-    //             if (
-    //                 newState === "to_accept" ||
-    //                 (newState === "new_accept" && shouldAcceptNewClients) ||
-    //                 (newState === "old_accept" && !shouldAcceptNewClients)
-    //             ) {
-    //                 this.logger.log(`Accepting stream ${streamId} from ${participantId}`);
-    //                 this.rtcManager?.acceptNewStream({
-    //                     streamId: streamId === "0" ? participantId : streamId,
-    //                     clientId: participantId,
-    //                     shouldAddLocalVideo: streamId === "0",
-    //                     activeBreakout,
-    //                 });
-    //             } else if (newState === "new_accept" || newState === "old_accept") {
-    //                 // do nothing - let this be marked as done_accept as the rtcManager
-    //                 // will trigger accept from other end
-    //             } else if (newState === "to_unaccept") {
-    //                 this.logger.log(`Disconnecting stream ${streamId} from ${participantId}`);
-    //                 this.rtcManager?.disconnect(streamId === "0" ? participantId : streamId, activeBreakout);
-    //             } else if (newState !== "done_accept") {
-    //                 this.logger.warn(`Stream state not handled: ${newState} for ${participantId}-${streamId}`);
-    //                 return;
-    //             } else {
-    //                 // done_accept
-    //             }
-
-    //             // Update stream state
-    //             participant.updateStreamState(streamId, streamState.replace(/to_|new_|old_/, "done_") as StreamState);
-    //         });
-    //     });
-    // }
-
-    private _handleStreamAdded(args: RtcStreamAddedPayload) {
-        // const streamAddedEvent = handleStreamAdded(this.remoteParticipants, args);
-        // if (streamAddedEvent) {
-        // this.dispatchEvent(streamAddedEvent);
-        // }
-    }
-
     public async join() {
         this._store.dispatch(
             doAppJoin({
@@ -806,6 +540,7 @@ export default class RoomConnection extends TypedEventTarget {
                 roomKey: this._roomKey,
                 displayName: this.displayName || "Guest",
                 sdkVersion: sdkVersion || "unknown",
+                localMedia: this.localMedia,
             })
         );
     }
@@ -849,6 +584,7 @@ export default class RoomConnection extends TypedEventTarget {
         // this.signalSocket.disconnect();
         // this.connectionStatus = "disconnected";
         // this._store.dispatch(doRoomLeft());
+        this._unsubscribe();
     }
 
     public sendChatMessage(text: string): void {
@@ -883,19 +619,19 @@ export default class RoomConnection extends TypedEventTarget {
     }
 
     public updateStreamResolution({ streamId, width, height }: { streamId?: string; width: number; height: number }) {
-        if (!streamId || !this.rtcManager) {
-            return;
-        }
+        // if (!streamId || !this.rtcManager) {
+        //     return;
+        // }
         // no need to report resolution for local participant
         if (this.localParticipant?.stream?.id === streamId) {
             return;
         }
 
-        const old = reportedStreamResolutions.get(streamId);
-        if (!old || old.width !== width || old.height !== height) {
-            this.rtcManager.updateStreamResolution(streamId, null, { width: width || 1, height: height || 1 });
-        }
-        reportedStreamResolutions.set(streamId, { width, height });
+        // const old = reportedStreamResolutions.get(streamId);
+        // if (!old || old.width !== width || old.height !== height) {
+        // this.rtcManager.updateStreamResolution(streamId, null, { width: width || 1, height: height || 1 });
+        // }
+        // reportedStreamResolutions.set(streamId, { width, height });
     }
 
     public async startScreenshare() {
@@ -912,7 +648,7 @@ export default class RoomConnection extends TypedEventTarget {
             screenshareStream.getVideoTracks()[0]?.addEventListener("ended", onEnded);
         }
 
-        this.rtcManager?.addNewStream(screenshareStream.id, screenshareStream, false, true);
+        // this.rtcManager?.addNewStream(screenshareStream.id, screenshareStream, false, true);
         this.screenshares = [
             ...this.screenshares,
             {
@@ -941,7 +677,7 @@ export default class RoomConnection extends TypedEventTarget {
         if (this.localMedia.screenshareStream) {
             const { id } = this.localMedia.screenshareStream;
 
-            this.rtcManager?.removeStream(id, this.localMedia.screenshareStream, null);
+            // this.rtcManager?.removeStream(id, this.localMedia.screenshareStream, null);
             this.screenshares = this.screenshares.filter((s) => s.id !== id);
             this.dispatchEvent(
                 new RoomConnectionEvent("screenshare_stopped", { detail: { participantId: this.selfId || "", id } })
