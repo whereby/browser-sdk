@@ -99,6 +99,28 @@ export const doSignalJoinRoom = createAppAsyncThunk(
             userAgent: `browser-sdk:${sdkVersion || "unknown"}`,
             externalId: null,
         });
+
+        return true;
+    }
+);
+
+export const doSignalEnableAudio = createAppAsyncThunk(
+    "signalConnection/doSignalEnableAudio",
+    async (payload: { enabled: boolean }, { getState }) => {
+        const state = getState();
+        const socket = selectSignalConnectionRaw(state).socket;
+
+        socket?.emit("enable_audio", { enabled: payload.enabled });
+    }
+);
+
+export const doSignalEnableVideo = createAppAsyncThunk(
+    "signalConnection/doSignalEnableVideo",
+    async (payload: { enabled: boolean }, { getState }) => {
+        const state = getState();
+        const socket = selectSignalConnectionRaw(state).socket;
+
+        socket?.emit("enable_video", { enabled: payload.enabled });
     }
 );
 
