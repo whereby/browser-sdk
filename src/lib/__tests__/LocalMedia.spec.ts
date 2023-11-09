@@ -25,8 +25,6 @@ Object.defineProperty(navigator, "mediaDevices", {
     value: mockMediaDevices,
 });
 
-const mockedMediaDevices = jest.mocked(navigator.mediaDevices);
-
 describe("LocalMedia", () => {
     describe("constructor", () => {
         describe("when passing constraints", () => {

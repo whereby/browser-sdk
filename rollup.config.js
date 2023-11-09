@@ -102,6 +102,7 @@ module.exports = [
     {
         input: "src/lib/react/index.ts",
         output: [{ file: "dist/react/index.d.ts", format: "es" }],
+        external: ["@whereby/jslib-media/src/webrtc/RtcManager"],
         plugins: [dts()],
     },
     {
