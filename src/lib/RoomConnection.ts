@@ -2,7 +2,6 @@ import { LocalParticipant, RemoteParticipant, Screenshare, WaitingParticipant } 
 
 import {
     ChatMessage as SignalChatMessage,
-    ClientMetadataReceivedEvent,
     CloudRecordingStartedEvent,
     KnockerLeftEvent,
     KnockAcceptedEvent,
@@ -71,33 +70,8 @@ export type ConnectionStatusChangedEvent = {
     connectionStatus: ConnectionStatus;
 };
 
-export type ParticipantJoinedEvent = {
-    remoteParticipant: RemoteParticipant;
-};
-
-export type ParticipantLeftEvent = {
-    participantId: string;
-};
-
-export type ParticipantStreamAddedEvent = {
-    participantId: string;
-    stream: MediaStream;
-    streamId: string;
-};
-
-export type ParticipantAudioEnabledEvent = {
-    participantId: string;
-    isAudioEnabled: boolean;
-};
-
-export type ParticipantVideoEnabledEvent = {
-    participantId: string;
-    isVideoEnabled: boolean;
-};
-
-export type ParticipantMetadataChangedEvent = {
-    participantId: string;
-    displayName: string;
+export type ParticipantsChangedEvent = {
+    remoteParticipants: RemoteParticipant[];
 };
 
 export type ScreenshareStartedEvent = {
@@ -138,12 +112,7 @@ export interface RoomEventsMap {
     cloud_recording_stopped: (e: CustomEvent<CloudRecordingState>) => void;
     local_camera_enabled: (e: CustomEvent<LocalCameraEnabledEvent>) => void;
     local_microphone_enabled: (e: CustomEvent<LocalMicrophoneEnabledEvent>) => void;
-    participant_audio_enabled: (e: CustomEvent<ParticipantAudioEnabledEvent>) => void;
-    participant_joined: (e: CustomEvent<ParticipantJoinedEvent>) => void;
-    participant_left: (e: CustomEvent<ParticipantLeftEvent>) => void;
-    participant_metadata_changed: (e: CustomEvent<ParticipantMetadataChangedEvent>) => void;
-    participant_stream_added: (e: CustomEvent<ParticipantStreamAddedEvent>) => void;
-    participant_video_enabled: (e: CustomEvent<ParticipantVideoEnabledEvent>) => void;
+    participants_changed: (e: CustomEvent<ParticipantsChangedEvent>) => void;
     connection_status_changed: (e: CustomEvent<ConnectionStatusChangedEvent>) => void;
     room_joined: (e: CustomEvent<RoomJoinedEvent>) => void;
     screenshare_started: (e: CustomEvent<ScreenshareStartedEvent>) => void;
@@ -276,6 +245,13 @@ export default class RoomConnection extends TypedEventTarget {
 
             if (remoteParticipants !== this.remoteParticipants) {
                 this.remoteParticipants = remoteParticipants;
+                this.dispatchEvent(
+                    new RoomConnectionEvent("participants_changed", {
+                        detail: {
+                            remoteParticipants: this.remoteParticipants,
+                        },
+                    })
+                );
             }
 
             const localParticipant = selectLocalParticipant(state);
