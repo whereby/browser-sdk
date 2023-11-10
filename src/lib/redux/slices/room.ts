@@ -14,7 +14,7 @@ import { doRtcManagerDestroyed, selectRtcConnectionRaw } from "./rtcConnection";
 import { doSignalDisconnect, selectSignalConnectionRaw } from "./signalConnection";
 import { selectAppLocalMedia } from "./app";
 import { startAppListening } from "../listenerMiddleware";
-import { ParticipantMetadataChangedEvent, ParticipantStreamAddedEvent } from "~/lib/RoomConnection";
+import { RtcStreamAddedPayload } from "@whereby/jslib-media/src/webrtc/RtcManagerDispatcher";
 
 const NON_PERSON_ROLES = ["recorder", "streamer"];
 
@@ -120,9 +120,9 @@ export const roomSlice = createSlice({
     name: "room",
     initialState,
     reducers: {
-        doParticipantStreamAdded: (state, action: PayloadAction<ParticipantStreamAddedEvent>) => {
-            const { participantId, stream } = action.payload;
-            const remoteParticipant = state.remoteParticipants.find((p) => p.id === participantId);
+        doParticipantStreamAdded: (state, action: PayloadAction<RtcStreamAddedPayload>) => {
+            const { clientId, stream } = action.payload;
+            const remoteParticipant = state.remoteParticipants.find((p) => p.id === clientId);
 
             if (!remoteParticipant) {
                 return state;
@@ -130,7 +130,7 @@ export const roomSlice = createSlice({
 
             return {
                 ...state,
-                remoteParticipants: updateParticipant(state.remoteParticipants, participantId, { stream }),
+                remoteParticipants: updateParticipant(state.remoteParticipants, clientId, { stream }),
             };
         },
         doParticipantAudioEnabled: (state, action: PayloadAction<AudioEnabledEvent>) => {
