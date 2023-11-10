@@ -83,43 +83,9 @@ type RoomConnectionEvent =
           };
       }
     | {
-          type: "PARTICIPANT_AUDIO_ENABLED";
+          type: "PARTICIPANTS_CHANGED";
           payload: {
-              participantId: string;
-              isAudioEnabled: boolean;
-          };
-      }
-    | {
-          type: "PARTICIPANT_JOINED";
-          payload: {
-              paritipant: RemoteParticipantState;
-          };
-      }
-    | {
-          type: "PARTICIPANT_LEFT";
-          payload: {
-              participantId: string;
-          };
-      }
-    | {
-          type: "PARTICIPANT_STREAM_ADDED";
-          payload: {
-              participantId: string;
-              stream: MediaStream;
-          };
-      }
-    | {
-          type: "PARTICIPANT_VIDEO_ENABLED";
-          payload: {
-              participantId: string;
-              isVideoEnabled: boolean;
-          };
-      }
-    | {
-          type: "PARTICIPANT_METADATA_CHANGED";
-          payload: {
-              participantId: string;
-              displayName: string;
+              participants: RemoteParticipantState[];
           };
       }
     | {
@@ -186,24 +152,6 @@ type RoomConnectionEvent =
               participantId: string;
           };
       };
-
-function updateParticipant(
-    remoteParticipants: RemoteParticipantState[],
-    participantId: string,
-    updates: Partial<RemoteParticipantState>
-): RemoteParticipantState[] {
-    const existingParticipant = remoteParticipants.find((p) => p.id === participantId);
-    if (!existingParticipant) {
-        return remoteParticipants;
-    }
-    const index = remoteParticipants.indexOf(existingParticipant);
-
-    return [
-        ...remoteParticipants.slice(0, index),
-        { ...existingParticipant, ...updates },
-        ...remoteParticipants.slice(index + 1),
-    ];
-}
 
 // omit the internal props
 function convertRemoteParticipantToRemoteParticipantState(p: RemoteParticipant): RemoteParticipantState {
@@ -273,46 +221,12 @@ function reducer(state: RoomConnectionState, action: RoomConnectionEvent): RoomC
                 ...state,
                 connectionStatus: action.payload.connectionStatus,
             };
-        case "PARTICIPANT_AUDIO_ENABLED":
+        case "PARTICIPANTS_CHANGED":
             return {
                 ...state,
-                remoteParticipants: updateParticipant(state.remoteParticipants, action.payload.participantId, {
-                    isAudioEnabled: action.payload.isAudioEnabled,
-                }),
+                remoteParticipants: action.payload.participants,
             };
-        case "PARTICIPANT_JOINED":
-            return {
-                ...state,
-                remoteParticipants: [...state.remoteParticipants, action.payload.paritipant],
-            };
-        case "PARTICIPANT_LEFT":
-            return {
-                ...state,
-                remoteParticipants: [...state.remoteParticipants.filter((p) => p.id !== action.payload.participantId)],
-            };
-        case "PARTICIPANT_STREAM_ADDED":
-            return {
-                ...state,
-                remoteParticipants: updateParticipant(state.remoteParticipants, action.payload.participantId, {
-                    stream: action.payload.stream,
-                }),
-            };
-        case "PARTICIPANT_VIDEO_ENABLED":
-            return {
-                ...state,
-                remoteParticipants: updateParticipant(state.remoteParticipants, action.payload.participantId, {
-                    isVideoEnabled: action.payload.isVideoEnabled,
-                }),
-            };
-        case "PARTICIPANT_METADATA_CHANGED":
-            return {
-                ...state,
-                remoteParticipants: [
-                    ...state.remoteParticipants.map((p) =>
-                        p.id === action.payload.participantId ? { ...p, displayName: action.payload.displayName } : p
-                    ),
-                ],
-            };
+
         case "LOCAL_CLIENT_DISPLAY_NAME_CHANGED":
             if (!state.localParticipant) return state;
             return {
@@ -494,34 +408,15 @@ export function useRoomConnection(
                 const { enabled } = e.detail;
                 dispatch({ type: "LOCAL_MICROPHONE_ENABLED", payload: enabled });
             }),
-            createEventListener("participant_audio_enabled", (e) => {
-                const { participantId, isAudioEnabled } = e.detail;
-                dispatch({ type: "PARTICIPANT_AUDIO_ENABLED", payload: { participantId, isAudioEnabled } });
-            }),
-            createEventListener("participant_joined", (e) => {
-                const { remoteParticipant } = e.detail;
+            createEventListener("participants_changed", (e) => {
+                const { remoteParticipants } = e.detail;
+
                 dispatch({
-                    type: "PARTICIPANT_JOINED",
+                    type: "PARTICIPANTS_CHANGED",
                     payload: {
-                        paritipant: convertRemoteParticipantToRemoteParticipantState(remoteParticipant),
+                        participants: remoteParticipants.map(convertRemoteParticipantToRemoteParticipantState),
                     },
                 });
-            }),
-            createEventListener("participant_left", (e) => {
-                const { participantId } = e.detail;
-                dispatch({ type: "PARTICIPANT_LEFT", payload: { participantId } });
-            }),
-            createEventListener("participant_metadata_changed", (e) => {
-                const { participantId, displayName } = e.detail;
-                dispatch({ type: "PARTICIPANT_METADATA_CHANGED", payload: { participantId, displayName } });
-            }),
-            createEventListener("participant_stream_added", (e) => {
-                const { participantId, stream } = e.detail;
-                dispatch({ type: "PARTICIPANT_STREAM_ADDED", payload: { participantId, stream } });
-            }),
-            createEventListener("participant_video_enabled", (e) => {
-                const { participantId, isVideoEnabled } = e.detail;
-                dispatch({ type: "PARTICIPANT_VIDEO_ENABLED", payload: { participantId, isVideoEnabled } });
             }),
             createEventListener("connection_status_changed", (e) => {
                 const { connectionStatus } = e.detail;
@@ -532,7 +427,6 @@ export function useRoomConnection(
             }),
             createEventListener("room_joined", (e) => {
                 const { localParticipant, remoteParticipants, waitingParticipants } = e.detail;
-                console.log("room_joined", e.detail);
                 dispatch({
                     type: "ROOM_JOINED",
                     payload: {
