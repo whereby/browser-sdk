@@ -9,7 +9,7 @@ import RtcManagerDispatcher, {
 } from "@whereby/jslib-media/src/webrtc/RtcManagerDispatcher";
 import { startAppListening } from "../listenerMiddleware";
 import { StreamState } from "~/lib/RoomParticipant";
-import { selectRemoteParticipants } from "./room";
+import { doUpdateRemoteParticipant, selectRemoteParticipants } from "./room";
 import { RoomConnectionEvent } from "~/lib/RoomConnection";
 import { selectAppLocalMedia } from "./app";
 
@@ -29,16 +29,6 @@ const initialState: RtcConnectionState = {
     dispatcherCreated: false,
     rtcManagerDispatcher: null,
     rtcManager: null,
-};
-
-const webrtcProvider = {
-    getMediaConstraints: () => ({
-        audio: true,
-        video: true,
-    }),
-    deferrable(clientId: string) {
-        return !clientId;
-    },
 };
 
 export const createWebRtcEmitter = (dispatch: AppDispatch) => {
@@ -108,23 +98,9 @@ export const doStreamAdded = createAppAsyncThunk(
             (!remoteParticipant.stream && streamType === "webcam") ||
             (!remoteParticipant.stream && !streamType && remoteParticipant.streams.indexOf(remoteParticipantStream) < 1)
         ) {
-            return extra.dispatchEvent(
-                new RoomConnectionEvent("participant_stream_added", {
-                    detail: { participantId: clientId, stream, streamId: streamId || "" },
-                })
-            );
+            dispatch(doUpdateRemoteParticipant({ id: clientId, stream: stream }));
         }
-        return extra.dispatchEvent(
-            new RoomConnectionEvent("screenshare_started", {
-                detail: {
-                    participantId: clientId,
-                    stream,
-                    id: streamId || "",
-                    isLocal: false,
-                    hasAudioTrack: stream.getAudioTracks().length > 0,
-                },
-            })
-        );
+        // update remote participant screen share stream
     }
 );
 
@@ -210,10 +186,21 @@ export const doConnectRtc = createAppAsyncThunk(
         const state = getState();
         const socket = selectSignalConnectionRaw(state).socket;
         const dispatcher = selectRtcConnectionRaw(state).rtcManagerDispatcher;
+        const localMedia = selectAppLocalMedia(state);
 
         if (dispatcher) {
             throw new Error("RTC dispatcher already exists");
         }
+
+        const webrtcProvider = {
+            getMediaConstraints: () => ({
+                audio: localMedia?.isMicrophoneEnabled() || false,
+                video: localMedia?.isCameraEnabled() || false,
+            }),
+            deferrable(clientId: string) {
+                return !clientId;
+            },
+        };
 
         const rtcManagerDispatcher = new RtcManagerDispatcher({
             emitter: createWebRtcEmitter(dispatch),

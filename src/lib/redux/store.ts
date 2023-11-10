@@ -32,18 +32,16 @@ export const rootReducer = combineReducers({
 export const createStore = ({
     preloadedState,
     injectServices,
-    dispatchEvent,
 }: {
     preloadedState?: PreloadedState<RootState>;
-    injectServices: ReturnType<typeof createServices>;
-    dispatchEvent: (event: CustomEvent) => void;
+    injectServices?: ReturnType<typeof createServices>;
 }) => {
     return configureStore({
         reducer: rootReducer,
         middleware: (getDefaultMiddleware) =>
             getDefaultMiddleware({
                 thunk: {
-                    extraArgument: { services: injectServices, dispatchEvent },
+                    extraArgument: { services: injectServices },
                 },
                 serializableCheck: false,
             }).prepend(listenerMiddleware.middleware),
@@ -56,7 +54,7 @@ export type AppDispatch = ReturnType<typeof createStore>["dispatch"];
 export type ThunkConfig = {
     state: RootState;
     dispatch: AppDispatch;
-    extra: { services: ReturnType<typeof createServices>; dispatchEvent: (event: CustomEvent) => void };
+    extra: { services?: ReturnType<typeof createServices> };
 };
 
 export function createAppAsyncThunk<ReturnType, ArgType = undefined>(
