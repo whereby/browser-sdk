@@ -30,6 +30,7 @@ import {
     selectWaitingParticipants,
 } from "./redux/slices/room";
 import { doSignalEnableAudio, doSignalEnableVideo } from "./redux/slices/signalConnection";
+import { Unsubscribe } from "@reduxjs/toolkit";
 
 export interface RoomConnectionOptions {
     displayName?: string; // Might not be needed at all
@@ -212,7 +213,6 @@ export default class RoomConnection extends TypedEventTarget {
     public screenshares: Screenshare[] = [];
     public readonly localMediaConstraints?: MediaStreamConstraints;
     public readonly roomName: string;
-    private organizationId: string;
 
     private connectionStatus: ConnectionStatus;
     private selfId: string | null;
@@ -221,8 +221,7 @@ export default class RoomConnection extends TypedEventTarget {
     private displayName?: string;
     private externalId?: string;
     private _roomKey: string | null;
-    private _unsubscribe: () => void;
-
+    // private _unsubscribe: Unsubscribe;
     // Redux
     private _store: ReturnType<typeof createStore>;
     private _state: RootState;
@@ -239,15 +238,16 @@ export default class RoomConnection extends TypedEventTarget {
         }: RoomConnectionOptions
     ) {
         super();
+        this.connectionStatus = "initializing";
+
         // redux
         this._store = createStore({
             injectServices: createServices(roomUrl),
-            dispatchEvent: this.dispatchEvent,
         });
         this._state = this._store.getState();
 
         // subscribe to redux store changes
-        this._unsubscribe = this._store.subscribe(() => {
+        this._store.subscribe(() => {
             const state = this._store.getState();
             const connectionStatus = selectRoomConnectionStatus(state);
 
@@ -260,15 +260,35 @@ export default class RoomConnection extends TypedEventTarget {
                         },
                     })
                 );
+
+                if (this.connectionStatus === "connected") {
+                    if (this.localParticipant) {
+                        this.dispatchEvent(
+                            new RoomConnectionEvent("room_joined", {
+                                detail: {
+                                    localParticipant: this.localParticipant,
+                                    remoteParticipants: this.remoteParticipants,
+                                    waitingParticipants: selectWaitingParticipants(state),
+                                },
+                            })
+                        );
+                    }
+                }
             }
 
-            if (state !== this._state) {
-                this._state = state;
+            const remoteParticipants = selectRemoteParticipants(state);
+
+            if (remoteParticipants !== this.remoteParticipants) {
+                this.remoteParticipants = remoteParticipants;
+            }
+
+            const localParticipant = selectLocalParticipant(state);
+
+            if (localParticipant !== this.localParticipant) {
+                this.localParticipant = localParticipant;
             }
         });
 
-        this.organizationId = "";
-        this.connectionStatus = "initializing";
         this.selfId = null;
         this.roomUrl = new URL(roomUrl); // Throw if invalid Whereby room url
         const searchParams = new URLSearchParams(this.roomUrl.search);
@@ -584,7 +604,10 @@ export default class RoomConnection extends TypedEventTarget {
         // this.signalSocket.disconnect();
         // this.connectionStatus = "disconnected";
         // this._store.dispatch(doRoomLeft());
-        this._unsubscribe();
+        // console.log("leave");
+        // console.log(this._store);
+        // console.log(this._unsubscribe);
+        // this._unsubscribe();
     }
 
     public sendChatMessage(text: string): void {

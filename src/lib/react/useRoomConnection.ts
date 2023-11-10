@@ -532,6 +532,7 @@ export function useRoomConnection(
             }),
             createEventListener("room_joined", (e) => {
                 const { localParticipant, remoteParticipants, waitingParticipants } = e.detail;
+                console.log("room_joined", e.detail);
                 dispatch({
                     type: "ROOM_JOINED",
                     payload: {

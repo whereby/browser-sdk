@@ -1,4 +1,4 @@
-import { createSlice } from "@reduxjs/toolkit";
+import { AnyAction, createSlice } from "@reduxjs/toolkit";
 import { RootState, createAppAsyncThunk } from "../store";
 import { startAppListening } from "../listenerMiddleware";
 import { selectAppWantsToJoin } from "./app";
@@ -18,7 +18,7 @@ export const doGetDeviceCredentials = createAppAsyncThunk(
     "deviceCredentials/doGetDeviceCredentials",
     async (payload, { extra }) => {
         try {
-            const deviceCredentials = await extra.services.credentialsService.getCredentials();
+            const deviceCredentials = await extra.services?.credentialsService.getCredentials();
 
             return deviceCredentials;
         } catch (error) {
@@ -57,16 +57,18 @@ export const deviceCredentialsSlice = createSlice({
 
 export const selectDeviceCredentialsRaw = (state: RootState) => state.deviceCredentials;
 
-startAppListening({
-    predicate: (action, currentState) => {
-        const wantsToJoin = selectAppWantsToJoin(currentState);
-        const deviceCredentialsRaw = selectDeviceCredentialsRaw(currentState);
+export const shouldFetchDeviceCredentials = (action: AnyAction, currentState: RootState) => {
+    const wantsToJoin = selectAppWantsToJoin(currentState);
+    const deviceCredentialsRaw = selectDeviceCredentialsRaw(currentState);
 
-        if (wantsToJoin && !deviceCredentialsRaw.data && !deviceCredentialsRaw.isFetching) {
-            return true;
-        }
-        return false;
-    },
+    if (wantsToJoin && !deviceCredentialsRaw.data && !deviceCredentialsRaw.isFetching) {
+        return true;
+    }
+    return false;
+};
+
+startAppListening({
+    predicate: shouldFetchDeviceCredentials,
     effect: (action, { dispatch }) => {
         dispatch(doGetDeviceCredentials());
     },

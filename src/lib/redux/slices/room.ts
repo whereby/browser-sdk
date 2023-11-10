@@ -1,14 +1,40 @@
-import { createSlice } from "@reduxjs/toolkit";
+import { PayloadAction, createSlice } from "@reduxjs/toolkit";
 import { RootState, createAppAsyncThunk } from "../store";
 import { RoomJoinedEvent } from "@whereby/jslib-media/src/utils/ServerSocket";
 import { doRoomConnectionStatusChanged } from "./roomConnection";
 import { RemoteParticipant, WaitingParticipant, LocalParticipant } from "../../RoomParticipant";
 import { doRtcManagerDestroyed, selectRtcConnectionRaw } from "./rtcConnection";
 import { doSignalDisconnect, selectSignalConnectionRaw } from "./signalConnection";
-import { RoomConnectionEvent } from "~/lib/RoomConnection";
 import { selectAppLocalMedia } from "./app";
+import { startAppListening } from "../listenerMiddleware";
 
 const NON_PERSON_ROLES = ["recorder", "streamer"];
+
+function updateParticipant(
+    remoteParticipants: RemoteParticipant[],
+    participantId: string,
+    updates: Partial<RemoteParticipant>
+): RemoteParticipant[] {
+    const existingParticipant = remoteParticipants.find((p) => p.id === participantId);
+    if (!existingParticipant) {
+        return remoteParticipants;
+    }
+    const index = remoteParticipants.indexOf(existingParticipant);
+
+    return [
+        ...remoteParticipants.slice(0, index),
+        {
+            ...existingParticipant,
+            ...updates,
+            addStream: updates.addStream ? updates.addStream : existingParticipant.addStream,
+            removeStream: updates.removeStream ? updates.removeStream : existingParticipant.removeStream,
+            updateStreamState: updates.updateStreamState
+                ? updates.updateStreamState
+                : existingParticipant.updateStreamState,
+        },
+        ...remoteParticipants.slice(index + 1),
+    ];
+}
 
 export interface RoomState {
     remoteParticipants: RemoteParticipant[];
@@ -53,22 +79,7 @@ export const doRoomJoined = createAppAsyncThunk(
                 .filter((c) => !NON_PERSON_ROLES.includes(c.role.roleName))
                 .map((c) => new RemoteParticipant({ ...c, newJoiner: false }));
 
-            dispatch(doRoomConnectionStatusChanged({ status: "connected" }));
-
             const localParticipant = new LocalParticipant({ ...localClient, stream: localMedia?.stream || undefined });
-
-            // extra.dispatchEvent(
-            //     new RoomConnectionEvent("room_joined", {
-            //         detail: {
-            //             localParticipant: new LocalParticipant(localClient),
-            //             remoteParticipants,
-            //             waitingParticipants: knockers.map((knocker) => ({
-            //                 id: knocker.clientId,
-            //                 displayName: knocker.displayName,
-            //             })),
-            //         },
-            //     })
-            // );
 
             return {
                 localParticipant,
@@ -100,7 +111,18 @@ export const doRoomLeft = createAppAsyncThunk("room/doRoomLeft", async (payload,
 export const roomSlice = createSlice({
     name: "room",
     initialState,
-    reducers: {},
+    reducers: {
+        doUpdateRemoteParticipant: (state, action: PayloadAction<Partial<RemoteParticipant>>) => {
+            const { id, ...updates } = action.payload;
+
+            if (!id) return state;
+
+            return {
+                ...state,
+                remoteParticipants: updateParticipant(state.remoteParticipants, id, updates),
+            };
+        },
+    },
     extraReducers: (builder) => {
         builder.addCase(doRoomJoined.fulfilled, (state, action) => {
             if (!action.payload) return state;
@@ -115,7 +137,16 @@ export const roomSlice = createSlice({
     },
 });
 
+export const { doUpdateRemoteParticipant } = roomSlice.actions;
+
 export const selectRoomRaw = (state: RootState) => state.room;
 export const selectLocalParticipant = (state: RootState) => state.room.localParticipant;
 export const selectRemoteParticipants = (state: RootState) => state.room.remoteParticipants;
 export const selectWaitingParticipants = (state: RootState) => state.room.waitingParticipants;
+
+startAppListening({
+    actionCreator: doRoomJoined.fulfilled,
+    effect: (action, { dispatch }) => {
+        dispatch(doRoomConnectionStatusChanged({ status: "connected" }));
+    },
+});

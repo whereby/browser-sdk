@@ -5,6 +5,7 @@ import { Credentials } from "~/lib/api";
 import { startAppListening } from "../listenerMiddleware";
 import {
     selectAppDisplayName,
+    selectAppLocalMedia,
     selectAppRoomKey,
     selectAppRoomName,
     selectAppSdkVersion,
@@ -80,12 +81,13 @@ export const doSignalJoinRoom = createAppAsyncThunk(
         const displayName = selectAppDisplayName(state);
         const sdkVersion = selectAppSdkVersion(state);
         const organizationId = selectOrganizationId(state);
+        const localMedia = selectAppLocalMedia(state);
 
         socket?.emit("join_room", {
             avatarUrl: null,
             config: {
-                isAudioEnabled: true,
-                isVideoEnabled: true,
+                isAudioEnabled: localMedia?.isMicrophoneEnabled || false,
+                isVideoEnabled: localMedia?.isCameraEnabled || false,
             },
             deviceCapabilities: { canScreenshare: true },
             displayName: displayName,
@@ -100,6 +102,7 @@ export const doSignalJoinRoom = createAppAsyncThunk(
             externalId: null,
         });
 
+        localMedia?.start();
         return true;
     }
 );
