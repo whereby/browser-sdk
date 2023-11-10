@@ -11,7 +11,7 @@ import DeviceControls from "./components/DeviceControls";
 function App({ roomUrl }: { roomUrl: string }) {
     const [isConnected, setIsConnected] = useState(false);
     const [displayName, setDisplayName] = useState("");
-    const localMedia = useLocalMedia({ audio: true, video: true });
+    const localMedia = useLocalMedia();
 
     const { localStream } = localMedia.state;
     const { toggleCameraEnabled, toggleMicrophoneEnabled } = localMedia.actions;
