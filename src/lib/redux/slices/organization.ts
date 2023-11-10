@@ -21,7 +21,7 @@ export const doOrganizationFetch = createAppAsyncThunk(
     "organization/doOrganizationFetch",
     async (payload, { extra }) => {
         try {
-            const organization = await extra.services.organizationServiceCache.fetchOrganization();
+            const organization = await extra.services?.organizationServiceCache.fetchOrganization();
 
             if (!organization) {
                 throw new Error("Invalid room url");
@@ -46,17 +46,18 @@ export const organizationSlice = createSlice({
             };
         });
         builder.addCase(doOrganizationFetch.fulfilled, (state, action) => {
+            if (!action.payload) return { ...state, isFetching: true };
             return {
                 ...state,
                 isFetching: false,
                 data: action.payload,
             };
         });
-        builder.addCase(doOrganizationFetch.rejected, (state, action) => {
+        builder.addCase(doOrganizationFetch.rejected, (state) => {
             return {
                 ...state,
                 isFetching: false,
-                error: { message: action.error.message, name: action.error.name },
+                error: true,
             };
         });
     },
