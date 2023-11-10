@@ -21,6 +21,7 @@ import {
     doParticipantVideoEnabled,
     doRoomJoined,
 } from "./room";
+import { doChatMessageReceived } from "./chat";
 
 const SIGNAL_BASE_URL = process.env["REACT_APP_SIGNAL_BASE_URL"] || "wss://signal.appearin.net";
 
@@ -95,6 +96,10 @@ export const doSignalListenForEvents = createAppAsyncThunk(
         socket.on("client_metadata_received", (payload) => {
             dispatch(doParticipantMetadataChanged(payload));
         });
+
+        socket.on("chat_message", (payload) => {
+            dispatch(doChatMessageReceived(payload));
+        });
     }
 );
 
@@ -151,6 +156,16 @@ export const doSignalEnableVideo = createAppAsyncThunk(
         const socket = selectSignalConnectionRaw(state).socket;
 
         socket?.emit("enable_video", { enabled: payload.enabled });
+    }
+);
+
+export const doSignalSendChatMessage = createAppAsyncThunk(
+    "signalConnection/doSignalSendChatMessage",
+    async (payload: { text: string }, { getState }) => {
+        const state = getState();
+        const socket = selectSignalConnectionRaw(state).socket;
+
+        socket?.emit("chat_message", { text: payload.text });
     }
 );
 

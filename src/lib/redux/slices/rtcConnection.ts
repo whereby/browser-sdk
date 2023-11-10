@@ -97,7 +97,7 @@ export const doStreamAdded = createAppAsyncThunk(
             (!remoteParticipant.stream && streamType === "webcam") ||
             (!remoteParticipant.stream && !streamType && remoteParticipant.streams.indexOf(remoteParticipantStream) < 1)
         ) {
-            dispatch(doParticipantStreamAdded({ participantId: clientId, streamId: stream.id, stream }));
+            dispatch(doParticipantStreamAdded({ clientId, streamId: stream.id, stream, streamType }));
         }
         // update remote participant screen share stream
     }
