@@ -10,6 +10,7 @@ import { listenerMiddleware } from "./listenerMiddleware";
 import { createServices } from "../services";
 
 import { appSlice } from "./slices/app";
+import { chatSlice } from "./slices/chat";
 import { deviceCredentialsSlice } from "./slices/deviceCredentials";
 import { organizationSlice } from "./slices/organization";
 import { roomSlice } from "./slices/room";
@@ -20,6 +21,7 @@ import { localMediaSlice } from "./slices/localMedia";
 
 export const rootReducer = combineReducers({
     app: appSlice.reducer,
+    chat: chatSlice.reducer,
     deviceCredentials: deviceCredentialsSlice.reducer,
     localMedia: localMediaSlice.reducer,
     organization: organizationSlice.reducer,
