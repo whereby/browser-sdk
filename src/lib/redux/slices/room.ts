@@ -1,12 +1,19 @@
 import { PayloadAction, createSlice } from "@reduxjs/toolkit";
 import { RootState, createAppAsyncThunk } from "../store";
-import { NewClientEvent, RoomJoinedEvent } from "@whereby/jslib-media/src/utils/ServerSocket";
+import {
+    AudioEnabledEvent,
+    ClientLeftEvent,
+    NewClientEvent,
+    RoomJoinedEvent,
+    VideoEnabledEvent,
+} from "@whereby/jslib-media/src/utils/ServerSocket";
 import { doRoomConnectionStatusChanged } from "./roomConnection";
 import { RemoteParticipant, WaitingParticipant, LocalParticipant } from "../../RoomParticipant";
 import { doRtcManagerDestroyed, selectRtcConnectionRaw } from "./rtcConnection";
 import { doSignalDisconnect, selectSignalConnectionRaw } from "./signalConnection";
 import { selectAppLocalMedia } from "./app";
 import { startAppListening } from "../listenerMiddleware";
+import { ParticipantStreamAddedEvent } from "~/lib/RoomConnection";
 
 const NON_PERSON_ROLES = ["recorder", "streamer"];
 
@@ -112,14 +119,47 @@ export const roomSlice = createSlice({
     name: "room",
     initialState,
     reducers: {
-        doUpdateRemoteParticipant: (state, action: PayloadAction<Partial<RemoteParticipant>>) => {
-            const { id, ...updates } = action.payload;
+        doParticipantStreamAdded: (state, action: PayloadAction<ParticipantStreamAddedEvent>) => {
+            const { participantId, stream } = action.payload;
+            const remoteParticipant = state.remoteParticipants.find((p) => p.id === participantId);
 
-            if (!id) return state;
+            if (!remoteParticipant) {
+                return state;
+            }
 
             return {
                 ...state,
-                remoteParticipants: updateParticipant(state.remoteParticipants, id, updates),
+                remoteParticipants: updateParticipant(state.remoteParticipants, participantId, { stream }),
+            };
+        },
+        doParticipantAudioEnabled: (state, action: PayloadAction<AudioEnabledEvent>) => {
+            const { clientId, isAudioEnabled } = action.payload;
+            const remoteParticipant = state.remoteParticipants.find((p) => p.id === clientId);
+
+            if (!remoteParticipant) {
+                return state;
+            }
+
+            return {
+                ...state,
+                remoteParticipants: updateParticipant(state.remoteParticipants, clientId, {
+                    isAudioEnabled,
+                }),
+            };
+        },
+        doParticipantVideoEnabled: (state, action: PayloadAction<VideoEnabledEvent>) => {
+            const { clientId, isVideoEnabled } = action.payload;
+            const remoteParticipant = state.remoteParticipants.find((p) => p.id === clientId);
+
+            if (!remoteParticipant) {
+                return state;
+            }
+
+            return {
+                ...state,
+                remoteParticipants: updateParticipant(state.remoteParticipants, clientId, {
+                    isVideoEnabled,
+                }),
             };
         },
         doHandleNewClient: (state, action: PayloadAction<NewClientEvent>) => {
@@ -141,6 +181,15 @@ export const roomSlice = createSlice({
                 remoteParticipants: [...state.remoteParticipants, remoteParticipant],
             };
         },
+        doHandleClientLeft: (state, action: PayloadAction<ClientLeftEvent>) => {
+            const { clientId } = action.payload;
+            const remoteParticipants = state.remoteParticipants.filter((p) => p.id !== clientId);
+
+            return {
+                ...state,
+                remoteParticipants,
+            };
+        },
     },
     extraReducers: (builder) => {
         builder.addCase(doRoomJoined.fulfilled, (state, action) => {
@@ -156,7 +205,13 @@ export const roomSlice = createSlice({
     },
 });
 
-export const { doUpdateRemoteParticipant, doHandleNewClient } = roomSlice.actions;
+export const {
+    doParticipantStreamAdded,
+    doParticipantAudioEnabled,
+    doParticipantVideoEnabled,
+    doHandleNewClient,
+    doHandleClientLeft,
+} = roomSlice.actions;
 
 export const selectRoomRaw = (state: RootState) => state.room;
 export const selectLocalParticipant = (state: RootState) => state.room.localParticipant;

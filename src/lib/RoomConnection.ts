@@ -2,13 +2,11 @@ import { LocalParticipant, RemoteParticipant, Screenshare, WaitingParticipant } 
 
 import {
     ChatMessage as SignalChatMessage,
-    ClientLeftEvent,
     ClientMetadataReceivedEvent,
     CloudRecordingStartedEvent,
     KnockerLeftEvent,
     KnockAcceptedEvent,
     KnockRejectedEvent,
-    NewClientEvent,
     RoomKnockedEvent as SignalRoomKnockedEvent,
     SignalClient,
     ScreenshareStartedEvent as SignalScreenshareStartedEvent,
@@ -372,41 +370,6 @@ export default class RoomConnection extends TypedEventTarget {
                     // been streaming for a while before "Client B" joins.
                     startedAt: new Date().getTime(),
                 },
-            })
-        );
-    }
-
-    private _handleClientLeft({ clientId }: ClientLeftEvent) {
-        const remoteParticipant = this.remoteParticipants.find((p) => p.id === clientId);
-        this.remoteParticipants = this.remoteParticipants.filter((p) => p.id !== clientId);
-        if (!remoteParticipant) {
-            return;
-        }
-        this.dispatchEvent(
-            new RoomConnectionEvent("participant_left", { detail: { participantId: remoteParticipant.id } })
-        );
-    }
-
-    private _handleClientAudioEnabled({ clientId, isAudioEnabled }: { clientId: string; isAudioEnabled: boolean }) {
-        const remoteParticipant = this.remoteParticipants.find((p) => p.id === clientId);
-        if (!remoteParticipant) {
-            return;
-        }
-        this.dispatchEvent(
-            new RoomConnectionEvent("participant_audio_enabled", {
-                detail: { participantId: remoteParticipant.id, isAudioEnabled },
-            })
-        );
-    }
-
-    private _handleClientVideoEnabled({ clientId, isVideoEnabled }: { clientId: string; isVideoEnabled: boolean }) {
-        const remoteParticipant = this.remoteParticipants.find((p) => p.id === clientId);
-        if (!remoteParticipant) {
-            return;
-        }
-        this.dispatchEvent(
-            new RoomConnectionEvent("participant_video_enabled", {
-                detail: { participantId: remoteParticipant.id, isVideoEnabled },
             })
         );
     }
