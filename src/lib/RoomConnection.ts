@@ -376,26 +376,6 @@ export default class RoomConnection extends TypedEventTarget {
         );
     }
 
-    private _handleNewClient({ client }: NewClientEvent) {
-        if (client.role.roleName === "recorder") {
-            this._handleRecorderClientJoined({ client });
-        }
-        if (client.role.roleName === "streamer") {
-            this._handleStreamingStarted();
-        }
-        if (NON_PERSON_ROLES.includes(client.role.roleName)) {
-            return;
-        }
-        const remoteParticipant = new RemoteParticipant({ ...client, newJoiner: true });
-        this.remoteParticipants = [...this.remoteParticipants, remoteParticipant];
-        // this._handleAcceptStreams([remoteParticipant]);
-        this.dispatchEvent(
-            new RoomConnectionEvent("participant_joined", {
-                detail: { remoteParticipant },
-            })
-        );
-    }
-
     private _handleClientLeft({ clientId }: ClientLeftEvent) {
         const remoteParticipant = this.remoteParticipants.find((p) => p.id === clientId);
         this.remoteParticipants = this.remoteParticipants.filter((p) => p.id !== clientId);
