@@ -1,6 +1,6 @@
 import { PayloadAction, createSlice } from "@reduxjs/toolkit";
 import { RootState, createAppAsyncThunk } from "../store";
-import { RoomJoinedEvent } from "@whereby/jslib-media/src/utils/ServerSocket";
+import { NewClientEvent, RoomJoinedEvent } from "@whereby/jslib-media/src/utils/ServerSocket";
 import { doRoomConnectionStatusChanged } from "./roomConnection";
 import { RemoteParticipant, WaitingParticipant, LocalParticipant } from "../../RoomParticipant";
 import { doRtcManagerDestroyed, selectRtcConnectionRaw } from "./rtcConnection";
@@ -122,6 +122,25 @@ export const roomSlice = createSlice({
                 remoteParticipants: updateParticipant(state.remoteParticipants, id, updates),
             };
         },
+        doHandleNewClient: (state, action: PayloadAction<NewClientEvent>) => {
+            const { client } = action.payload;
+
+            if (client.role.roleName === "recorder") {
+                // this._handleRecorderClientJoined({ client });
+            }
+            if (client.role.roleName === "streamer") {
+                // this._handleStreamingStarted();
+            }
+            if (NON_PERSON_ROLES.includes(client.role.roleName)) {
+                return;
+            }
+            const remoteParticipant = new RemoteParticipant({ ...client, newJoiner: true });
+
+            return {
+                ...state,
+                remoteParticipants: [...state.remoteParticipants, remoteParticipant],
+            };
+        },
     },
     extraReducers: (builder) => {
         builder.addCase(doRoomJoined.fulfilled, (state, action) => {
@@ -137,7 +156,7 @@ export const roomSlice = createSlice({
     },
 });
 
-export const { doUpdateRemoteParticipant } = roomSlice.actions;
+export const { doUpdateRemoteParticipant, doHandleNewClient } = roomSlice.actions;
 
 export const selectRoomRaw = (state: RootState) => state.room;
 export const selectLocalParticipant = (state: RootState) => state.room.localParticipant;
