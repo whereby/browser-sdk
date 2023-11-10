@@ -26,7 +26,12 @@ import {
     selectRemoteParticipants,
     selectWaitingParticipants,
 } from "./redux/slices/room";
-import { doSignalEnableAudio, doSignalEnableVideo, doSignalSendChatMessage } from "./redux/slices/signalConnection";
+import {
+    doSignalEnableAudio,
+    doSignalEnableVideo,
+    doSignalSendChatMessage,
+    doSignalSetDisplayName,
+} from "./redux/slices/signalConnection";
 import { Unsubscribe } from "@reduxjs/toolkit";
 import { selectChatMessages } from "./redux/slices/chat";
 
@@ -524,12 +529,7 @@ export default class RoomConnection extends TypedEventTarget {
     }
 
     public setDisplayName(displayName: string): void {
-        // this.signalSocket.emit("send_client_metadata", {
-        //     type: "UserData",
-        //     payload: {
-        //         displayName,
-        //     },
-        // });
+        this._store.dispatch(doSignalSetDisplayName({ displayName }));
     }
 
     public acceptWaitingParticipant(participantId: string) {
