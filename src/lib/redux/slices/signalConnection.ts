@@ -169,6 +169,19 @@ export const doSignalSendChatMessage = createAppAsyncThunk(
     }
 );
 
+export const doSignalSetDisplayName = createAppAsyncThunk(
+    "signalConnection/doSignalSetDisplayName",
+    async (payload: { displayName: string }, { getState }) => {
+        const state = getState();
+        const socket = selectSignalConnectionRaw(state).socket;
+
+        socket?.emit("send_client_metadata", {
+            type: "UserData",
+            payload,
+        });
+    }
+);
+
 export const signalConnectionSlice = createSlice({
     name: "signalConnection",
     initialState,
