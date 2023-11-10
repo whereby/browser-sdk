@@ -51,8 +51,8 @@ const initialState: RoomConnectionState = {
 
 type RoomConnectionEvent =
     | {
-          type: "CHAT_MESSAGE";
-          payload: ChatMessage;
+          type: "CHAT_MESSAGES_CHANGED";
+          payload: ChatMessage[];
       }
     | {
           type: "CLOUD_RECORDING_STARTED";
@@ -175,10 +175,10 @@ function addScreenshare(screenshares: Screenshare[], screenshare: Screenshare): 
 
 function reducer(state: RoomConnectionState, action: RoomConnectionEvent): RoomConnectionState {
     switch (action.type) {
-        case "CHAT_MESSAGE":
+        case "CHAT_MESSAGES_CHANGED":
             return {
                 ...state,
-                chatMessages: [...state.chatMessages, action.payload],
+                chatMessages: action.payload,
             };
         case "CLOUD_RECORDING_REQUEST_STARTED":
             return {
@@ -384,8 +384,8 @@ export function useRoomConnection(
 
     const eventListeners = React.useMemo(
         (): EventListener<keyof RoomEventsMap>[] => [
-            createEventListener("chat_message", (e) => {
-                dispatch({ type: "CHAT_MESSAGE", payload: e.detail });
+            createEventListener("chat_messages_changed", (e) => {
+                dispatch({ type: "CHAT_MESSAGES_CHANGED", payload: e.detail });
             }),
             createEventListener("cloud_recording_request_started", () => {
                 dispatch({ type: "CLOUD_RECORDING_REQUEST_STARTED" });

@@ -26,8 +26,9 @@ import {
     selectRemoteParticipants,
     selectWaitingParticipants,
 } from "./redux/slices/room";
-import { doSignalEnableAudio, doSignalEnableVideo } from "./redux/slices/signalConnection";
+import { doSignalEnableAudio, doSignalEnableVideo, doSignalSendChatMessage } from "./redux/slices/signalConnection";
 import { Unsubscribe } from "@reduxjs/toolkit";
+import { selectChatMessages } from "./redux/slices/chat";
 
 export interface RoomConnectionOptions {
     displayName?: string; // Might not be needed at all
@@ -105,7 +106,7 @@ export type LocalMicrophoneEnabledEvent = {
 };
 
 export interface RoomEventsMap {
-    chat_message: (e: CustomEvent<ChatMessage>) => void;
+    chat_messages_changed: (e: CustomEvent<ChatMessage[]>) => void;
     cloud_recording_request_started: (e: CustomEvent<CloudRecordingState>) => void;
     cloud_recording_started: (e: CustomEvent<CloudRecordingState>) => void;
     cloud_recording_started_error: (e: CustomEvent<CloudRecordingState>) => void;
@@ -176,6 +177,7 @@ export default class RoomConnection extends TypedEventTarget {
     public roomUrl: URL;
     public remoteParticipants: RemoteParticipant[] = [];
     public screenshares: Screenshare[] = [];
+    public chatMessages: ChatMessage[] = [];
     public readonly localMediaConstraints?: MediaStreamConstraints;
     public readonly roomName: string;
 
@@ -259,6 +261,12 @@ export default class RoomConnection extends TypedEventTarget {
             if (localParticipant !== this.localParticipant) {
                 this.localParticipant = localParticipant;
             }
+
+            const chatMessages = selectChatMessages(state);
+
+            if (chatMessages !== this.chatMessages) {
+                this.dispatchEvent(new RoomConnectionEvent("chat_messages_changed", { detail: chatMessages }));
+            }
         });
 
         this.selfId = null;
@@ -302,10 +310,6 @@ export default class RoomConnection extends TypedEventTarget {
 
     public get roomKey(): string | null {
         return this._roomKey;
-    }
-
-    private _handleNewChatMessage(message: SignalChatMessage) {
-        this.dispatchEvent(new RoomConnectionEvent("chat_message", { detail: message }));
     }
 
     private _handleCloudRecordingStarted(event: CloudRecordingStartedEvent) {
@@ -516,9 +520,7 @@ export default class RoomConnection extends TypedEventTarget {
     }
 
     public sendChatMessage(text: string): void {
-        // this.signalSocket.emit("chat_message", {
-        //     text,
-        // });
+        this._store.dispatch(doSignalSendChatMessage({ text }));
     }
 
     public setDisplayName(displayName: string): void {
