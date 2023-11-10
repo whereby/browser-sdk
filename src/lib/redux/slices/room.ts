@@ -3,6 +3,7 @@ import { RootState, createAppAsyncThunk } from "../store";
 import {
     AudioEnabledEvent,
     ClientLeftEvent,
+    ClientMetadataReceivedEvent,
     NewClientEvent,
     RoomJoinedEvent,
     VideoEnabledEvent,
@@ -13,7 +14,7 @@ import { doRtcManagerDestroyed, selectRtcConnectionRaw } from "./rtcConnection";
 import { doSignalDisconnect, selectSignalConnectionRaw } from "./signalConnection";
 import { selectAppLocalMedia } from "./app";
 import { startAppListening } from "../listenerMiddleware";
-import { ParticipantStreamAddedEvent } from "~/lib/RoomConnection";
+import { ParticipantMetadataChangedEvent, ParticipantStreamAddedEvent } from "~/lib/RoomConnection";
 
 const NON_PERSON_ROLES = ["recorder", "streamer"];
 
@@ -162,6 +163,21 @@ export const roomSlice = createSlice({
                 }),
             };
         },
+        doParticipantMetadataChanged: (state, action: PayloadAction<ClientMetadataReceivedEvent>) => {
+            const { clientId, displayName } = action.payload.payload;
+            const remoteParticipant = state.remoteParticipants.find((p) => p.id === clientId);
+
+            if (!remoteParticipant) {
+                return state;
+            }
+
+            return {
+                ...state,
+                remoteParticipants: updateParticipant(state.remoteParticipants, clientId, {
+                    displayName,
+                }),
+            };
+        },
         doHandleNewClient: (state, action: PayloadAction<NewClientEvent>) => {
             const { client } = action.payload;
 
@@ -209,6 +225,7 @@ export const {
     doParticipantStreamAdded,
     doParticipantAudioEnabled,
     doParticipantVideoEnabled,
+    doParticipantMetadataChanged,
     doHandleNewClient,
     doHandleClientLeft,
 } = roomSlice.actions;
