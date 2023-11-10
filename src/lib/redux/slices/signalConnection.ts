@@ -13,7 +13,7 @@ import {
 } from "./app";
 import { selectDeviceCredentialsRaw } from "./deviceCredentials";
 import { selectOrganizationId } from "./organization";
-import { doRoomJoined } from "./room";
+import { doHandleNewClient, doRoomJoined } from "./room";
 
 const SIGNAL_BASE_URL = process.env["REACT_APP_SIGNAL_BASE_URL"] || "wss://signal.appearin.net";
 
@@ -67,6 +67,10 @@ export const doSignalListenForEvents = createAppAsyncThunk(
 
         socket.on("room_joined", (payload) => {
             dispatch(doRoomJoined(payload));
+        });
+
+        socket.on("new_client", (payload) => {
+            dispatch(doHandleNewClient(payload));
         });
     }
 );
