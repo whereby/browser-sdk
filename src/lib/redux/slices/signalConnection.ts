@@ -17,6 +17,7 @@ import {
     doHandleClientLeft,
     doHandleNewClient,
     doParticipantAudioEnabled,
+    doParticipantMetadataChanged,
     doParticipantVideoEnabled,
     doRoomJoined,
 } from "./room";
@@ -89,6 +90,10 @@ export const doSignalListenForEvents = createAppAsyncThunk(
 
         socket.on("video_enabled", (payload) => {
             dispatch(doParticipantVideoEnabled(payload));
+        });
+
+        socket.on("client_metadata_received", (payload) => {
+            dispatch(doParticipantMetadataChanged(payload));
         });
     }
 );

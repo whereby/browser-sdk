@@ -166,8 +166,6 @@ export class RoomConnectionEvent<T extends RoomEventKey> extends CustomEvent<Roo
     }
 }
 
-const NON_PERSON_ROLES = ["recorder", "streamer"];
-
 // cache last reported stream resolutions
 const reportedStreamResolutions = new Map<string, { width: number; height: number }>();
 
@@ -370,18 +368,6 @@ export default class RoomConnection extends TypedEventTarget {
                     // been streaming for a while before "Client B" joins.
                     startedAt: new Date().getTime(),
                 },
-            })
-        );
-    }
-
-    private _handleClientMetadataReceived({ payload: { clientId, displayName } }: ClientMetadataReceivedEvent) {
-        const remoteParticipant = this.remoteParticipants.find((p) => p.id === clientId);
-        if (!remoteParticipant) {
-            return;
-        }
-        this.dispatchEvent(
-            new RoomConnectionEvent("participant_metadata_changed", {
-                detail: { participantId: remoteParticipant.id, displayName },
             })
         );
     }
