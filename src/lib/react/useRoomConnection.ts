@@ -140,16 +140,9 @@ type RoomConnectionEvent =
           payload: boolean;
       }
     | {
-          type: "WAITING_PARTICIPANT_JOINED";
+          type: "WAITING_PARTICIPANTS_CHANGED";
           payload: {
-              participantId: string;
-              displayName: string | null;
-          };
-      }
-    | {
-          type: "WAITING_PARTICIPANT_LEFT";
-          payload: {
-              participantId: string;
+              waitingParticipants: WaitingParticipant[];
           };
       };
 
@@ -295,18 +288,10 @@ function reducer(state: RoomConnectionState, action: RoomConnectionEvent): RoomC
             return {
                 ...state,
             };
-        case "WAITING_PARTICIPANT_JOINED":
+        case "WAITING_PARTICIPANTS_CHANGED":
             return {
                 ...state,
-                waitingParticipants: [
-                    ...state.waitingParticipants,
-                    { id: action.payload.participantId, displayName: action.payload.displayName },
-                ],
-            };
-        case "WAITING_PARTICIPANT_LEFT":
-            return {
-                ...state,
-                waitingParticipants: state.waitingParticipants.filter((wp) => wp.id !== action.payload.participantId),
+                waitingParticipants: action.payload.waitingParticipants,
             };
         default:
             throw state;
@@ -463,20 +448,29 @@ export function useRoomConnection(
             createEventListener("streaming_stopped", () => {
                 dispatch({ type: "STREAMING_STOPPED" });
             }),
-            createEventListener("waiting_participant_joined", (e) => {
-                const { participantId, displayName } = e.detail;
+            createEventListener("waiting_participants_changed", (e) => {
+                const waitingParticipants = e.detail;
                 dispatch({
-                    type: "WAITING_PARTICIPANT_JOINED",
-                    payload: { participantId, displayName },
+                    type: "WAITING_PARTICIPANTS_CHANGED",
+                    payload: {
+                        waitingParticipants,
+                    },
                 });
             }),
-            createEventListener("waiting_participant_left", (e) => {
-                const { participantId } = e.detail;
-                dispatch({
-                    type: "WAITING_PARTICIPANT_LEFT",
-                    payload: { participantId },
-                });
-            }),
+            // createEventListener("waiting_participant_joined", (e) => {
+            //     const { participantId, displayName } = e.detail;
+            //     dispatch({
+            //         type: "WAITING_PARTICIPANT_JOINED",
+            //         payload: { participantId, displayName },
+            //     });
+            // }),
+            // createEventListener("waiting_participant_left", (e) => {
+            //     const { participantId } = e.detail;
+            //     dispatch({
+            //         type: "WAITING_PARTICIPANT_LEFT",
+            //         payload: { participantId },
+            //     });
+            // }),
         ],
         []
     );

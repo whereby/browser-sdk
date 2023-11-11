@@ -4,14 +4,18 @@ import {
     AudioEnabledEvent,
     ClientLeftEvent,
     ClientMetadataReceivedEvent,
+    KnockAcceptedEvent,
+    KnockRejectedEvent,
+    KnockerLeftEvent,
     NewClientEvent,
     RoomJoinedEvent,
+    RoomKnockedEvent,
     VideoEnabledEvent,
 } from "@whereby/jslib-media/src/utils/ServerSocket";
 import { doRoomConnectionStatusChanged } from "./roomConnection";
 import { RemoteParticipant, WaitingParticipant, LocalParticipant } from "../../RoomParticipant";
 import { doRtcManagerDestroyed, selectRtcConnectionRaw } from "./rtcConnection";
-import { doSignalDisconnect, selectSignalConnectionRaw } from "./signalConnection";
+import { doSignalDisconnect, doSignalJoinRoom, selectSignalConnectionRaw } from "./signalConnection";
 import { selectAppLocalMedia } from "./app";
 import { startAppListening } from "../listenerMiddleware";
 import { RtcStreamAddedPayload } from "@whereby/jslib-media/src/webrtc/RtcManagerDispatcher";
@@ -96,6 +100,7 @@ export const doRoomJoined = createAppAsyncThunk(
                     id: knocker.clientId,
                     displayName: knocker.displayName,
                 })),
+                selfId,
             };
         }
     }
@@ -115,6 +120,25 @@ export const doRoomLeft = createAppAsyncThunk("room/doRoomLeft", async (payload,
         dispatch(doSignalDisconnect());
     }
 });
+
+export const doHandleKnockHandled = createAppAsyncThunk(
+    "room/doHandleKnockHandled",
+    async (payload: KnockAcceptedEvent | KnockRejectedEvent, { dispatch, getState }) => {
+        const { clientId, resolution } = payload;
+        const state = getState();
+        const room = selectRoomRaw(state);
+
+        if (room.selfId !== clientId) {
+            return;
+        }
+
+        if (resolution === "accepted") {
+            dispatch(doSignalJoinRoom());
+        } else if (resolution === "rejected") {
+            dispatch(doRoomConnectionStatusChanged({ status: "knock_rejected" }));
+        }
+    }
+);
 
 export const roomSlice = createSlice({
     name: "room",
@@ -206,6 +230,23 @@ export const roomSlice = createSlice({
                 remoteParticipants,
             };
         },
+        doHandleWaitingParticipantJoined: (state, action: PayloadAction<RoomKnockedEvent>) => {
+            const { clientId, displayName } = action.payload;
+
+            return {
+                ...state,
+                waitingParticipants: [...state.waitingParticipants, { id: clientId, displayName }],
+            };
+        },
+        doHandleWaitingParticipantLeft: (state, action: PayloadAction<KnockerLeftEvent>) => {
+            const { clientId } = action.payload;
+            const waitingParticipants = state.waitingParticipants.filter((p) => p.id !== clientId);
+
+            return {
+                ...state,
+                waitingParticipants,
+            };
+        },
     },
     extraReducers: (builder) => {
         builder.addCase(doRoomJoined.fulfilled, (state, action) => {
@@ -228,6 +269,8 @@ export const {
     doParticipantMetadataChanged,
     doHandleNewClient,
     doHandleClientLeft,
+    doHandleWaitingParticipantJoined,
+    doHandleWaitingParticipantLeft,
 } = roomSlice.actions;
 
 export const selectRoomRaw = (state: RootState) => state.room;

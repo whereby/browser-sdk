@@ -3,10 +3,6 @@ import { LocalParticipant, RemoteParticipant, Screenshare, WaitingParticipant } 
 import {
     ChatMessage as SignalChatMessage,
     CloudRecordingStartedEvent,
-    KnockerLeftEvent,
-    KnockAcceptedEvent,
-    KnockRejectedEvent,
-    RoomKnockedEvent as SignalRoomKnockedEvent,
     SignalClient,
     ScreenshareStartedEvent as SignalScreenshareStartedEvent,
     ScreenshareStoppedEvent as SignalScreenshareStoppedEvent,
@@ -125,8 +121,7 @@ export interface RoomEventsMap {
     screenshare_stopped: (e: CustomEvent<ScreenshareStoppedEvent>) => void;
     streaming_started: (e: CustomEvent<LiveStreamState>) => void;
     streaming_stopped: (e: CustomEvent<LiveStreamState>) => void;
-    waiting_participant_joined: (e: CustomEvent<WaitingParticipantJoinedEvent>) => void;
-    waiting_participant_left: (e: CustomEvent<WaitingParticipantLeftEvent>) => void;
+    waiting_participants_changed: (e: CustomEvent<WaitingParticipant[]>) => void;
 }
 
 type ArgType<T> = T extends (arg: infer U) => unknown ? U : never;
@@ -183,6 +178,7 @@ export default class RoomConnection extends TypedEventTarget {
     public remoteParticipants: RemoteParticipant[] = [];
     public screenshares: Screenshare[] = [];
     public chatMessages: ChatMessage[] = [];
+    public waitingParticipants: WaitingParticipant[] = [];
     public readonly localMediaConstraints?: MediaStreamConstraints;
     public readonly roomName: string;
 
@@ -272,6 +268,17 @@ export default class RoomConnection extends TypedEventTarget {
             if (chatMessages !== this.chatMessages) {
                 this.dispatchEvent(new RoomConnectionEvent("chat_messages_changed", { detail: chatMessages }));
             }
+
+            const waitingParticipants = selectWaitingParticipants(state);
+
+            if (waitingParticipants !== this.waitingParticipants) {
+                this.waitingParticipants = waitingParticipants;
+                this.dispatchEvent(
+                    new RoomConnectionEvent("waiting_participants_changed", {
+                        detail: this.waitingParticipants,
+                    })
+                );
+            }
         });
 
         this.selfId = null;
@@ -353,50 +360,6 @@ export default class RoomConnection extends TypedEventTarget {
                     // been streaming for a while before "Client B" joins.
                     startedAt: new Date().getTime(),
                 },
-            })
-        );
-    }
-
-    private _handleKnockHandled(payload: KnockAcceptedEvent | KnockRejectedEvent) {
-        const { clientId, resolution } = payload;
-
-        // If the knocker is not the local participant, ignore the event
-        if (clientId !== this.selfId) {
-            return;
-        }
-
-        if (resolution === "accepted") {
-            this._roomKey = payload.metadata.roomKey;
-            // this._joinRoom();
-        } else if (resolution === "rejected") {
-            this.connectionStatus = "knock_rejected";
-
-            this.dispatchEvent(
-                new RoomConnectionEvent("connection_status_changed", {
-                    detail: {
-                        connectionStatus: this.connectionStatus,
-                    },
-                })
-            );
-        }
-    }
-
-    private _handleKnockerLeft(payload: KnockerLeftEvent) {
-        const { clientId } = payload;
-
-        this.dispatchEvent(
-            new RoomConnectionEvent("waiting_participant_left", {
-                detail: { participantId: clientId },
-            })
-        );
-    }
-
-    private _handleRoomKnocked(event: SignalRoomKnockedEvent) {
-        const { clientId, displayName } = event;
-
-        this.dispatchEvent(
-            new RoomConnectionEvent("waiting_participant_joined", {
-                detail: { participantId: clientId, displayName },
             })
         );
     }
