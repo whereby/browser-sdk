@@ -15,7 +15,10 @@ import { selectDeviceCredentialsRaw } from "./deviceCredentials";
 import { selectOrganizationId } from "./organization";
 import {
     doHandleClientLeft,
+    doHandleKnockHandled,
     doHandleNewClient,
+    doHandleWaitingParticipantJoined,
+    doHandleWaitingParticipantLeft,
     doParticipantAudioEnabled,
     doParticipantMetadataChanged,
     doParticipantVideoEnabled,
@@ -99,6 +102,18 @@ export const doSignalListenForEvents = createAppAsyncThunk(
 
         socket.on("chat_message", (payload) => {
             dispatch(doChatMessageReceived(payload));
+        });
+
+        socket.on("room_knocked", (payload) => {
+            dispatch(doHandleWaitingParticipantJoined(payload));
+        });
+
+        socket.on("knocker_left", (payload) => {
+            dispatch(doHandleWaitingParticipantLeft(payload));
+        });
+
+        socket.on("knock_handled", (payload) => {
+            dispatch(doHandleKnockHandled(payload));
         });
     }
 );
@@ -261,7 +276,7 @@ startAppListening({
         }
         return false;
     },
-    effect: (action, { dispatch, extra }) => {
+    effect: (action, { dispatch }) => {
         dispatch(doSignalListenForEvents());
     },
 });
