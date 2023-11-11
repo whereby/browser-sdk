@@ -25,6 +25,7 @@ import {
 import {
     doSignalEnableAudio,
     doSignalEnableVideo,
+    doSignalKnock,
     doSignalSendChatMessage,
     doSignalSetDisplayName,
 } from "./redux/slices/signalConnection";
@@ -443,25 +444,7 @@ export default class RoomConnection extends TypedEventTarget {
     }
 
     public knock() {
-        this.connectionStatus = "knocking";
-        this.dispatchEvent(
-            new RoomConnectionEvent("connection_status_changed", {
-                detail: {
-                    connectionStatus: this.connectionStatus,
-                },
-            })
-        );
-
-        // this.signalSocket.emit("knock_room", {
-        //     displayName: this.displayName,
-        //     imageUrl: null,
-        //     kickFromOtherRooms: true,
-        //     liveVideo: false,
-        //     organizationId: this.organizationId,
-        //     roomKey: this._roomKey,
-        //     roomName: this.roomName,
-        //     externalId: this.externalId,
-        // });
+        this._store.dispatch(doSignalKnock());
     }
 
     public leave() {
