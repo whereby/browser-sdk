@@ -6,13 +6,14 @@ import { startAppListening } from "../listenerMiddleware";
 import {
     selectAppDisplayName,
     selectAppLocalMedia,
+    selectAppRaw,
     selectAppRoomKey,
     selectAppRoomName,
     selectAppSdkVersion,
     selectAppWantsToJoin,
 } from "./app";
 import { selectDeviceCredentialsRaw } from "./deviceCredentials";
-import { selectOrganizationId } from "./organization";
+import { selectOrganizationId, selectOrganizationRaw } from "./organization";
 import {
     doHandleClientLeft,
     doHandleKnockHandled,
@@ -25,6 +26,7 @@ import {
     doRoomJoined,
 } from "./room";
 import { doChatMessageReceived } from "./chat";
+import { doRoomConnectionStatusChanged } from "./roomConnection";
 
 const SIGNAL_BASE_URL = process.env["REACT_APP_SIGNAL_BASE_URL"] || "wss://signal.appearin.net";
 
@@ -193,6 +195,29 @@ export const doSignalSetDisplayName = createAppAsyncThunk(
         socket?.emit("send_client_metadata", {
             type: "UserData",
             payload,
+        });
+    }
+);
+
+export const doSignalKnock = createAppAsyncThunk(
+    "signalConnection/doSignalKnock",
+    async (payload, { dispatch, getState }) => {
+        const state = getState();
+        const socket = selectSignalConnectionRaw(state).socket;
+        const app = selectAppRaw(state);
+        const organization = selectOrganizationRaw(state);
+
+        dispatch(doRoomConnectionStatusChanged({ status: "knocking" }));
+
+        socket?.emit("knock_room", {
+            displayName: app.displayName,
+            imageUrl: null,
+            kickFromOtherRooms: true,
+            liveVideo: false,
+            organizationId: organization.data?.organizationId,
+            roomKey: app.roomKey,
+            roomName: app.roomName,
+            externalId: "",
         });
     }
 );

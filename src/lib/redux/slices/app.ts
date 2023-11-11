@@ -40,10 +40,16 @@ export const appSlice = createSlice({
                 wantsToJoin: true,
             };
         },
+        doAppSetRoomKey: (state, action: PayloadAction<string>) => {
+            return {
+                ...state,
+                roomKey: action.payload,
+            };
+        },
     },
 });
 
-export const { doAppJoin } = appSlice.actions;
+export const { doAppJoin, doAppSetRoomKey } = appSlice.actions;
 
 export const selectAppRaw = (state: RootState) => state.app;
 export const selectAppWantsToJoin = (state: RootState) => state.app.wantsToJoin;
