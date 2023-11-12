@@ -196,29 +196,6 @@ export const doSignalDisconnect = createAppAsyncThunk(
     }
 );
 
-export const doSignalSendChatMessage = createAppAsyncThunk(
-    "signalConnection/doSignalSendChatMessage",
-    async (payload: { text: string }, { getState }) => {
-        const state = getState();
-        const socket = selectSignalConnectionRaw(state).socket;
-
-        socket?.emit("chat_message", { text: payload.text });
-    }
-);
-
-export const doSignalSetDisplayName = createAppAsyncThunk(
-    "signalConnection/doSignalSetDisplayName",
-    async (payload: { displayName: string }, { getState }) => {
-        const state = getState();
-        const socket = selectSignalConnectionRaw(state).socket;
-
-        socket?.emit("send_client_metadata", {
-            type: "UserData",
-            payload,
-        });
-    }
-);
-
 export const doSignalKnock = createAppAsyncThunk(
     "signalConnection/doSignalKnock",
     async (payload, { dispatch, getState }) => {

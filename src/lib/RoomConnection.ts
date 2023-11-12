@@ -20,12 +20,12 @@ import {
     selectScreenshares,
     selectWaitingParticipants,
 } from "./redux/slices/room";
-import { doSignalKnock, doSignalSendChatMessage, doSignalSetDisplayName } from "./redux/slices/signalConnection";
-import { selectChatMessages } from "./redux/slices/chat";
-import { Unsubscribe } from "@reduxjs/toolkit";
+import { doSignalKnock } from "./redux/slices/signalConnection";
+import { doSendChatMessage, selectChatMessages } from "./redux/slices/chat";
 import {
     doEnableAudio,
     doEnableVideo,
+    doSetDisplayName,
     doStartScreenshare,
     doStopScreenshare,
     selectLocalParticipantRaw,
@@ -404,11 +404,11 @@ export default class RoomConnection extends TypedEventTarget {
     }
 
     public sendChatMessage(text: string): void {
-        this._store.dispatch(doSignalSendChatMessage({ text }));
+        this._store.dispatch(doSendChatMessage({ text }));
     }
 
     public setDisplayName(displayName: string): void {
-        this._store.dispatch(doSignalSetDisplayName({ displayName }));
+        this._store.dispatch(doSetDisplayName({ displayName }));
     }
 
     public acceptWaitingParticipant(participantId: string) {
