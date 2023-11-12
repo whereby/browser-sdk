@@ -12,18 +12,18 @@ import { createServices } from "../services";
 import { appSlice } from "./slices/app";
 import { chatSlice } from "./slices/chat";
 import { deviceCredentialsSlice } from "./slices/deviceCredentials";
+import { localParticipantSlice } from "./slices/localParticipant";
 import { organizationSlice } from "./slices/organization";
 import { roomSlice } from "./slices/room";
 import { roomConnectionSlice } from "./slices/roomConnection";
 import { signalConnectionSlice } from "./slices/signalConnection";
 import { rtcConnectionSlice } from "./slices/rtcConnection";
-import { localMediaSlice } from "./slices/localMedia";
 
 export const rootReducer = combineReducers({
     app: appSlice.reducer,
     chat: chatSlice.reducer,
     deviceCredentials: deviceCredentialsSlice.reducer,
-    localMedia: localMediaSlice.reducer,
+    localParticipant: localParticipantSlice.reducer,
     organization: organizationSlice.reducer,
     room: roomSlice.reducer,
     roomConnection: roomConnectionSlice.reducer,

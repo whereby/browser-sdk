@@ -22,6 +22,7 @@ import { doAppSetRoomKey, selectAppLocalMedia } from "./app";
 import { startAppListening } from "../listenerMiddleware";
 import { RtcStreamAddedPayload } from "@whereby/jslib-media/src/webrtc/RtcManagerDispatcher";
 import { Screenshare } from "~/lib/react";
+import { doSetLocalParticipant, selectSelfId } from "./localParticipant";
 
 const NON_PERSON_ROLES = ["recorder", "streamer"];
 
@@ -53,8 +54,6 @@ function updateParticipant(
 
 export interface RoomState {
     remoteParticipants: RemoteParticipant[];
-    localParticipant?: LocalParticipant;
-    selfId?: string;
     waitingParticipants: WaitingParticipant[];
     screenshares: Screenshare[];
 }
@@ -98,6 +97,8 @@ export const doRoomJoined = createAppAsyncThunk(
 
             const localParticipant = new LocalParticipant({ ...localClient, stream: localMedia?.stream || undefined });
 
+            dispatch(doSetLocalParticipant(localParticipant));
+
             return {
                 localParticipant,
                 remoteParticipants,
@@ -105,7 +106,6 @@ export const doRoomJoined = createAppAsyncThunk(
                     id: knocker.clientId,
                     displayName: knocker.displayName,
                 })),
-                selfId,
             };
         }
     }
@@ -137,9 +137,9 @@ export const doHandleKnockHandled = createAppAsyncThunk(
     async (payload: KnockAcceptedEvent | KnockRejectedEvent, { dispatch, getState }) => {
         const { clientId, resolution } = payload;
         const state = getState();
-        const room = selectRoomRaw(state);
+        const selfId = selectSelfId(state);
 
-        if (room.selfId !== clientId) {
+        if (selfId !== clientId) {
             return;
         }
 
@@ -305,6 +305,18 @@ export const roomSlice = createSlice({
                 waitingParticipants,
             };
         },
+        doAddScreenshare: (state, action: PayloadAction<Screenshare>) => {
+            return {
+                ...state,
+                screenshares: [...state.screenshares, action.payload],
+            };
+        },
+        doRemoveScreenshare: (state, action: PayloadAction<string>) => {
+            return {
+                ...state,
+                screenshares: state.screenshares.filter((s) => s.id !== action.payload),
+            };
+        },
     },
     extraReducers: (builder) => {
         builder.addCase(doRoomJoined.fulfilled, (state, action) => {
@@ -345,10 +357,11 @@ export const {
     doHandleClientLeft,
     doHandleWaitingParticipantJoined,
     doHandleWaitingParticipantLeft,
+    doAddScreenshare,
+    doRemoveScreenshare,
 } = roomSlice.actions;
 
 export const selectRoomRaw = (state: RootState) => state.room;
-export const selectLocalParticipant = (state: RootState) => state.room.localParticipant;
 export const selectRemoteParticipants = (state: RootState) => state.room.remoteParticipants;
 export const selectWaitingParticipants = (state: RootState) => state.room.waitingParticipants;
 export const selectScreenshares = (state: RootState) => state.room.screenshares;
