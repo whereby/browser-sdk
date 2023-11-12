@@ -23,6 +23,7 @@ import { startAppListening } from "../listenerMiddleware";
 import { RtcStreamAddedPayload } from "@whereby/jslib-media/src/webrtc/RtcManagerDispatcher";
 import { Screenshare } from "~/lib/react";
 import { doSetLocalParticipant, selectSelfId } from "./localParticipant";
+import { doHandleRecorderClientJoined } from "./cloudRecording";
 
 const NON_PERSON_ROLES = ["recorder", "streamer"];
 
@@ -80,10 +81,10 @@ export const doRoomJoined = createAppAsyncThunk(
             const localClient = clients.find((c) => c.id === selfId);
             if (!localClient) throw new Error("Missing local client");
 
-            // const recorderClient = clients.find((c) => c.role.roleName === "recorder");
-            // if (recorderClient) {
-            //     this._handleCloudRecordingStarted({ client: recorderClient });
-            // }
+            const recorderClient = clients.find((c) => c.role.roleName === "recorder");
+            if (recorderClient) {
+                dispatch(doHandleRecorderClientJoined());
+            }
 
             // const streamerClient = clients.find((c) => c.role.roleName === "streamer");
             // if (streamerClient) {
@@ -228,6 +229,28 @@ export const doRejectWaitingParticipant = createAppAsyncThunk(
     }
 );
 
+export const doHandleNewClient = createAppAsyncThunk(
+    "room/doHandleNewClient",
+    async (payload: NewClientEvent, { dispatch }) => {
+        const { client } = payload;
+
+        if (client.role.roleName === "recorder") {
+            dispatch(doHandleRecorderClientJoined());
+        }
+        if (client.role.roleName === "streamer") {
+            // this._handleStreamingStarted();
+        }
+        if (NON_PERSON_ROLES.includes(client.role.roleName)) {
+            return;
+        }
+        const remoteParticipant = new RemoteParticipant({ ...client, newJoiner: true });
+
+        return {
+            remoteParticipant,
+        };
+    }
+);
+
 export const roomSlice = createSlice({
     name: "room",
     initialState,
@@ -288,25 +311,6 @@ export const roomSlice = createSlice({
                 remoteParticipants: updateParticipant(state.remoteParticipants, clientId, {
                     displayName,
                 }),
-            };
-        },
-        doHandleNewClient: (state, action: PayloadAction<NewClientEvent>) => {
-            const { client } = action.payload;
-
-            if (client.role.roleName === "recorder") {
-                // this._handleRecorderClientJoined({ client });
-            }
-            if (client.role.roleName === "streamer") {
-                // this._handleStreamingStarted();
-            }
-            if (NON_PERSON_ROLES.includes(client.role.roleName)) {
-                return;
-            }
-            const remoteParticipant = new RemoteParticipant({ ...client, newJoiner: true });
-
-            return {
-                ...state,
-                remoteParticipants: [...state.remoteParticipants, remoteParticipant],
             };
         },
         doHandleClientLeft: (state, action: PayloadAction<ClientLeftEvent>) => {
@@ -375,6 +379,14 @@ export const roomSlice = createSlice({
                 screenshares: state.screenshares.filter((s) => s.id !== action.payload),
             };
         });
+        builder.addCase(doHandleNewClient.fulfilled, (state, action) => {
+            if (!action.payload) return state;
+
+            return {
+                ...state,
+                remoteParticipants: [...state.remoteParticipants, action.payload.remoteParticipant],
+            };
+        });
     },
 });
 
@@ -383,7 +395,6 @@ export const {
     doParticipantAudioEnabled,
     doParticipantVideoEnabled,
     doParticipantMetadataChanged,
-    doHandleNewClient,
     doHandleClientLeft,
     doHandleWaitingParticipantJoined,
     doHandleWaitingParticipantLeft,

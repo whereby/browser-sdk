@@ -29,6 +29,7 @@ import {
 } from "./room";
 import { doChatMessageReceived } from "./chat";
 import { doRoomConnectionStatusChanged } from "./roomConnection";
+import { doHandleCloudRecordingStarted, doHandleCloudRecordingStopped } from "./cloudRecording";
 
 const SIGNAL_BASE_URL = process.env["REACT_APP_SIGNAL_BASE_URL"] || "wss://signal.appearin.net";
 
@@ -126,6 +127,14 @@ export const doSignalListenForEvents = createAppAsyncThunk(
 
         socket.on("screenshare_stopped", (payload) => {
             dispatch(doHandleScreenshareStopped(payload));
+        });
+
+        socket.on("cloud_recording_started", (payload) => {
+            dispatch(doHandleCloudRecordingStarted(payload));
+        });
+
+        socket.on("cloud_recording_stopped", () => {
+            dispatch(doHandleCloudRecordingStopped());
         });
 
         socket.getManager().on("reconnect", () => {
