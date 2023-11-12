@@ -198,6 +198,36 @@ export const doHandleScreenshareStopped = createAppAsyncThunk(
     }
 );
 
+export const doAcceptWaitingParticipant = createAppAsyncThunk(
+    "room/doAcceptWaitingParticipant",
+    async (payload: { participantId: string }, { getState }) => {
+        const { participantId } = payload;
+        const state = getState();
+        const socket = selectSignalConnectionRaw(state).socket;
+
+        socket?.emit("handle_knock", {
+            action: "accept",
+            clientId: participantId,
+            response: {},
+        });
+    }
+);
+
+export const doRejectWaitingParticipant = createAppAsyncThunk(
+    "room/doRejectWaitingParticipant",
+    async (payload: { participantId: string }, { getState }) => {
+        const { participantId } = payload;
+        const state = getState();
+        const socket = selectSignalConnectionRaw(state).socket;
+
+        socket?.emit("handle_knock", {
+            action: "reject",
+            clientId: participantId,
+            response: {},
+        });
+    }
+);
+
 export const roomSlice = createSlice({
     name: "room",
     initialState,
