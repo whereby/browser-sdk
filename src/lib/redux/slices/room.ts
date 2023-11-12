@@ -11,14 +11,17 @@ import {
     RoomJoinedEvent,
     RoomKnockedEvent,
     VideoEnabledEvent,
+    ScreenshareStartedEvent,
+    ScreenshareStoppedEvent,
 } from "@whereby/jslib-media/src/utils/ServerSocket";
 import { doRoomConnectionStatusChanged } from "./roomConnection";
 import { RemoteParticipant, WaitingParticipant, LocalParticipant } from "../../RoomParticipant";
-import { doRtcManagerDestroyed, selectRtcConnectionRaw } from "./rtcConnection";
+import { doHandleAcceptStreams, doRtcManagerDestroyed, selectRtcConnectionRaw } from "./rtcConnection";
 import { doSignalDisconnect, doSignalJoinRoom, selectSignalConnectionRaw } from "./signalConnection";
 import { doAppSetRoomKey, selectAppLocalMedia } from "./app";
 import { startAppListening } from "../listenerMiddleware";
 import { RtcStreamAddedPayload } from "@whereby/jslib-media/src/webrtc/RtcManagerDispatcher";
+import { Screenshare } from "~/lib/react";
 
 const NON_PERSON_ROLES = ["recorder", "streamer"];
 
@@ -53,11 +56,13 @@ export interface RoomState {
     localParticipant?: LocalParticipant;
     selfId?: string;
     waitingParticipants: WaitingParticipant[];
+    screenshares: Screenshare[];
 }
 
 const initialState: RoomState = {
     remoteParticipants: [],
     waitingParticipants: [],
+    screenshares: [],
 };
 
 export const doRoomJoined = createAppAsyncThunk(
@@ -111,12 +116,18 @@ export const doRoomLeft = createAppAsyncThunk("room/doRoomLeft", async (payload,
     const state = getState();
     const rtcManager = selectRtcConnectionRaw(state).rtcManager;
     const socket = selectSignalConnectionRaw(state).socket;
+    const localMedia = selectAppLocalMedia(state);
 
-    rtcManager?.disconnectAll();
+    localMedia?.stop();
+
+    if (rtcManager) {
+        localMedia?.removeRtcManager(rtcManager);
+        rtcManager.disconnectAll();
+    }
+
     dispatch(doRtcManagerDestroyed());
 
     if (socket) {
-        dispatch(doRoomConnectionStatusChanged({ status: "disconnected" }));
         dispatch(doSignalDisconnect());
     }
 });
@@ -138,6 +149,52 @@ export const doHandleKnockHandled = createAppAsyncThunk(
         } else if (resolution === "rejected") {
             dispatch(doRoomConnectionStatusChanged({ status: "knock_rejected" }));
         }
+    }
+);
+
+export const doHandleScreenshareStarted = createAppAsyncThunk(
+    "room/doHandleScreenshareStarted",
+    async (payload: ScreenshareStartedEvent, { dispatch, getState }) => {
+        const { clientId: participantId, streamId: id, hasAudioTrack } = payload;
+        const remoteParticipants = selectRemoteParticipants(getState());
+        const participant = remoteParticipants.find((p) => p.id === participantId);
+
+        if (!participant) {
+            return;
+        }
+
+        const foundScreenshare = selectScreenshares(getState()).find((s) => s.id === id);
+        if (foundScreenshare) {
+            return;
+        }
+
+        participant.addStream(id, "to_accept");
+        dispatch(doHandleAcceptStreams());
+
+        return {
+            participantId,
+            id,
+            hasAudioTrack,
+            stream: undefined,
+            isLocal: false,
+        };
+    }
+);
+
+export const doHandleScreenshareStopped = createAppAsyncThunk(
+    "room/doHandleScreenshareStopped",
+    async (payload: ScreenshareStoppedEvent, { getState }) => {
+        const { clientId: participantId, streamId: id } = payload;
+        const remoteParticipants = selectRemoteParticipants(getState());
+        const participant = remoteParticipants.find((p) => p.id === participantId);
+
+        if (!participant) {
+            return;
+        }
+
+        participant.removeStream(id);
+
+        return id;
     }
 );
 
@@ -260,6 +317,22 @@ export const roomSlice = createSlice({
                 waitingParticipants: action.payload.waitingParticipants,
             };
         });
+        builder.addCase(doHandleScreenshareStarted.fulfilled, (state, action) => {
+            if (!action.payload) return state;
+
+            return {
+                ...state,
+                screenshares: [...state.screenshares, action.payload],
+            };
+        });
+        builder.addCase(doHandleScreenshareStopped.fulfilled, (state, action) => {
+            if (!action.payload) return state;
+
+            return {
+                ...state,
+                screenshares: state.screenshares.filter((s) => s.id !== action.payload),
+            };
+        });
     },
 });
 
@@ -278,6 +351,7 @@ export const selectRoomRaw = (state: RootState) => state.room;
 export const selectLocalParticipant = (state: RootState) => state.room.localParticipant;
 export const selectRemoteParticipants = (state: RootState) => state.room.remoteParticipants;
 export const selectWaitingParticipants = (state: RootState) => state.room.waitingParticipants;
+export const selectScreenshares = (state: RootState) => state.room.screenshares;
 
 startAppListening({
     actionCreator: doRoomJoined.fulfilled,
