@@ -16,20 +16,20 @@ import { doAppJoin } from "./redux/slices/app";
 import { selectRoomConnectionStatus } from "./redux/slices/roomConnection";
 import {
     doRoomLeft,
-    selectLocalParticipant,
     selectRemoteParticipants,
     selectScreenshares,
     selectWaitingParticipants,
 } from "./redux/slices/room";
-import {
-    doSignalEnableAudio,
-    doSignalEnableVideo,
-    doSignalKnock,
-    doSignalSendChatMessage,
-    doSignalSetDisplayName,
-} from "./redux/slices/signalConnection";
+import { doSignalKnock, doSignalSendChatMessage, doSignalSetDisplayName } from "./redux/slices/signalConnection";
 import { selectChatMessages } from "./redux/slices/chat";
 import { Unsubscribe } from "@reduxjs/toolkit";
+import {
+    doEnableAudio,
+    doEnableVideo,
+    doStartScreenshare,
+    doStopScreenshare,
+    selectLocalParticipantRaw,
+} from "./redux/slices/localParticipant";
 
 export interface RoomConnectionOptions {
     displayName?: string; // Might not be needed at all
@@ -256,7 +256,7 @@ export default class RoomConnection extends TypedEventTarget {
                 );
             }
 
-            const localParticipant = selectLocalParticipant(state);
+            const localParticipant = selectLocalParticipantRaw(state);
 
             if (localParticipant !== this.localParticipant) {
                 this.localParticipant = localParticipant;
@@ -320,12 +320,12 @@ export default class RoomConnection extends TypedEventTarget {
         // Set up local media listeners
         this.localMedia.addEventListener("camera_enabled", (e) => {
             const { enabled } = e.detail;
-            this._store.dispatch(doSignalEnableVideo({ enabled }));
+            this._store.dispatch(doEnableVideo({ enabled }));
             this.dispatchEvent(new RoomConnectionEvent("local_camera_enabled", { detail: { enabled } }));
         });
         this.localMedia.addEventListener("microphone_enabled", (e) => {
             const { enabled } = e.detail;
-            this._store.dispatch(doSignalEnableAudio({ enabled }));
+            this._store.dispatch(doEnableAudio({ enabled }));
             this.dispatchEvent(new RoomConnectionEvent("local_microphone_enabled", { detail: { enabled } }));
         });
     }
@@ -444,55 +444,11 @@ export default class RoomConnection extends TypedEventTarget {
     }
 
     public async startScreenshare() {
-        const screenshareStream = this.localMedia.screenshareStream || (await this.localMedia.startScreenshare());
-        const onEnded = () => {
-            this.stopScreenshare();
-        };
-
-        if ("oninactive" in screenshareStream) {
-            // Chrome
-            screenshareStream.addEventListener("inactive", onEnded);
-        } else {
-            // FF
-            screenshareStream.getVideoTracks()[0]?.addEventListener("ended", onEnded);
-        }
-
-        // this.rtcManager?.addNewStream(screenshareStream.id, screenshareStream, false, true);
-        this.screenshares = [
-            ...this.screenshares,
-            {
-                participantId: this.selfId || "",
-                id: screenshareStream.id,
-                hasAudioTrack: false,
-                stream: screenshareStream,
-                isLocal: true,
-            },
-        ];
-
-        // this.dispatchEvent(
-        //     new RoomConnectionEvent("screenshare_started", {
-        //         detail: {
-        //             participantId: this.selfId || "",
-        //             id: screenshareStream.id,
-        //             hasAudioTrack: false,
-        //             stream: screenshareStream,
-        //             isLocal: true,
-        //         },
-        //     })
-        // );
+        this._store.dispatch(doStartScreenshare());
     }
 
     public stopScreenshare() {
-        if (this.localMedia.screenshareStream) {
-            const { id } = this.localMedia.screenshareStream;
-
-            // this.rtcManager?.removeStream(id, this.localMedia.screenshareStream, null);
-            this.screenshares = this.screenshares.filter((s) => s.id !== id);
-            // this.dispatchEvent(
-            //     new RoomConnectionEvent("screenshare_stopped", { detail: { participantId: this.selfId || "", id } })
-            // );
-            this.localMedia.stopScreenshare();
-        }
+        this._store.dispatch(doStopScreenshare());
     }
 
     public startCloudRecording() {
