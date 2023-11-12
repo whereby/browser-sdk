@@ -365,17 +365,6 @@ export default class RoomConnection extends TypedEventTarget {
         );
     }
 
-    private _handleDisconnect() {
-        this.connectionStatus = "disconnected";
-        this.dispatchEvent(
-            new RoomConnectionEvent("connection_status_changed", {
-                detail: {
-                    connectionStatus: this.connectionStatus,
-                },
-            })
-        );
-    }
-
     private _handleCloudRecordingStopped() {
         this.dispatchEvent(new RoomConnectionEvent("cloud_recording_stopped"));
     }
