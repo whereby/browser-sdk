@@ -365,15 +365,6 @@ export default class RoomConnection extends TypedEventTarget {
         );
     }
 
-    private _handleReconnect() {
-        this.logger.log("Reconnected to signal socket");
-        // this.signalSocket.emit("identify_device", { deviceCredentials: this._deviceCredentials });
-
-        // this.signalSocket.once("device_identified", () => {
-        // this._joinRoom();
-        // });
-    }
-
     private _handleDisconnect() {
         this.connectionStatus = "disconnected";
         this.dispatchEvent(

@@ -117,6 +117,10 @@ export const doSignalListenForEvents = createAppAsyncThunk(
         socket.on("knock_handled", (payload) => {
             dispatch(doHandleKnockHandled(payload));
         });
+
+        socket.getManager().on("reconnect", () => {
+            dispatch(doSignalReconnect());
+        });
     }
 );
 
@@ -153,6 +157,14 @@ export const doSignalJoinRoom = createAppAsyncThunk(
 
         localMedia?.start();
         return true;
+    }
+);
+
+export const doSignalReconnect = createAppAsyncThunk(
+    "signalConnection/doSignalReconnect",
+    async (payload, { getState, dispatch }) => {
+        const deviceCredentialsRaw = selectDeviceCredentialsRaw(getState());
+        dispatch(doSignalIdentifyDevice({ deviceCredentials: deviceCredentialsRaw.data }));
     }
 );
 
