@@ -1,10 +1,6 @@
 import { LocalParticipant, RemoteParticipant, Screenshare, WaitingParticipant } from "./RoomParticipant";
 
-import {
-    ChatMessage as SignalChatMessage,
-    CloudRecordingStartedEvent,
-    SignalClient,
-} from "@whereby/jslib-media/src/utils/ServerSocket";
+import { ChatMessage as SignalChatMessage, SignalClient } from "@whereby/jslib-media/src/utils/ServerSocket";
 import { sdkVersion } from "./version";
 import LocalMedia, { LocalMediaOptions } from "./LocalMedia";
 
@@ -17,7 +13,6 @@ import { selectRoomConnectionStatus } from "./redux/slices/roomConnection";
 import {
     doAcceptWaitingParticipant,
     doRejectWaitingParticipant,
-    doRoomLeft,
     selectRemoteParticipants,
     selectScreenshares,
     selectWaitingParticipants,
@@ -32,6 +27,7 @@ import {
     doStopScreenshare,
     selectLocalParticipantRaw,
 } from "./redux/slices/localParticipant";
+import { doStartCloudRecording, doStopCloudRecording } from "./redux/slices/cloudRecording";
 
 export interface RoomConnectionOptions {
     displayName?: string; // Might not be needed at all
@@ -336,18 +332,6 @@ export default class RoomConnection extends TypedEventTarget {
         return this._roomKey;
     }
 
-    private _handleCloudRecordingStarted(event: CloudRecordingStartedEvent) {
-        // Only handle the start failure event here. The recording is
-        // considered started when the recorder client joins.
-        if (event.error) {
-            this.dispatchEvent(
-                new RoomConnectionEvent("cloud_recording_started_error", {
-                    detail: { error: event.error, status: "error" },
-                })
-            );
-        }
-    }
-
     private _handleRecorderClientJoined({ client }: { client: SignalClient }) {
         this.dispatchEvent(
             new RoomConnectionEvent("cloud_recording_started", {
@@ -446,13 +430,11 @@ export default class RoomConnection extends TypedEventTarget {
     }
 
     public startCloudRecording() {
-        // this.signalSocket.emit("start_recording", {
-        //     recording: "cloud",
-        // });
+        this._store.dispatch(doStartCloudRecording());
         this.dispatchEvent(new RoomConnectionEvent("cloud_recording_request_started"));
     }
 
     public stopCloudRecording() {
-        // this.signalSocket.emit("stop_recording");
+        this._store.dispatch(doStopCloudRecording());
     }
 }
