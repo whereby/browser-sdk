@@ -21,7 +21,7 @@ const initialState: LocalParticipantState = {
 };
 
 export const doEnableAudio = createAppAsyncThunk(
-    "signalConnection/doSignalEnableAudio",
+    "localParticipant/doEnableAudio",
     async (payload: { enabled: boolean }, { getState }) => {
         const state = getState();
         const socket = selectSignalConnectionRaw(state).socket;
@@ -33,7 +33,7 @@ export const doEnableAudio = createAppAsyncThunk(
 );
 
 export const doEnableVideo = createAppAsyncThunk(
-    "signalConnection/doSignalEnableVideo",
+    "localParticipant/doEnableVideo",
     async (payload: { enabled: boolean }, { getState }) => {
         const state = getState();
         const socket = selectSignalConnectionRaw(state).socket;
@@ -44,8 +44,23 @@ export const doEnableVideo = createAppAsyncThunk(
     }
 );
 
+export const doSetDisplayName = createAppAsyncThunk(
+    "localParticipant/doSetDisplayName",
+    async (payload: { displayName: string }, { getState }) => {
+        const state = getState();
+        const socket = selectSignalConnectionRaw(state).socket;
+
+        socket?.emit("send_client_metadata", {
+            type: "UserData",
+            payload,
+        });
+
+        return payload.displayName;
+    }
+);
+
 export const doStartScreenshare = createAppAsyncThunk(
-    "signalConnection/doStartScreenshare",
+    "localParticipant/doStartScreenshare",
     async (payload, { dispatch, getState }) => {
         const state = getState();
         const rtcManager = selectRtcConnectionRaw(state).rtcManager;
@@ -83,7 +98,7 @@ export const doStartScreenshare = createAppAsyncThunk(
 );
 
 export const doStopScreenshare = createAppAsyncThunk(
-    "signalConnection/doStopScreenshare",
+    "localParticipant/doStopScreenshare",
     async (payload, { dispatch, getState }) => {
         const state = getState();
         const rtcManager = selectRtcConnectionRaw(state).rtcManager;
@@ -121,6 +136,12 @@ export const localParticipantSlice = createSlice({
             return {
                 ...state,
                 isVideoEnabled: action.payload,
+            };
+        });
+        builder.addCase(doSetDisplayName.fulfilled, (state, action) => {
+            return {
+                ...state,
+                displayName: action.payload,
             };
         });
         builder.addCase(doStartScreenshare.fulfilled, (state) => {
