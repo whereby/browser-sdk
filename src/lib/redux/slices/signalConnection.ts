@@ -121,6 +121,10 @@ export const doSignalListenForEvents = createAppAsyncThunk(
         socket.getManager().on("reconnect", () => {
             dispatch(doSignalReconnect());
         });
+
+        socket.on("disconnect", () => {
+            dispatch(doSignalDisconnect());
+        });
     }
 );
 
@@ -165,6 +169,13 @@ export const doSignalReconnect = createAppAsyncThunk(
     async (payload, { getState, dispatch }) => {
         const deviceCredentialsRaw = selectDeviceCredentialsRaw(getState());
         dispatch(doSignalIdentifyDevice({ deviceCredentials: deviceCredentialsRaw.data }));
+    }
+);
+
+export const doSignalDisconnect = createAppAsyncThunk(
+    "signalConnection/doSignalDisconnect",
+    async (payload, { dispatch }) => {
+        dispatch(doRoomConnectionStatusChanged({ status: "disconnected" }));
     }
 );
 
@@ -269,17 +280,6 @@ export const signalConnectionSlice = createSlice({
                 isIdentifyingDevice: false,
             };
         },
-        doSignalDisconnect: (state) => {
-            state.socket?.emit("leave_room");
-            state.socket?.disconnect();
-            return {
-                ...state,
-                deviceIdentified: false,
-                isIdentifyingDevice: false,
-                socket: null,
-                status: "disconnected",
-            };
-        },
     },
     extraReducers: (builder) => {
         builder.addCase(doSignalListenForEvents.pending, (state) => {
@@ -297,7 +297,7 @@ export const signalConnectionSlice = createSlice({
     },
 });
 
-export const { doSignalSocketConnect, doSignalIdentifyDevice, doSignalDisconnect } = signalConnectionSlice.actions;
+export const { doSignalSocketConnect, doSignalIdentifyDevice } = signalConnectionSlice.actions;
 
 export const selectSignalConnectionRaw = (state: RootState) => state.signalConnection;
 export const selectSignalStatus = (state: RootState) => state.signalConnection.status;
