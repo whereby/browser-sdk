@@ -196,26 +196,6 @@ export const doSignalDisconnect = createAppAsyncThunk(
     }
 );
 
-export const doSignalEnableAudio = createAppAsyncThunk(
-    "signalConnection/doSignalEnableAudio",
-    async (payload: { enabled: boolean }, { getState }) => {
-        const state = getState();
-        const socket = selectSignalConnectionRaw(state).socket;
-
-        socket?.emit("enable_audio", { enabled: payload.enabled });
-    }
-);
-
-export const doSignalEnableVideo = createAppAsyncThunk(
-    "signalConnection/doSignalEnableVideo",
-    async (payload: { enabled: boolean }, { getState }) => {
-        const state = getState();
-        const socket = selectSignalConnectionRaw(state).socket;
-
-        socket?.emit("enable_video", { enabled: payload.enabled });
-    }
-);
-
 export const doSignalSendChatMessage = createAppAsyncThunk(
     "signalConnection/doSignalSendChatMessage",
     async (payload: { text: string }, { getState }) => {
