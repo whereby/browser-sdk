@@ -4,8 +4,6 @@ import {
     ChatMessage as SignalChatMessage,
     CloudRecordingStartedEvent,
     SignalClient,
-    ScreenshareStartedEvent as SignalScreenshareStartedEvent,
-    ScreenshareStoppedEvent as SignalScreenshareStoppedEvent,
 } from "@whereby/jslib-media/src/utils/ServerSocket";
 import { sdkVersion } from "./version";
 import LocalMedia, { LocalMediaOptions } from "./LocalMedia";
@@ -20,6 +18,7 @@ import {
     doRoomLeft,
     selectLocalParticipant,
     selectRemoteParticipants,
+    selectScreenshares,
     selectWaitingParticipants,
 } from "./redux/slices/room";
 import {
@@ -29,8 +28,8 @@ import {
     doSignalSendChatMessage,
     doSignalSetDisplayName,
 } from "./redux/slices/signalConnection";
-import { Unsubscribe } from "@reduxjs/toolkit";
 import { selectChatMessages } from "./redux/slices/chat";
+import { Unsubscribe } from "@reduxjs/toolkit";
 
 export interface RoomConnectionOptions {
     displayName?: string; // Might not be needed at all
@@ -118,8 +117,7 @@ export interface RoomEventsMap {
     participants_changed: (e: CustomEvent<ParticipantsChangedEvent>) => void;
     connection_status_changed: (e: CustomEvent<ConnectionStatusChangedEvent>) => void;
     room_joined: (e: CustomEvent<RoomJoinedEvent>) => void;
-    screenshare_started: (e: CustomEvent<ScreenshareStartedEvent>) => void;
-    screenshare_stopped: (e: CustomEvent<ScreenshareStoppedEvent>) => void;
+    screenshares_changed: (e: CustomEvent<Screenshare[]>) => void;
     streaming_started: (e: CustomEvent<LiveStreamState>) => void;
     streaming_stopped: (e: CustomEvent<LiveStreamState>) => void;
     waiting_participants_changed: (e: CustomEvent<WaitingParticipant[]>) => void;
@@ -280,6 +278,17 @@ export default class RoomConnection extends TypedEventTarget {
                     })
                 );
             }
+
+            const screenshares = selectScreenshares(state);
+
+            if (screenshares !== this.screenshares) {
+                this.screenshares = screenshares;
+                this.dispatchEvent(
+                    new RoomConnectionEvent("screenshares_changed", {
+                        detail: this.screenshares,
+                    })
+                );
+            }
         });
 
         this.selfId = null;
@@ -373,44 +382,6 @@ export default class RoomConnection extends TypedEventTarget {
         this.dispatchEvent(new RoomConnectionEvent("streaming_stopped"));
     }
 
-    private _handleScreenshareStarted(screenshare: SignalScreenshareStartedEvent) {
-        const { clientId: participantId, streamId: id, hasAudioTrack } = screenshare;
-        const remoteParticipant = this.remoteParticipants.find((p) => p.id === participantId);
-
-        if (!remoteParticipant) {
-            this.logger.log("WARN: Could not find participant for screenshare");
-            return;
-        }
-
-        const foundScreenshare = this.screenshares.find((s) => s.id === id);
-        if (foundScreenshare) {
-            this.logger.log("WARN: Screenshare already exists");
-            return;
-        }
-
-        remoteParticipant.addStream(id, "to_accept");
-        // this._handleAcceptStreams([remoteParticipant]);
-
-        this.screenshares = [
-            ...this.screenshares,
-            { participantId, id, hasAudioTrack, stream: undefined, isLocal: false },
-        ];
-    }
-
-    private _handleScreenshareStopped(screenshare: SignalScreenshareStoppedEvent) {
-        const { clientId: participantId, streamId: id } = screenshare;
-        const remoteParticipant = this.remoteParticipants.find((p) => p.id === participantId);
-
-        if (!remoteParticipant) {
-            this.logger.log("WARN: Could not find participant for screenshare");
-            return;
-        }
-
-        remoteParticipant.removeStream(id);
-        this.screenshares = this.screenshares.filter((s) => !(s.participantId === participantId && s.id === id));
-        this.dispatchEvent(new RoomConnectionEvent("screenshare_stopped", { detail: { participantId, id } }));
-    }
-
     public async join() {
         this._store.dispatch(
             doAppJoin({
@@ -428,25 +399,7 @@ export default class RoomConnection extends TypedEventTarget {
     }
 
     public leave() {
-        // this.connectionStatus = "disconnecting";
-        // if (this._ownsLocalMedia) {
-        //     this.localMedia.stop();
-        // }
-        // if (this.rtcManager) {
-        //     this.localMedia.removeRtcManager(this.rtcManager);
-        //     this.rtcManager.disconnectAll();
-        //     this.rtcManager = undefined;
-        // }
-        // if (!this.signalSocket) {
-        //     return;
-        // }
-        // this.signalSocket.emit("leave_room");
-        // this.signalSocket.disconnect();
-        // this.connectionStatus = "disconnected";
         // this._store.dispatch(doRoomLeft());
-        // console.log("leave");
-        // console.log(this._store);
-        // console.log(this._unsubscribe);
         // this._unsubscribe();
     }
 
@@ -516,17 +469,17 @@ export default class RoomConnection extends TypedEventTarget {
             },
         ];
 
-        this.dispatchEvent(
-            new RoomConnectionEvent("screenshare_started", {
-                detail: {
-                    participantId: this.selfId || "",
-                    id: screenshareStream.id,
-                    hasAudioTrack: false,
-                    stream: screenshareStream,
-                    isLocal: true,
-                },
-            })
-        );
+        // this.dispatchEvent(
+        //     new RoomConnectionEvent("screenshare_started", {
+        //         detail: {
+        //             participantId: this.selfId || "",
+        //             id: screenshareStream.id,
+        //             hasAudioTrack: false,
+        //             stream: screenshareStream,
+        //             isLocal: true,
+        //         },
+        //     })
+        // );
     }
 
     public stopScreenshare() {
@@ -535,9 +488,9 @@ export default class RoomConnection extends TypedEventTarget {
 
             // this.rtcManager?.removeStream(id, this.localMedia.screenshareStream, null);
             this.screenshares = this.screenshares.filter((s) => s.id !== id);
-            this.dispatchEvent(
-                new RoomConnectionEvent("screenshare_stopped", { detail: { participantId: this.selfId || "", id } })
-            );
+            // this.dispatchEvent(
+            //     new RoomConnectionEvent("screenshare_stopped", { detail: { participantId: this.selfId || "", id } })
+            // );
             this.localMedia.stopScreenshare();
         }
     }

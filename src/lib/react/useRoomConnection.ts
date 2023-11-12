@@ -95,20 +95,9 @@ type RoomConnectionEvent =
           };
       }
     | {
-          type: "SCREENSHARE_STARTED";
+          type: "SCREENSHARES_CHANGED";
           payload: {
-              participantId: string;
-              stream: MediaStream;
-              id: string;
-              hasAudioTrack: boolean;
-              isLocal: boolean;
-          };
-      }
-    | {
-          type: "SCREENSHARE_STOPPED";
-          payload: {
-              participantId: string;
-              id: string;
+              screenshares: Screenshare[];
           };
       }
     | {
@@ -156,14 +145,6 @@ function convertRemoteParticipantToRemoteParticipantState(p: RemoteParticipant):
         isVideoEnabled: p.isVideoEnabled,
         stream: p.stream,
     };
-}
-
-function addScreenshare(screenshares: Screenshare[], screenshare: Screenshare): Screenshare[] {
-    const existingScreenshare = screenshares.find((ss) => ss.id === screenshare.id);
-    if (existingScreenshare) {
-        return screenshares;
-    }
-    return [...screenshares, screenshare];
 }
 
 function reducer(state: RoomConnectionState, action: RoomConnectionEvent): RoomConnectionState {
@@ -226,21 +207,10 @@ function reducer(state: RoomConnectionState, action: RoomConnectionEvent): RoomC
                 ...state,
                 localParticipant: { ...state.localParticipant, displayName: action.payload.displayName },
             };
-        case "SCREENSHARE_STARTED":
+        case "SCREENSHARES_CHANGED":
             return {
                 ...state,
-                screenshares: addScreenshare(state.screenshares, {
-                    participantId: action.payload.participantId,
-                    id: action.payload.id,
-                    hasAudioTrack: action.payload.hasAudioTrack,
-                    stream: action.payload.stream,
-                    isLocal: action.payload.isLocal,
-                }),
-            };
-        case "SCREENSHARE_STOPPED":
-            return {
-                ...state,
-                screenshares: state.screenshares.filter((ss) => ss.id !== action.payload.id),
+                screenshares: action.payload.screenshares,
             };
         case "LOCAL_SCREENSHARE_START_ERROR":
             return {
@@ -421,26 +391,28 @@ export function useRoomConnection(
                     },
                 });
             }),
-            createEventListener("screenshare_started", (e) => {
-                const { participantId, stream, id, hasAudioTrack, isLocal } = e.detail;
+            createEventListener("screenshares_changed", (e) => {
+                const screenshares = e.detail;
                 dispatch({
-                    type: "SCREENSHARE_STARTED",
-                    payload: { participantId, stream, id, hasAudioTrack, isLocal },
+                    type: "SCREENSHARES_CHANGED",
+                    payload: {
+                        screenshares,
+                    },
                 });
             }),
-            createEventListener("screenshare_stopped", (e) => {
-                const { participantId, id } = e.detail;
-                dispatch({
-                    type: "SCREENSHARE_STOPPED",
-                    payload: { participantId, id },
-                });
-                // dispach LOCAL_SCREENSHARE_STOPPED here because the exposed
-                // stopScreenshare method is not called when the screenshare is
-                // stopped by the browser's native stop screenshare button
-                if (participantId === state.localParticipant?.id) {
-                    dispatch({ type: "LOCAL_SCREENSHARE_STOPPED" });
-                }
-            }),
+            // createEventListener("screenshare_stopped", (e) => {
+            //     const { participantId, id } = e.detail;
+            //     dispatch({
+            //         type: "SCREENSHARE_STOPPED",
+            //         payload: { participantId, id },
+            //     });
+            //     // dispach LOCAL_SCREENSHARE_STOPPED here because the exposed
+            //     // stopScreenshare method is not called when the screenshare is
+            //     // stopped by the browser's native stop screenshare button
+            //     if (participantId === state.localParticipant?.id) {
+            //         dispatch({ type: "LOCAL_SCREENSHARE_STOPPED" });
+            //     }
+            // }),
             createEventListener("streaming_started", (e) => {
                 const { status, startedAt } = e.detail;
                 dispatch({ type: "STREAMING_STARTED", payload: { status, startedAt } });
@@ -457,20 +429,6 @@ export function useRoomConnection(
                     },
                 });
             }),
-            // createEventListener("waiting_participant_joined", (e) => {
-            //     const { participantId, displayName } = e.detail;
-            //     dispatch({
-            //         type: "WAITING_PARTICIPANT_JOINED",
-            //         payload: { participantId, displayName },
-            //     });
-            // }),
-            // createEventListener("waiting_participant_left", (e) => {
-            //     const { participantId } = e.detail;
-            //     dispatch({
-            //         type: "WAITING_PARTICIPANT_LEFT",
-            //         payload: { participantId },
-            //     });
-            // }),
         ],
         []
     );
