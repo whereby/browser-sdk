@@ -18,6 +18,8 @@ import {
     doHandleClientLeft,
     doHandleKnockHandled,
     doHandleNewClient,
+    doHandleScreenshareStarted,
+    doHandleScreenshareStopped,
     doHandleWaitingParticipantJoined,
     doHandleWaitingParticipantLeft,
     doParticipantAudioEnabled,
@@ -118,6 +120,14 @@ export const doSignalListenForEvents = createAppAsyncThunk(
             dispatch(doHandleKnockHandled(payload));
         });
 
+        socket.on("screenshare_started", (payload) => {
+            dispatch(doHandleScreenshareStarted(payload));
+        });
+
+        socket.on("screenshare_stopped", (payload) => {
+            dispatch(doHandleScreenshareStopped(payload));
+        });
+
         socket.getManager().on("reconnect", () => {
             dispatch(doSignalReconnect());
         });
@@ -174,7 +184,14 @@ export const doSignalReconnect = createAppAsyncThunk(
 
 export const doSignalDisconnect = createAppAsyncThunk(
     "signalConnection/doSignalDisconnect",
-    async (payload, { dispatch }) => {
+    async (payload, { dispatch, getState }) => {
+        const socket = selectSignalConnectionRaw(getState()).socket;
+
+        if (socket) {
+            socket.emit("leave_room");
+            socket.disconnect();
+        }
+
         dispatch(doRoomConnectionStatusChanged({ status: "disconnected" }));
     }
 );
@@ -292,6 +309,18 @@ export const signalConnectionSlice = createSlice({
             return {
                 ...state,
                 status: "joining",
+            };
+        });
+        builder.addCase(doSignalJoinRoom.rejected, (state) => {
+            return {
+                ...state,
+                status: "disconnected",
+            };
+        });
+        builder.addCase(doSignalDisconnect.fulfilled, (state) => {
+            return {
+                ...state,
+                status: "disconnected",
             };
         });
     },
