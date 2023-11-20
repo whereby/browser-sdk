@@ -28,6 +28,7 @@ import {
     selectLocalParticipantRaw,
 } from "./redux/slices/localParticipant";
 import { doStartCloudRecording, doStopCloudRecording, selectCloudRecordingRaw } from "./redux/slices/cloudRecording";
+import { selectStreamingRaw } from "./redux/slices/streaming";
 
 export interface RoomConnectionOptions {
     displayName?: string; // Might not be needed at all
@@ -57,7 +58,7 @@ export type CloudRecordingState = {
 
 export type LiveStreamState = {
     status: "streaming";
-    startedAt: number;
+    startedAt?: number;
 };
 
 export type RoomJoinedEvent = {
@@ -176,11 +177,12 @@ export default class RoomConnection extends TypedEventTarget {
     public screenshares: Screenshare[] = [];
     public chatMessages: ChatMessage[] = [];
     public waitingParticipants: WaitingParticipant[] = [];
-    public isRecording = false;
     public readonly localMediaConstraints?: MediaStreamConstraints;
     public readonly roomName: string;
 
     private connectionStatus: ConnectionStatus;
+    private isRecording = false;
+    private isStreaming = false;
     private selfId: string | null;
     private logger: Logger;
     private _ownsLocalMedia = false;
@@ -305,6 +307,25 @@ export default class RoomConnection extends TypedEventTarget {
                     this.dispatchEvent(new RoomConnectionEvent("cloud_recording_stopped"));
                 }
             }
+
+            const streaming = selectStreamingRaw(state);
+
+            if (streaming.isStreaming !== this.isStreaming) {
+                this.isStreaming = streaming.isStreaming;
+
+                if (this.isStreaming) {
+                    this.dispatchEvent(
+                        new RoomConnectionEvent("streaming_started", {
+                            detail: {
+                                status: "streaming",
+                                startedAt: streaming.startedAt,
+                            },
+                        })
+                    );
+                } else {
+                    this.dispatchEvent(new RoomConnectionEvent("streaming_stopped"));
+                }
+            }
         });
 
         this.selfId = null;
@@ -348,25 +369,6 @@ export default class RoomConnection extends TypedEventTarget {
 
     public get roomKey(): string | null {
         return this._roomKey;
-    }
-
-    private _handleStreamingStarted() {
-        this.dispatchEvent(
-            new RoomConnectionEvent("streaming_started", {
-                detail: {
-                    status: "streaming",
-                    // We don't have the streaming start time stored on the
-                    // server, so we use the current time instead. This gives
-                    // an invalid timestamp for "Client B" if "Client A" has
-                    // been streaming for a while before "Client B" joins.
-                    startedAt: new Date().getTime(),
-                },
-            })
-        );
-    }
-
-    private _handleStreamingStopped() {
-        this.dispatchEvent(new RoomConnectionEvent("streaming_stopped"));
     }
 
     public async join() {
