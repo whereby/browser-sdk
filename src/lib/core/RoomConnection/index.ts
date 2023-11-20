@@ -1,12 +1,12 @@
 import { LocalParticipant, RemoteParticipant, Screenshare, WaitingParticipant } from "../../RoomParticipant";
 
-import { ChatMessage as SignalChatMessage, SignalClient } from "@whereby/jslib-media/src/utils/ServerSocket";
+import { ChatMessage as SignalChatMessage } from "@whereby/jslib-media/src/utils/ServerSocket";
 import { sdkVersion } from "../../version";
 import LocalMedia, { LocalMediaOptions } from "../../LocalMedia";
 
 type Logger = Pick<Console, "debug" | "error" | "log" | "warn" | "info">;
 // new
-import { RootState, createStore } from "./redux/store";
+import { createStore } from "./redux/store";
 import { createServices } from "../../services";
 import { doAppJoin } from "./redux/slices/app";
 import { selectRoomConnectionStatus } from "./redux/slices/roomConnection";
@@ -27,7 +27,7 @@ import {
     doStopScreenshare,
     selectLocalParticipantRaw,
 } from "./redux/slices/localParticipant";
-import { doStartCloudRecording, doStopCloudRecording } from "./redux/slices/cloudRecording";
+import { doStartCloudRecording, doStopCloudRecording, selectCloudRecordingRaw } from "./redux/slices/cloudRecording";
 
 export interface RoomConnectionOptions {
     displayName?: string; // Might not be needed at all
@@ -176,6 +176,7 @@ export default class RoomConnection extends TypedEventTarget {
     public screenshares: Screenshare[] = [];
     public chatMessages: ChatMessage[] = [];
     public waitingParticipants: WaitingParticipant[] = [];
+    public isRecording = false;
     public readonly localMediaConstraints?: MediaStreamConstraints;
     public readonly roomName: string;
 
@@ -189,7 +190,6 @@ export default class RoomConnection extends TypedEventTarget {
     // private _unsubscribe: Unsubscribe;
     // Redux
     private _store: ReturnType<typeof createStore>;
-    private _state: RootState;
 
     constructor(
         roomUrl: string,
@@ -209,7 +209,6 @@ export default class RoomConnection extends TypedEventTarget {
         this._store = createStore({
             injectServices: createServices(roomUrl),
         });
-        this._state = this._store.getState();
 
         // subscribe to redux store changes
         this._store.subscribe(() => {
@@ -287,6 +286,25 @@ export default class RoomConnection extends TypedEventTarget {
                     })
                 );
             }
+
+            const cloudRecording = selectCloudRecordingRaw(state);
+
+            if (cloudRecording.isRecording !== this.isRecording) {
+                this.isRecording = cloudRecording.isRecording;
+
+                if (this.isRecording) {
+                    this.dispatchEvent(
+                        new RoomConnectionEvent("cloud_recording_started", {
+                            detail: {
+                                status: "recording",
+                                startedAt: cloudRecording.startedAt,
+                            },
+                        })
+                    );
+                } else {
+                    this.dispatchEvent(new RoomConnectionEvent("cloud_recording_stopped"));
+                }
+            }
         });
 
         this.selfId = null;
@@ -332,19 +350,6 @@ export default class RoomConnection extends TypedEventTarget {
         return this._roomKey;
     }
 
-    private _handleRecorderClientJoined({ client }: { client: SignalClient }) {
-        this.dispatchEvent(
-            new RoomConnectionEvent("cloud_recording_started", {
-                detail: {
-                    status: "recording",
-                    startedAt: client.startedCloudRecordingAt
-                        ? new Date(client.startedCloudRecordingAt).getTime()
-                        : new Date().getTime(),
-                },
-            })
-        );
-    }
-
     private _handleStreamingStarted() {
         this.dispatchEvent(
             new RoomConnectionEvent("streaming_started", {
@@ -358,10 +363,6 @@ export default class RoomConnection extends TypedEventTarget {
                 },
             })
         );
-    }
-
-    private _handleCloudRecordingStopped() {
-        this.dispatchEvent(new RoomConnectionEvent("cloud_recording_stopped"));
     }
 
     private _handleStreamingStopped() {

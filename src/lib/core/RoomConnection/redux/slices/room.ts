@@ -83,7 +83,7 @@ export const doRoomJoined = createAppAsyncThunk(
 
             const recorderClient = clients.find((c) => c.role.roleName === "recorder");
             if (recorderClient) {
-                dispatch(doHandleRecorderClientJoined());
+                dispatch(doHandleRecorderClientJoined({ client: recorderClient }));
             }
 
             // const streamerClient = clients.find((c) => c.role.roleName === "streamer");
@@ -235,7 +235,7 @@ export const doHandleNewClient = createAppAsyncThunk(
         const { client } = payload;
 
         if (client.role.roleName === "recorder") {
-            dispatch(doHandleRecorderClientJoined());
+            dispatch(doHandleRecorderClientJoined({ client }));
         }
         if (client.role.roleName === "streamer") {
             // this._handleStreamingStarted();
