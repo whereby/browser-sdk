@@ -1,6 +1,6 @@
 import { jest } from "@jest/globals";
 
-import RoomConnection from "../RoomConnection";
+import RoomConnection from "../../lib/core/RoomConnection";
 import { RemoteParticipant } from "../RoomParticipant";
 import MockMediaStream from "../__mocks__/MediaStream";
 
