@@ -15,7 +15,7 @@ import {
     ScreenshareStoppedEvent,
 } from "@whereby/jslib-media/src/utils/ServerSocket";
 import { doRoomConnectionStatusChanged } from "./roomConnection";
-import { RemoteParticipant, WaitingParticipant, LocalParticipant } from "../../RoomParticipant";
+import { RemoteParticipant, WaitingParticipant, LocalParticipant } from "../../../../RoomParticipant";
 import { doHandleAcceptStreams, doRtcManagerDestroyed, selectRtcConnectionRaw } from "./rtcConnection";
 import { doSignalDisconnect, doSignalJoinRoom, selectSignalConnectionRaw } from "./signalConnection";
 import { doAppSetRoomKey, selectAppLocalMedia } from "./app";

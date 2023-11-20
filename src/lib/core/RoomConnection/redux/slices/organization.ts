@@ -1,6 +1,6 @@
 import { createSlice } from "@reduxjs/toolkit";
 import { RootState, createAppAsyncThunk } from "../store";
-import Organization from "../../api/models/Organization";
+import Organization from "../../../../api/models/Organization";
 import { startAppListening } from "../listenerMiddleware";
 import { selectAppWantsToJoin } from "./app";
 import { selectDeviceCredentialsRaw } from "./deviceCredentials";
