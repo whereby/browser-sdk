@@ -30,6 +30,7 @@ import {
 import { doChatMessageReceived } from "./chat";
 import { doRoomConnectionStatusChanged } from "./roomConnection";
 import { doHandleCloudRecordingStarted, doHandleCloudRecordingStopped } from "./cloudRecording";
+import { doHandleStreamingStarted, doHandleStreamingStopped } from "./streaming";
 
 const SIGNAL_BASE_URL = process.env["REACT_APP_SIGNAL_BASE_URL"] || "wss://signal.appearin.net";
 
@@ -135,6 +136,10 @@ export const doSignalListenForEvents = createAppAsyncThunk(
 
         socket.on("cloud_recording_stopped", () => {
             dispatch(doHandleCloudRecordingStopped());
+        });
+
+        socket.on("streaming_stopped", () => {
+            dispatch(doHandleStreamingStopped());
         });
 
         socket.getManager().on("reconnect", () => {

@@ -24,6 +24,7 @@ import { RtcStreamAddedPayload } from "@whereby/jslib-media/src/webrtc/RtcManage
 import { Screenshare } from "~/lib/react";
 import { doSetLocalParticipant, selectSelfId } from "./localParticipant";
 import { doHandleRecorderClientJoined } from "./cloudRecording";
+import { doHandleStreamingStarted } from "./streaming";
 
 const NON_PERSON_ROLES = ["recorder", "streamer"];
 
@@ -86,10 +87,10 @@ export const doRoomJoined = createAppAsyncThunk(
                 dispatch(doHandleRecorderClientJoined({ client: recorderClient }));
             }
 
-            // const streamerClient = clients.find((c) => c.role.roleName === "streamer");
-            // if (streamerClient) {
-            //     this._handleStreamingStarted();
-            // }
+            const streamerClient = clients.find((c) => c.role.roleName === "streamer");
+            if (streamerClient) {
+                dispatch(doHandleStreamingStarted());
+            }
 
             const remoteParticipants = clients
                 .filter((c) => c.id !== selfId)
