@@ -1,4 +1,4 @@
-import { createStore } from "../redux/store";
+import { createStore } from "../core/RoomConnection/redux/store";
 
 export const mockStore = createStore({});
 
