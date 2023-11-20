@@ -19,6 +19,7 @@ import { roomSlice } from "./slices/room";
 import { roomConnectionSlice } from "./slices/roomConnection";
 import { signalConnectionSlice } from "./slices/signalConnection";
 import { rtcConnectionSlice } from "./slices/rtcConnection";
+import { streamingSlice } from "./slices/streaming";
 
 export const rootReducer = combineReducers({
     app: appSlice.reducer,
@@ -31,6 +32,7 @@ export const rootReducer = combineReducers({
     roomConnection: roomConnectionSlice.reducer,
     rtcConnection: rtcConnectionSlice.reducer,
     signalConnection: signalConnectionSlice.reducer,
+    streaming: streamingSlice.reducer,
 });
 
 export const createStore = ({
