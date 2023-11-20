@@ -1,6 +1,6 @@
 import { PayloadAction, createSlice } from "@reduxjs/toolkit";
 
-import { ConnectionStatus } from "~/lib/RoomConnection";
+import { ConnectionStatus } from "../../../RoomConnection";
 import { RootState } from "../store";
 
 export interface RoomConnectionState {

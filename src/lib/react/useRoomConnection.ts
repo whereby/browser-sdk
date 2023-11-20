@@ -8,7 +8,7 @@ import RoomConnection, {
     ConnectionStatus,
     RoomEventsMap,
     LiveStreamState,
-} from "../RoomConnection";
+} from "..//core/RoomConnection";
 import { LocalParticipant, RemoteParticipant, Screenshare, WaitingParticipant } from "../RoomParticipant";
 
 export type RemoteParticipantState = Omit<
