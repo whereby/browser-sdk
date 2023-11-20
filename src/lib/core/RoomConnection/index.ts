@@ -1,13 +1,13 @@
-import { LocalParticipant, RemoteParticipant, Screenshare, WaitingParticipant } from "./RoomParticipant";
+import { LocalParticipant, RemoteParticipant, Screenshare, WaitingParticipant } from "../../RoomParticipant";
 
 import { ChatMessage as SignalChatMessage, SignalClient } from "@whereby/jslib-media/src/utils/ServerSocket";
-import { sdkVersion } from "./version";
-import LocalMedia, { LocalMediaOptions } from "./LocalMedia";
+import { sdkVersion } from "../../version";
+import LocalMedia, { LocalMediaOptions } from "../../LocalMedia";
 
 type Logger = Pick<Console, "debug" | "error" | "log" | "warn" | "info">;
 // new
 import { RootState, createStore } from "./redux/store";
-import { createServices } from "./services";
+import { createServices } from "../../services";
 import { doAppJoin } from "./redux/slices/app";
 import { selectRoomConnectionStatus } from "./redux/slices/roomConnection";
 import {

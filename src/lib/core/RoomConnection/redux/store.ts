@@ -7,7 +7,7 @@ import {
     createAsyncThunk,
 } from "@reduxjs/toolkit";
 import { listenerMiddleware } from "./listenerMiddleware";
-import { createServices } from "../services";
+import { createServices } from "../../../services";
 
 import { appSlice } from "./slices/app";
 import { chatSlice } from "./slices/chat";
