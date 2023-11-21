@@ -1,5 +1,6 @@
 import { PayloadAction, createSlice } from "@reduxjs/toolkit";
-import { RootState, createAppAsyncThunk } from "../store";
+import { RootState } from "../store";
+import { createAppAsyncThunk } from "../asyncThunk";
 import ServerSocket from "@whereby/jslib-media/src/utils/ServerSocket";
 import { Credentials } from "~/lib/api";
 import { startAppListening } from "../listenerMiddleware";
@@ -30,7 +31,7 @@ import {
 import { doChatMessageReceived } from "./chat";
 import { doRoomConnectionStatusChanged } from "./roomConnection";
 import { doHandleCloudRecordingStarted, doHandleCloudRecordingStopped } from "./cloudRecording";
-import { doHandleStreamingStarted, doHandleStreamingStopped } from "./streaming";
+import { doHandleStreamingStopped } from "./streaming";
 
 const SIGNAL_BASE_URL = process.env["REACT_APP_SIGNAL_BASE_URL"] || "wss://signal.appearin.net";
 
