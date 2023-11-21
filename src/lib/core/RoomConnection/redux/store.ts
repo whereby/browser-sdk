@@ -33,7 +33,7 @@ export const createStore = ({
     injectServices,
 }: {
     preloadedState?: PreloadedState<RootState>;
-    injectServices?: ReturnType<typeof createServices>;
+    injectServices: ReturnType<typeof createServices>;
 }) => {
     return configureStore({
         reducer: rootReducer,
