@@ -57,6 +57,7 @@ export const deviceCredentialsSlice = createSlice({
 });
 
 export const selectDeviceCredentialsRaw = (state: RootState) => state.deviceCredentials;
+export const selectHasFetchedDeviceCredentials = (state: RootState) => !!state.deviceCredentials.data?.credentials;
 
 export const shouldFetchDeviceCredentials = (action: AnyAction, currentState: RootState) => {
     const wantsToJoin = selectAppWantsToJoin(currentState);
