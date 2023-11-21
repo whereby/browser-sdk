@@ -2,7 +2,8 @@ import { PayloadAction, createSlice } from "@reduxjs/toolkit";
 
 import { ConnectionStatus } from "../../../RoomConnection";
 import { startAppListening } from "../listenerMiddleware";
-import { createAppAsyncThunk, RootState } from "../store";
+import { RootState } from "../store";
+import { createAppAsyncThunk } from "../asyncThunk";
 import {
     selectAppDisplayName,
     selectAppLocalMedia,
