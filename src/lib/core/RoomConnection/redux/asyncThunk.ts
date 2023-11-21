@@ -5,7 +5,7 @@ import { createServices } from "../../../services";
 export type ThunkConfig = {
     state: RootState;
     dispatch: AppDispatch;
-    extra: { services?: ReturnType<typeof createServices> };
+    extra: { services: ReturnType<typeof createServices> };
 };
 
 export function createAppAsyncThunk<ReturnType, ArgType = undefined>(
