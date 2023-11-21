@@ -1,4 +1,4 @@
-import { AnyAction, createSlice } from "@reduxjs/toolkit";
+import { createSlice } from "@reduxjs/toolkit";
 import { RootState } from "../store";
 import { createAppAsyncThunk } from "../asyncThunk";
 import { startAppListening } from "../listenerMiddleware";
@@ -19,7 +19,7 @@ export const doGetDeviceCredentials = createAppAsyncThunk(
     "deviceCredentials/doGetDeviceCredentials",
     async (payload, { extra }) => {
         try {
-            const deviceCredentials = await extra.services?.credentialsService.getCredentials();
+            const deviceCredentials = await extra.services.credentialsService.getCredentials();
 
             return deviceCredentials;
         } catch (error) {
@@ -59,18 +59,24 @@ export const deviceCredentialsSlice = createSlice({
 export const selectDeviceCredentialsRaw = (state: RootState) => state.deviceCredentials;
 export const selectHasFetchedDeviceCredentials = (state: RootState) => !!state.deviceCredentials.data?.credentials;
 
-export const shouldFetchDeviceCredentials = (action: AnyAction, currentState: RootState) => {
-    const wantsToJoin = selectAppWantsToJoin(currentState);
-    const deviceCredentialsRaw = selectDeviceCredentialsRaw(currentState);
-
-    if (wantsToJoin && !deviceCredentialsRaw.data && !deviceCredentialsRaw.isFetching) {
+export const shouldFetchDeviceCredentials = (
+    wantsToJoin: boolean,
+    isFetching: boolean,
+    deviceCredentialsData?: Credentials | null
+) => {
+    if (wantsToJoin && !deviceCredentialsData && !isFetching) {
         return true;
     }
     return false;
 };
 
 startAppListening({
-    predicate: shouldFetchDeviceCredentials,
+    predicate: (_, state, currentState) => {
+        const wantsToJoin = selectAppWantsToJoin(currentState);
+        const deviceCredentialsRaw = selectDeviceCredentialsRaw(currentState);
+
+        return shouldFetchDeviceCredentials(wantsToJoin, deviceCredentialsRaw.isFetching, deviceCredentialsRaw.data);
+    },
     effect: (action, { dispatch }) => {
         dispatch(doGetDeviceCredentials());
     },
