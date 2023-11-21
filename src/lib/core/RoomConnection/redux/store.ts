@@ -1,11 +1,4 @@
-import {
-    AsyncThunk,
-    AsyncThunkPayloadCreator,
-    PreloadedState,
-    combineReducers,
-    configureStore,
-    createAsyncThunk,
-} from "@reduxjs/toolkit";
+import { PreloadedState, combineReducers, configureStore } from "@reduxjs/toolkit";
 import { listenerMiddleware } from "./listenerMiddleware";
 import { createServices } from "../../../services";
 
@@ -57,15 +50,3 @@ export const createStore = ({
 
 export type RootState = ReturnType<typeof rootReducer>;
 export type AppDispatch = ReturnType<typeof createStore>["dispatch"];
-export type ThunkConfig = {
-    state: RootState;
-    dispatch: AppDispatch;
-    extra: { services?: ReturnType<typeof createServices> };
-};
-
-export function createAppAsyncThunk<ReturnType, ArgType = undefined>(
-    typePrefix: string,
-    payloadCreator: AsyncThunkPayloadCreator<ReturnType, ArgType, ThunkConfig>
-): AsyncThunk<ReturnType, ArgType, ThunkConfig> {
-    return createAsyncThunk<ReturnType, ArgType, ThunkConfig>(typePrefix, payloadCreator);
-}

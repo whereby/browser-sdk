@@ -1,5 +1,6 @@
 import { AnyAction, createSlice } from "@reduxjs/toolkit";
-import { RootState, createAppAsyncThunk } from "../store";
+import { RootState } from "../store";
+import { createAppAsyncThunk } from "../asyncThunk";
 import { startAppListening } from "../listenerMiddleware";
 import { selectAppWantsToJoin } from "./app";
 import { Credentials } from "~/lib/api";
