@@ -31,7 +31,7 @@ export const appSlice = createSlice({
                 roomKey: string | null;
                 displayName: string;
                 sdkVersion: string;
-                localMedia: LocalMedia;
+                localMedia?: LocalMedia;
             }>
         ) => {
             return {

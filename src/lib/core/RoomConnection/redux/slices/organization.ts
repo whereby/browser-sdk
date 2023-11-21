@@ -22,7 +22,7 @@ export const doOrganizationFetch = createAppAsyncThunk(
     "organization/doOrganizationFetch",
     async (payload, { extra }) => {
         try {
-            const organization = await extra.services?.organizationServiceCache.fetchOrganization();
+            const organization = await extra.services.organizationServiceCache.fetchOrganization();
 
             if (!organization) {
                 throw new Error("Invalid room url");
