@@ -29,7 +29,7 @@ import {
     doRoomJoined,
 } from "./room";
 import { doChatMessageReceived } from "./chat";
-import { doRoomConnectionStatusChanged } from "./roomConnection";
+import { doConnectRoom, doRoomConnectionStatusChanged } from "./roomConnection";
 import { doHandleCloudRecordingStarted, doHandleCloudRecordingStopped } from "./cloudRecording";
 import { doHandleStreamingStopped } from "./streaming";
 
@@ -79,9 +79,9 @@ export const doSignalListenForEvents = createAppAsyncThunk(
             return;
         }
 
-        socket.once("device_identified", () => {
+        /* socket.once("device_identified", () => {
             dispatch(doSignalJoinRoom());
-        });
+        });*/
 
         socket.on("room_joined", (payload) => {
             dispatch(doRoomJoined(payload));
@@ -150,42 +150,6 @@ export const doSignalListenForEvents = createAppAsyncThunk(
         socket.on("disconnect", () => {
             dispatch(doSignalDisconnect());
         });
-    }
-);
-
-export const doSignalJoinRoom = createAppAsyncThunk(
-    "signalConnection/doSignalJoinRoom",
-    async (payload, { getState }) => {
-        const state = getState();
-        const socket = selectSignalConnectionRaw(state).socket;
-        const roomName = selectAppRoomName(state);
-        const roomKey = selectAppRoomKey(state);
-        const displayName = selectAppDisplayName(state);
-        const sdkVersion = selectAppSdkVersion(state);
-        const organizationId = selectOrganizationId(state);
-        const localMedia = selectAppLocalMedia(state);
-
-        socket?.emit("join_room", {
-            avatarUrl: null,
-            config: {
-                isAudioEnabled: localMedia?.isMicrophoneEnabled || false,
-                isVideoEnabled: localMedia?.isCameraEnabled || false,
-            },
-            deviceCapabilities: { canScreenshare: true },
-            displayName: displayName,
-            isCoLocated: false,
-            isDevicePermissionDenied: false,
-            kickFromOtherRooms: false,
-            organizationId: organizationId,
-            roomKey: roomKey,
-            roomName: roomName,
-            selfId: "",
-            userAgent: `browser-sdk:${sdkVersion || "unknown"}`,
-            externalId: null,
-        });
-
-        localMedia?.start();
-        return true;
     }
 );
 
@@ -277,13 +241,13 @@ export const signalConnectionSlice = createSlice({
                 isListeningForEvents: true,
             };
         });
-        builder.addCase(doSignalJoinRoom.fulfilled, (state) => {
+        builder.addCase(doConnectRoom.fulfilled, (state) => {
             return {
                 ...state,
                 status: "joining",
             };
         });
-        builder.addCase(doSignalJoinRoom.rejected, (state) => {
+        builder.addCase(doConnectRoom.rejected, (state) => {
             return {
                 ...state,
                 status: "disconnected",
