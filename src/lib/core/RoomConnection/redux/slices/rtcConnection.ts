@@ -286,7 +286,7 @@ startAppListening({
 
 // react accept streams
 startAppListening({
-    predicate: (action, currentState, previousState) => {
+    predicate: (_action, currentState, previousState) => {
         const rtcConnection = selectRtcConnectionRaw(currentState);
         const oldRemoteParticipants = selectRemoteParticipants(previousState);
         const remoteParticipants = selectRemoteParticipants(currentState);
@@ -295,28 +295,28 @@ startAppListening({
             return false;
         }
 
-        const upd: string[] = [];
+        let shouldAcceptStreams = false;
 
         remoteParticipants.forEach((participant) => {
             const { streams } = participant;
             const isInSameRoomOrGroupOrClientBroadcasting = true; // TODO: Remove once breakout is implemented
 
             streams.forEach((stream) => {
-                const { id: streamId, state: streamState } = stream;
+                const { state: streamState } = stream;
 
                 if (isInSameRoomOrGroupOrClientBroadcasting) {
                     if (streamState === "done_accept") return;
-                    upd.push(streamId);
+                    shouldAcceptStreams = true;
                 } else {
                     if (streamState === "done_unaccept") return;
-                    upd.push(streamId);
+                    shouldAcceptStreams = true;
                 }
             });
         });
 
-        return upd.length > 0;
+        return shouldAcceptStreams;
     },
-    effect: (action, { dispatch }) => {
+    effect: (_action, { dispatch }) => {
         dispatch(doHandleAcceptStreams());
     },
 });

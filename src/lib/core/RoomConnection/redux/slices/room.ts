@@ -74,7 +74,8 @@ export const doRoomJoined = createAppAsyncThunk(
         const localMedia = selectAppLocalMedia(getState());
 
         if (error === "room_locked" && isLocked) {
-            dispatch(doRoomConnectionStatusChanged({ status: "room_locked" }));
+            //dispatch(doRoomConnectionStatusChanged({ status: "room_locked" }));
+            throw new Error("room_locked");
         }
 
         if (room) {
