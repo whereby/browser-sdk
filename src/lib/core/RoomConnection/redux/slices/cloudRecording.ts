@@ -1,5 +1,6 @@
 import { createSlice } from "@reduxjs/toolkit";
-import { RootState, createAppAsyncThunk } from "../store";
+import { RootState } from "../store";
+import { createAppAsyncThunk } from "../asyncThunk";
 import { selectSignalConnectionRaw } from "./signalConnection";
 import { CloudRecordingStartedEvent, SignalClient } from "@whereby/jslib-media/src/utils/ServerSocket";
 
