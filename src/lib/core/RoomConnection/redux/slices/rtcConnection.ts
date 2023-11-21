@@ -1,5 +1,6 @@
 import { createSlice } from "@reduxjs/toolkit";
-import { AppDispatch, RootState, createAppAsyncThunk } from "../store";
+import { AppDispatch, RootState } from "../store";
+import { createAppAsyncThunk } from "../asyncThunk";
 import RtcManager from "@whereby/jslib-media/src/webrtc/RtcManager";
 import { selectSignalConnectionRaw } from "./signalConnection";
 import RtcManagerDispatcher, {
