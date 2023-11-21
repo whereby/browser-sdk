@@ -18,7 +18,7 @@ import {
 import { doRoomConnectionStatusChanged } from "./roomConnection";
 import { RemoteParticipant, WaitingParticipant, LocalParticipant } from "../../../../RoomParticipant";
 import { doHandleAcceptStreams, doRtcManagerDestroyed, selectRtcConnectionRaw } from "./rtcConnection";
-import { doSignalDisconnect, doSignalJoinRoom, selectSignalConnectionRaw } from "./signalConnection";
+import { doSignalDisconnect, selectSignalConnectionRaw } from "./signalConnection";
 import { doAppSetRoomKey, selectAppLocalMedia } from "./app";
 import { startAppListening } from "../listenerMiddleware";
 import { RtcStreamAddedPayload } from "@whereby/jslib-media/src/webrtc/RtcManagerDispatcher";
@@ -149,7 +149,7 @@ export const doHandleKnockHandled = createAppAsyncThunk(
 
         if (resolution === "accepted") {
             dispatch(doAppSetRoomKey(payload.metadata.roomKey));
-            dispatch(doSignalJoinRoom());
+            // dispatch(doSignalJoinRoom());
         } else if (resolution === "rejected") {
             dispatch(doRoomConnectionStatusChanged({ status: "knock_rejected" }));
         }
