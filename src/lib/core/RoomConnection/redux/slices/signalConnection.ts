@@ -1,6 +1,6 @@
 import { PayloadAction, createSlice } from "@reduxjs/toolkit";
 import { RootState } from "../store";
-import { createAppAsyncThunk } from "../asyncThunk";
+import { createAppAsyncThunk, createAppThunk } from "../asyncThunk";
 import ServerSocket from "@whereby/jslib-media/src/utils/ServerSocket";
 import { Credentials } from "~/lib/api";
 import { startAppListening } from "../listenerMiddleware";
@@ -56,9 +56,8 @@ function createSocket() {
 export interface SignalConnectionState {
     deviceIdentified: boolean;
     isIdentifyingDevice: boolean;
-    status: "connected" | "connecting" | "disconnected" | "reconnect" | "" | "joining";
+    status: "connected" | "connecting" | "disconnected" | "reconnect" | ""; // the state of the underlying socket.io connection
     socket: ServerSocket | null;
-    isListeningForEvents: boolean;
 }
 
 const initialState: SignalConnectionState = {
@@ -66,100 +65,162 @@ const initialState: SignalConnectionState = {
     isIdentifyingDevice: false,
     status: "",
     socket: null,
-    isListeningForEvents: false,
 };
 
-export const doSignalListenForEvents = createAppAsyncThunk(
-    "signalConnection/doSignalListenForEvents",
-    async (payload, { dispatch, getState }) => {
-        const state = getState();
-        const socket = selectSignalConnectionRaw(state).socket;
+export const signalConnectionSlice = createSlice({
+    name: "signalConnection",
+    initialState,
+    reducers: {
+        socketConnecting: (state) => {
+            return {
+                ...state,
+                status: "connecting",
+            };
+        },
+        socketConnected: (state) => {
+            return {
+                ...state,
+                status: "connected",
+            };
+        },
+        deviceIdentifying: (state) => {
+            return {
+                ...state,
+                isIdentifyingDevice: true,
+            };
+        },
+        deviceIdentified: (state) => {
+            return {
+                ...state,
+                deviceIdentified: true,
+                isIdentifyingDevice: false,
+            };
+        },
+    },
+    extraReducers: (builder) => {
+        builder.addCase(doConnectRoom.rejected, (state) => {
+            return {
+                ...state,
+                status: "disconnected",
+            };
+        });
+        builder.addCase(doSignalDisconnect.fulfilled, (state) => {
+            return {
+                ...state,
+                status: "disconnected",
+            };
+        });
+    },
+});
 
-        if (!socket) {
+export const { deviceIdentifying, deviceIdentified, socketConnected, socketConnecting } = signalConnectionSlice.actions;
+
+/**
+ * Action creators
+ */
+const doSignalSocketConnect = createAppThunk(() => {
+    return (dispatch, getState) => {
+        dispatch(socketConnecting());
+
+        if (selectSignalConnectionSocket(getState())) {
             return;
         }
 
-        /* socket.once("device_identified", () => {
-            dispatch(doSignalJoinRoom());
-        });*/
+        const socket = createSocket();
+
+        socket.on("connect", () => {
+            dispatch(socketConnected());
+        });
+
+        socket.once("device_identified", () => {
+            //dispatch(doSignalJoinRoom());
+        });
 
         socket.on("room_joined", (payload) => {
-            dispatch(doRoomJoined(payload));
+            //dispatch(doRoomJoined(payload));
         });
 
         socket.on("new_client", (payload) => {
-            dispatch(doHandleNewClient(payload));
+            //dispatch(doHandleNewClient(payload));
         });
 
         socket.on("client_left", (payload) => {
-            dispatch(doHandleClientLeft(payload));
+            //dispatch(doHandleClientLeft(payload));
         });
 
         socket.on("audio_enabled", (payload) => {
-            dispatch(doParticipantAudioEnabled(payload));
+            //dispatch(doParticipantAudioEnabled(payload));
         });
 
         socket.on("video_enabled", (payload) => {
-            dispatch(doParticipantVideoEnabled(payload));
+            //dispatch(doParticipantVideoEnabled(payload));
         });
 
         socket.on("client_metadata_received", (payload) => {
-            dispatch(doParticipantMetadataChanged(payload));
+            //dispatch(doParticipantMetadataChanged(payload));
         });
 
         socket.on("chat_message", (payload) => {
-            dispatch(doChatMessageReceived(payload));
+            //dispatch(doChatMessageReceived(payload));
         });
 
         socket.on("room_knocked", (payload) => {
-            dispatch(doHandleWaitingParticipantJoined(payload));
+            //dispatch(doHandleWaitingParticipantJoined(payload));
         });
 
         socket.on("knocker_left", (payload) => {
-            dispatch(doHandleWaitingParticipantLeft(payload));
+            //dispatch(doHandleWaitingParticipantLeft(payload));
         });
 
         socket.on("knock_handled", (payload) => {
-            dispatch(doHandleKnockHandled(payload));
+            //dispatch(doHandleKnockHandled(payload));
         });
 
         socket.on("screenshare_started", (payload) => {
-            dispatch(doHandleScreenshareStarted(payload));
+            //dispatch(doHandleScreenshareStarted(payload));
         });
 
         socket.on("screenshare_stopped", (payload) => {
-            dispatch(doHandleScreenshareStopped(payload));
+            //dispatch(doHandleScreenshareStopped(payload));
         });
 
         socket.on("cloud_recording_started", (payload) => {
-            dispatch(doHandleCloudRecordingStarted(payload));
+            //dispatch(doHandleCloudRecordingStarted(payload));
         });
 
         socket.on("cloud_recording_stopped", () => {
-            dispatch(doHandleCloudRecordingStopped());
+            //dispatch(doHandleCloudRecordingStopped());
         });
 
         socket.on("streaming_stopped", () => {
-            dispatch(doHandleStreamingStopped());
+            //dispatch(doHandleStreamingStopped());
         });
 
         socket.getManager().on("reconnect", () => {
-            dispatch(doSignalReconnect());
+            //dispatch(doSignalReconnect());
         });
 
         socket.on("disconnect", () => {
-            dispatch(doSignalDisconnect());
+            //dispatch(doSignalDisconnect());
         });
-    }
-);
 
-export const doSignalReconnect = createAppAsyncThunk(
-    "signalConnection/doSignalReconnect",
-    async (payload, { getState, dispatch }) => {
-        const deviceCredentialsRaw = selectDeviceCredentialsRaw(getState());
-        dispatch(doSignalIdentifyDevice({ deviceCredentials: deviceCredentialsRaw.data }));
+        socket.connect();
+
+        return true;
+    };
+});
+
+export const doSignalIdentifyDevice = createAppThunk((arg: any) => (dispatch, getState) => {
+    const state = getState();
+    const signalSocket = selectSignalConnectionSocket(state);
+
+    if (!signalSocket) {
+        return;
     }
-);
+
+    signalSocket.emit("identify_device", { deviceCredentials: arg.deviceCredentials });
+    dispatch(deviceIdentifying());
+});
 
 export const doSignalDisconnect = createAppAsyncThunk(
     "signalConnection/doSignalDisconnect",
@@ -198,108 +259,43 @@ export const doSignalKnock = createAppAsyncThunk(
     }
 );
 
-export const signalConnectionSlice = createSlice({
-    name: "signalConnection",
-    initialState,
-    reducers: {
-        doSignalSocketConnect: (state) => {
-            let socket = null;
-            if (!state.socket) {
-                socket = createSocket();
-                socket.connect();
-            }
+export const doSignalReconnect = createAppAsyncThunk(
+    "signalConnection/doSignalReconnect",
+    async (payload, { getState, dispatch }) => {
+        const deviceCredentialsRaw = selectDeviceCredentialsRaw(getState());
+        dispatch(doSignalIdentifyDevice({ deviceCredentials: deviceCredentialsRaw.data }));
+    }
+);
 
-            return {
-                ...state,
-                status: "connecting",
-                ...(socket ? { socket } : {}),
-            };
-        },
-        doSignalIdentifyDevice: (
-            state,
-            action: PayloadAction<{ deviceCredentials: Credentials | null | undefined }>
-        ) => {
-            const { deviceCredentials } = action.payload;
-            state.socket?.emit("identify_device", { deviceCredentials });
-            return {
-                ...state,
-                isIdentifyingDevice: true,
-            };
-        },
-        doSignalDeviceIdentified: (state) => {
-            return {
-                ...state,
-                deviceIdentified: true,
-                isIdentifyingDevice: false,
-            };
-        },
-    },
-    extraReducers: (builder) => {
-        builder.addCase(doSignalListenForEvents.pending, (state) => {
-            return {
-                ...state,
-                isListeningForEvents: true,
-            };
-        });
-        builder.addCase(doConnectRoom.fulfilled, (state) => {
-            return {
-                ...state,
-                status: "joining",
-            };
-        });
-        builder.addCase(doConnectRoom.rejected, (state) => {
-            return {
-                ...state,
-                status: "disconnected",
-            };
-        });
-        builder.addCase(doSignalDisconnect.fulfilled, (state) => {
-            return {
-                ...state,
-                status: "disconnected",
-            };
-        });
-    },
-});
-
-export const { doSignalSocketConnect, doSignalIdentifyDevice } = signalConnectionSlice.actions;
-
+/**
+ * Selectors
+ */
 export const selectSignalConnectionRaw = (state: RootState) => state.signalConnection;
 export const selectSignalStatus = (state: RootState) => state.signalConnection.status;
-export const selectSignalIsListeningForEvents = (state: RootState) => state.signalConnection.isListeningForEvents;
+export const selectSignalConnectionSocket = (state: RootState) => state.signalConnection.socket;
 
+/**
+ * Reactors
+ */
 startAppListening({
-    predicate: (action, currentState) => {
-        const signalConnectionRaw = selectSignalConnectionRaw(currentState);
-        const isListeningForEvents = selectSignalIsListeningForEvents(currentState);
-
-        if (!!signalConnectionRaw.socket && !isListeningForEvents) {
-            return true;
-        }
-        return false;
-    },
-    effect: (action, { dispatch }) => {
-        dispatch(doSignalListenForEvents());
-    },
-});
-
-startAppListening({
-    predicate: (action, currentState) => {
+    predicate: (_, currentState) => {
         const wantsToJoin = selectAppWantsToJoin(currentState);
         const signalConnectionStatus = selectSignalStatus(currentState);
 
-        if ((wantsToJoin && signalConnectionStatus === "") || signalConnectionStatus === "disconnected") {
+        if (wantsToJoin && signalConnectionStatus === "") {
             return true;
         }
         return false;
     },
-    effect: (action, { dispatch }) => {
+
+    effect: (_, { dispatch }) => {
+        //dispatch(socketConnecting());
         dispatch(doSignalSocketConnect());
     },
 });
 
 startAppListening({
-    predicate: (action, currentState) => {
+    predicate: (_, currentState, previousState) => {
         const deviceCredentialsRaw = selectDeviceCredentialsRaw(currentState);
         const signalConnectionRaw = selectSignalConnectionRaw(currentState);
 
@@ -312,7 +308,7 @@ startAppListening({
         }
         return false;
     },
-    effect: (action, { dispatch, getState }) => {
+    effect: (_, { dispatch, getState }) => {
         const deviceCredentialsRaw = selectDeviceCredentialsRaw(getState());
 
         dispatch(doSignalIdentifyDevice({ deviceCredentials: deviceCredentialsRaw.data }));
