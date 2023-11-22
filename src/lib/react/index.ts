@@ -1,6 +1,8 @@
-export { default as VideoView } from "./VideoView";
-export { useRoomConnection } from "./useRoomConnection";
+export { default as VideoView } from "./components/VideoView";
+export { default as VideoCell } from "./components/VideoCell";
+export { default as VideoStageLayout } from "./components/VideoStageLayout";
 export { useLocalMedia } from "./useLocalMedia";
+export { useRoomConnection } from "./useRoomConnection";
 
 export type { UseLocalMediaResult } from "./useLocalMedia/types";
 

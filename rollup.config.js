@@ -6,6 +6,7 @@ const { terser } = require("rollup-plugin-terser");
 const pkg = require("./package.json");
 const typescript = require("rollup-plugin-typescript2");
 const { dts } = require("rollup-plugin-dts");
+const css = require("rollup-plugin-import-css");
 
 const peerDependencies = [...Object.keys(pkg.peerDependencies || {})];
 
@@ -54,6 +55,7 @@ const plugins = [
     }),
     commonjs(),
     typescript(),
+    css(),
 ];
 
 module.exports = [

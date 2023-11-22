@@ -1,0 +1,47 @@
+.cellWrapper {
+    padding: env(--layout-groups-cell-padding);
+    margin: env(--layout-groups-cell-margin);
+
+    background: #fff;
+    border-radius: var(--border-radius-large);
+    box-shadow: var(--drop-shadow-small);
+    overflow: hidden;
+}
+
+.avatarWrapper {
+    width: 100%;
+    margin: 0 0 env(--layout-groups-cell-avatar-wrapper-bottom-margin) 0;
+
+    display: flex;
+    flex-flow: row wrap;
+    overflow: hidden;
+
+    .avatar {
+        margin: calc(env(--layout-groups-cell-avatar-grid-gap) / 2);
+        border: 1px solid rgba(0, 0, 0, 0.12);
+        border-radius: var(--border-radius-small);
+
+        &.isPlaceholder {
+            opacity: 0.5;
+            transition: opacity 0.2s ease-in-out;
+        }
+    }
+}
+
+.navWrapper {
+    display: grid;
+    grid-gap: var(--spacing-2);
+    grid-template-columns: auto min-content;
+    align-items: center;
+
+    /* Insets as to total 16px from edge so that avatars align */
+    margin: var(--spacing-1);
+
+    .name {
+        font-weight: var(--font-weight-medium);
+
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }
+}

@@ -1,0 +1,34 @@
+.SelfviewVisibilityToggle {
+    --hide-button-height: 32px;
+    --hide-button-width: 24px;
+    --gap: 2px;
+
+    left: calc(-1 * (var(--hide-button-width) + var(--gap)));
+    padding-right: var(--gap);
+    position: absolute;
+    top: calc(50% - (var(--hide-button-height) / 2));
+    transform: translateX(0);
+    transition: transform 0.1s ease-out;
+    z-index: -1;
+
+    &.isSelfviewVisible {
+        transform: translateX(calc(100% + var(--gap)));
+    }
+}
+
+.arrowButton {
+    align-items: center;
+    background-color: var(--color-grey-light);
+    border-radius: var(--border-radius-large) 2px 2px var(--border-radius-large);
+    border: 0;
+    color: #fff;
+    display: flex;
+    height: var(--hide-button-height);
+    outline: none;
+    padding: var(--spacing-2) 0px var(--spacing-2) var(--spacing-1);
+    width: var(--hide-button-width);
+}
+
+.hideButtonIcon {
+    transform: rotateY(180deg);
+}

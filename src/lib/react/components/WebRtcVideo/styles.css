@@ -1,0 +1,466 @@
+/*  WebRtcVideo */
+
+.WebRtcVideo--zoomed {
+
+    & video {
+        object-fit: cover;
+    }
+}
+
+.WebRtcVideo--draggable {
+    /* Only allow browser to handle the pan-y gesture (disabling other pan / zoom / select gestures
+    as it interferes with drag and drop) */
+    touch-action: pan-y;
+    user-select: none;
+}
+
+.loaderWrapper{
+    align-items: center;
+    display: flex;
+    height: 100%;
+    justify-content: center;
+    position: absolute;
+    width: 100%;
+}
+
+.inlineSpinner {
+    position: absolute;
+    width: 3em;
+    height: 3em;
+    z-index: -1;
+}
+
+.WebRtcVideo {
+    width: 100%;
+    height: 100%;
+
+    .mediaWrapper {
+        width: 100%;
+        height: 100%;
+    }
+
+    .mediaWrapper video {
+        height: 100%;
+        width: 100%;
+        transition: opacity 0.3s ease-out;
+        background-color: var(--color-grey-light);
+    }
+
+    &.switching .mediaWrapper video {
+        opacity: 0;
+    }
+
+    &.mirror .mediaWrapper video {
+        transform: scaleX(-1);
+    }
+
+    &.withRoundedCorners .mediaWrapper video {
+        border-radius: var(--border-radius-small);
+    }
+
+    &.withShadow .mediaWrapper video {
+        box-shadow: var(--drop-shadow-small);
+    }
+
+    &.coLocation .mediaWrapper video {
+        border: 2px solid;
+    }
+
+    &.coLocation--sand_yellow .mediaWrapper video {
+        border-color: var(--color-background-yellow);
+    }
+
+    &.coLocation--success_green .mediaWrapper video {
+        border-color: #14be9e;
+    }
+
+    &.coLocation--error_red .mediaWrapper video {
+        border-color: var(--color-background-error-red);
+    }
+
+    &.coLocation--information_blue .mediaWrapper video {
+        border-color: var(--color-background-info-blue);
+    }
+
+    &.coLocation--pink .mediaWrapper video {
+        border-color: #f0acf6;
+    }
+
+    &.coLocation--purple .mediaWrapper video {
+        border-color: #a182fb;
+    }
+
+    &.coLocation--warning_yellow .mediaWrapper video {
+        border-color: var(--color-background-warning-yellow);
+    }
+
+    &.coLocation--dark_blue .mediaWrapper video {
+        border-color: var(--color-blue-dark);
+    }
+
+    &.isPlaceholder {
+        opacity: 0.5;
+    }
+
+    &.isFloating {
+        transform: translateX(0);
+        transition: transform 0.2s ease-in-out;
+
+        &.isHiddenSelfview {
+            transform: translateX(100%);
+
+            &:hover {
+                transform: translateX(calc(100% - 4px));
+            }
+        }
+
+        &:hover .SelfviewVisibilityToggle {
+            transform: translateX(0);
+        }
+    }
+}
+
+.content {
+    width: 100%;
+    height: 100%;
+
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    position: relative;
+}
+
+/* Show more button on cell hover in non-touch devices */
+
+.moreButton {
+
+    html:not([data-is-touch]) & {
+        opacity: 0;
+    }
+
+    html:not([data-is-touch]) .content:hover & {
+        opacity: 1;
+    }
+}
+
+.topControls {
+    position: absolute;
+    left: 6px;
+    top: 6px;
+
+    .WebRtcVideo--small & {
+        left: 0;
+        top: 0;
+    }
+}
+
+.cross {
+    position: absolute;
+    fill: #fff;
+}
+
+.connectionInterrupted {
+    position: absolute;
+    top: 0;
+    left: 0;
+    bottom: 0;
+    right: 0;
+
+    background-color: var(--color-grey);
+    color: #fff;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    overflow: hidden;
+    padding: 4px;
+    text-align: center;
+
+    > p {
+        margin: 4px;
+    }
+
+    &.withRoundedCorners {
+        border-radius: var(--border-radius-small);
+    }
+
+    &.small {
+        font-size: var(--font-size-small);
+        line-height: var(--font-line-height-small);
+    }
+}
+
+.controls {
+    position: absolute;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    padding: 4px 0;
+
+    .controlsContent {
+        display: flex;
+    }
+}
+
+.nameBanner {
+    margin: 0 4px;
+    background-color: var(--color-grey);
+    color: #fff;
+    display: inline-block;
+
+    border-radius: var(--border-radius-extra-small);
+    font-size: var(--font-size-small);
+    line-height: 22px;
+
+    overflow: hidden;
+    padding: 0 var(--spacing-1);
+
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    user-select: none;
+
+    > span {
+        max-width: 100%;
+
+        > span {
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+    }
+
+    &.isSpotlighted {
+        display: flex;
+        align-items: center;
+        background-color: rgba(106, 111, 253, 0.72); /* color-illustration-blue */
+        padding-left: 2px;
+    }
+
+    &.isScreenshare {
+
+        html:not([data-is-touch]) & {
+            opacity: 0;
+        }
+
+        html:not([data-is-touch]) .content:hover & {
+            opacity: 1;
+        }
+    }
+}
+
+.nameChangeConfirmBtn {
+    background-color: #5c5c5c;
+    font-size: var(--font-size-extra-small);
+    line-height: 20px;
+    margin-top: 1px;
+    margin-right: -3px;
+    font-weight: var(--font-weight-medium);
+}
+
+.switchButton {
+    flex: 0 0 auto;
+    margin-right: 4px;
+    margin-left: auto;
+
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    width: 22px;
+    height: 22px;
+    background-color: var(--color-grey);
+    border-radius: var(--border-radius-extra-small);
+    padding: 0px;
+    border: 0;
+    outline: 0;
+}
+
+.muteIcon {
+    flex: 0 0 auto;
+    margin-left: 4px;
+
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    width: 22px;
+    height: 22px;
+    background-color: var(--theme-color-video-controls-mute);
+    border-radius: var(--border-radius-extra-small);
+
+    overflow: hidden;
+}
+
+.signalIcon {
+    flex: 0 0 auto;
+    margin-right: 4px;
+
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    width: 22px;
+    height: 22px;
+
+    border-radius: var(--border-radius-extra-small);
+
+    overflow: hidden;
+
+    &--small {
+        position: absolute;
+        left: 4px;
+        bottom: 4px;
+
+        width: 18px;
+        height: 18px;
+
+    }
+
+    &--lossy {
+        background-color: #d6b742;
+    }
+
+    &--congested {
+        background-color: var(--color-meeting-red);
+    }
+}
+
+.speakerIconWrapper {
+    flex: 0 0 auto;
+    margin-left: 4px;
+
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    width: 22px;
+    height: 22px;
+    border-radius: var(--border-radius-extra-small);
+
+    &.mutedLocally {
+        background-color: var(--theme-color-video-controls-mute);
+    }
+
+    &.unmutedScreenshare {
+        background-color: var(--color-illustration-green);
+    }
+
+}
+
+.coLocationIcon {
+    flex: 0 0 auto;
+    margin-right: 4px;
+
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    width: 22px;
+    height: 22px;
+    border-radius: var(--border-radius-extra-small);
+    background-color: var(--color-grey-dark);
+
+    &.isScreenshare {
+
+        html:not([data-is-touch]) & {
+            opacity: 0;
+        }
+
+        html:not([data-is-touch]) .content:hover & {
+            opacity: 1;
+        }
+    }
+}
+
+.recIcon {
+    animation: rec 5s infinite linear;
+    background-color: var(--color-meeting-red);
+    border-radius: 100%;
+    height: 12px;
+    width: 12px;
+    margin: var(--spacing-1);
+}
+
+.videoOffIndicator {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    position: absolute;
+    background: #333333;
+    top: 0;
+    left: 0;
+    height: 100%;
+    width: 100%;
+
+    &.withRoundedCorners {
+        border-radius: var(--border-radius-small);
+    }
+
+    .avatarWrapper {
+        pointer-events: none;
+
+        position: relative;
+        width: 80px;
+        height: 80px;
+
+        &.isSmallCell {
+            width: 60px;
+            height: 60px;
+        }
+    }
+}
+
+@keyframes rec {
+    2% { opacity: 0.5; }
+    10% { opacity: 1; }
+}
+
+.floatingMenu {
+    position: absolute;
+    top: var(--spacing-1);
+    right: var(--spacing-1);
+    max-width: calc(100% - var(--spacing-1) * 2);
+
+    /* Show menu on cell hover */
+
+    html:not([data-is-touch]) & {
+        opacity: 0;
+        transition: 0.075s opacity ease-in-out;
+    }
+
+    html:not([data-is-touch]) .content:hover & {
+        opacity: 1;
+    }
+
+    &&:focus-within {
+        opacity: 1;
+    }
+}
+
+.floatingMenu--hidden {
+    visibility: hidden;
+    pointer-events: none;
+}
+
+.stickyReaction {
+    position: absolute;
+    bottom: 5px;
+    right: 12px;
+    cursor: default;
+
+    &.isSmallCell {
+        bottom: 3px;
+        right: 3px;
+    }
+}
+
+.removeStickyReaction {
+    background: none;
+    border: none;
+    position: absolute;
+    right: 15px;
+    top: -30px;
+}
+
+.disablePointerEvents {
+    pointer-events: none;
+}

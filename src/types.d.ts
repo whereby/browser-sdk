@@ -1,3 +1,8 @@
+declare module "*.css" {
+    const content: Record<string, string>;
+    export default content;
+}
+
 declare module "heresy" {
     interface AttrChanged {
         attributeName: string;

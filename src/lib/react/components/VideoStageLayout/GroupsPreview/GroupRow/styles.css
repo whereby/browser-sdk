@@ -1,0 +1,45 @@
+.GroupRow {
+    width: 100%;
+    padding: 12px 12px 12px var(--spacing-3);
+    background: #fff;
+    border-bottom: 1px solid var(--color-grey-extra-light);
+
+    display: flex;
+    flex-flow: row nowrap;
+    align-items: center;
+
+    &:last-child {
+        border-bottom: none;
+    }
+}
+
+.group {
+    flex: 1 1 auto;
+    margin-right: var(--spacing-2);
+
+    display: flex;
+    flex-flow: column nowrap;
+    overflow: hidden;
+
+    .name {
+        font-weight: var(--font-weight-medium);
+
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }
+
+    .desc {
+        color: var(--color-grey);
+        font-size: var(--font-size-small);
+        line-height: var(--font-line-height-small);
+
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }
+}
+
+.button {
+    flex: 0 0 auto;
+}

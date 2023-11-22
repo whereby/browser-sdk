@@ -1,0 +1,12 @@
+.VideoElement {
+    display: flex; /* otherwise it's 3px taller than the video */
+    height: 100%;
+    width: 100%;
+}
+
+:global {
+
+    .VideoElement-bugfixChromeAndroid {
+        border-radius: 1px;
+    }
+}

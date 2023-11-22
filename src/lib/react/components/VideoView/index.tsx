@@ -1,5 +1,5 @@
 import React, { useEffect, useRef } from "react";
-import debounce from "../utils/debounce";
+import debounce from "~/lib/utils/debounce";
 
 interface VideoViewSelfProps {
     stream: MediaStream;

@@ -1,0 +1,93 @@
+/* WebRtcOverflowVideo */
+
+.WebRtcOverflowVideo {
+    position: relative;
+    width: 100%;
+    height: 100%;
+
+    .mediaWrapper {
+        width: 100%;
+        height: 100%;
+    }
+
+    .mediaWrapper video {
+        height: 100%;
+        width: 100%;
+        object-fit: cover;
+        background-color: #000;
+    }
+
+    &.withRoundedCorners {
+
+        .mediaWrapper, .mediaWrapper video {
+            border-radius: var(--border-radius-small);
+        }
+    }
+
+    &.withShadow {
+
+        .mediaWrapper, .mediaWrapper video {
+            box-shadow: var(--drop-shadow-small);
+        }
+    }
+
+    &.mirror .mediaWrapper video {
+        transform: scaleX(-1);
+    }
+
+    &.hiddenContent .mediaWrapper {
+        display: none;
+    }
+}
+
+.content {
+    overflow: visible; /* for audio indicator to be visible */
+}
+
+.overlay {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+}
+
+.avatarWrapper {
+    position: absolute;
+    top: 0;
+    left: 0;
+}
+
+.topControls {
+    position: absolute;
+    top: var(--spacing-1);
+    left: var(--spacing-1);
+}
+
+.cellLayout {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-flow: column nowrap;
+    width: 100%;
+    height: 100%;
+}
+
+.displayNameLabel {
+    width: 100%;
+
+    text-align: center;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    font-size: var(--font-size-small);
+    line-height: var(--font-line-height-small);
+    color: #fff;
+    text-shadow: var(--drop-shadow-small);
+}
+
+.reaction {
+    position: absolute;
+    bottom: -5px;
+    right: -5px;
+}

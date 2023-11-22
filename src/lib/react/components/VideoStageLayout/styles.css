@@ -1,0 +1,43 @@
+.VideoStageLayout {
+    width: 100%;
+    height: 100%;
+    position: relative;
+    user-select: none;
+
+    &.debug {
+        background: #ace5f6;
+    }
+}
+
+.hidden {
+    display: none;
+}
+
+.gridVideoCell {
+    position: absolute;
+    top: 0;
+    left: 0;
+}
+
+.floatingVideoCell {
+    position: fixed;
+    top: 0;
+    left: 0;
+    z-index: var(--app-layer-self-view);
+}
+
+.floatingVideoCellContent {
+    box-shadow: var(--drop-shadow-large);
+}
+
+.overflowBackdrop {
+    background-color: var(--color-grey-light);
+    position: absolute;
+}
+
+.debugShape {
+    position: absolute;
+    background: #00ced1;
+    opacity: 0.3;
+    pointer-events: none;
+}
