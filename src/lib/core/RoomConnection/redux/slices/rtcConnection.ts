@@ -9,7 +9,7 @@ import RtcManagerDispatcher, {
     RtcStreamAddedPayload,
 } from "@whereby/jslib-media/src/webrtc/RtcManagerDispatcher";
 import { createReactor } from "../listenerMiddleware";
-import { doParticipantStreamAdded, selectRemoteParticipants, streamStatusUpdated } from "./remoteParticipants";
+import { participantStreamAdded, selectRemoteParticipants, streamStatusUpdated } from "./remoteParticipants";
 import { selectAppLocalMedia } from "./app";
 import { StreamState } from "~/lib/RoomParticipant";
 
@@ -93,7 +93,7 @@ export const doStreamAdded = createAppAsyncThunk(
             (!remoteParticipant.stream && streamType === "webcam") ||
             (!remoteParticipant.stream && !streamType && remoteParticipant.streams.indexOf(remoteParticipantStream) < 1)
         ) {
-            dispatch(doParticipantStreamAdded({ clientId, streamId: stream.id, stream, streamType }));
+            dispatch(participantStreamAdded({ clientId, streamId: stream.id, stream, streamType }));
         }
         // update remote participant screen share stream
     }
