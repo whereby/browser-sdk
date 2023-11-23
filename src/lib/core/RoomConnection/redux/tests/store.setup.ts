@@ -45,7 +45,6 @@ export function createStore({ initialState, withSignalConnection }: StoreOptions
         initialState.signalConnection = {
             isIdentifyingDevice: false,
             deviceIdentified: true,
-            isListeningForEvents: true,
             status: "connected",
             socket: {
                 on: jest.fn(),
