@@ -5,7 +5,7 @@ import { LocalParticipant } from "~/lib/react";
 import { selectSignalConnectionRaw } from "./signalConnection";
 import { selectAppLocalMedia } from "./app";
 import { selectRtcConnectionRaw } from "./rtcConnection";
-import { doAddScreenshare, doRemoveScreenshare } from "./room";
+// import { doAddScreenshare, doRemoveScreenshare } from "./remoteParticipants";
 
 export interface LocalParticipantState extends LocalParticipant {
     isScreenSharing: boolean;
@@ -85,15 +85,15 @@ export const doStartScreenshare = createAppAsyncThunk(
 
             rtcManager?.addNewStream(screenshareStream.id, screenshareStream, false, true);
 
-            dispatch(
-                doAddScreenshare({
-                    participantId: selfId || "",
-                    id: screenshareStream.id,
-                    hasAudioTrack: false,
-                    stream: screenshareStream,
-                    isLocal: true,
-                })
-            );
+            // dispatch(
+            //     doAddScreenshare({
+            //         participantId: selfId || "",
+            //         id: screenshareStream.id,
+            //         hasAudioTrack: false,
+            //         stream: screenshareStream,
+            //         isLocal: true,
+            //     })
+            // );
         }
     }
 );
@@ -110,7 +110,7 @@ export const doStopScreenshare = createAppAsyncThunk(
         if (screenshareStream && localMedia.screenshareStream) {
             rtcManager?.removeStream(localMedia.screenshareStream.id, localMedia.screenshareStream, null);
             localMedia.stopScreenshare();
-            dispatch(doRemoveScreenshare(screenshareStream.id));
+            // dispatch(doRemoveScreenshare(screenshareStream.id));
         }
     }
 );

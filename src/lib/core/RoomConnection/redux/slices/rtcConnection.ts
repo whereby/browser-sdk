@@ -1,6 +1,6 @@
 import { createSlice } from "@reduxjs/toolkit";
 import { AppDispatch, RootState } from "../store";
-import { createAppAsyncThunk } from "../asyncThunk";
+import { createAppAsyncThunk, createAppThunk } from "../asyncThunk";
 import RtcManager from "@whereby/jslib-media/src/webrtc/RtcManager";
 import { selectSignalConnectionRaw } from "./signalConnection";
 import RtcManagerDispatcher, {
@@ -9,9 +9,9 @@ import RtcManagerDispatcher, {
     RtcStreamAddedPayload,
 } from "@whereby/jslib-media/src/webrtc/RtcManagerDispatcher";
 import { createReactor } from "../listenerMiddleware";
-import { StreamState } from "~/lib/RoomParticipant";
-import { doParticipantStreamAdded, selectRemoteParticipants } from "./room";
+import { participantStreamAdded, selectRemoteParticipants, streamStatusUpdated } from "./remoteParticipants";
 import { selectAppLocalMedia } from "./app";
+import { StreamState } from "~/lib/RoomParticipant";
 
 export interface RtcConnectionState {
     error: unknown;
@@ -41,7 +41,7 @@ export const createWebRtcEmitter = (dispatch: AppDispatch) => {
             } else if (eventName === "rtc_manager_destroyed") {
                 dispatch(doRtcManagerDestroyed());
             } else {
-                console.log(`Unhandled RTC event ${eventName}`);
+                //console.log(`Unhandled RTC event ${eventName}`);
             }
         },
     };
@@ -49,10 +49,9 @@ export const createWebRtcEmitter = (dispatch: AppDispatch) => {
 
 export const doRtcManagerCreated = createAppAsyncThunk(
     "rtcConnection/doRtcManagerCreated",
-    async (payload: RtcManagerCreatedPayload, { getState, dispatch }) => {
+    async (payload: RtcManagerCreatedPayload, { getState }) => {
         const { rtcManager } = payload;
         const localMedia = selectAppLocalMedia(getState());
-        const remoteParticipants = selectRemoteParticipants(getState());
 
         localMedia?.addRtcManager(rtcManager);
 
@@ -63,10 +62,6 @@ export const doRtcManagerCreated = createAppAsyncThunk(
                 !localMedia.isMicrophoneEnabled(),
                 !localMedia.isCameraEnabled()
             );
-        }
-
-        if (remoteParticipants.length > 0) {
-            dispatch(doHandleAcceptStreams());
         }
 
         return rtcManager;
@@ -98,87 +93,63 @@ export const doStreamAdded = createAppAsyncThunk(
             (!remoteParticipant.stream && streamType === "webcam") ||
             (!remoteParticipant.stream && !streamType && remoteParticipant.streams.indexOf(remoteParticipantStream) < 1)
         ) {
-            dispatch(doParticipantStreamAdded({ clientId, streamId: stream.id, stream, streamType }));
+            dispatch(participantStreamAdded({ clientId, streamId: stream.id, stream, streamType }));
         }
         // update remote participant screen share stream
     }
 );
 
-export const doHandleAcceptStreams = createAppAsyncThunk(
-    "rtcConnection/doHandleAcceptStreams",
-    async (payload, { getState }) => {
-        const state = getState();
-        const rtcManager = selectRtcConnectionRaw(state).rtcManager;
-        const remoteParticipants = selectRemoteParticipants(state);
+export interface StreamStatusUpdate {
+    clientId: string;
+    streamId: string;
+    state: StreamState;
+}
 
-        if (!rtcManager) {
-            throw new Error("No rtc manager");
-        }
+const doHandleAcceptStreams = createAppThunk((payload: StreamStatusUpdate[]) => (dispatch, getState) => {
+    const state = getState();
+    const rtcManager = selectRtcConnectionRaw(state).rtcManager;
+    const remoteParticipants = selectRemoteParticipants(state);
 
-        const shouldAcceptNewClients = rtcManager.shouldAcceptStreamsFromBothSides?.();
-        const activeBreakout = false; // TODO: Remove this once breakout is implemented
-        const myselfBroadcasting = false; // TODO: Remove once breakout is implemented
-
-        remoteParticipants.forEach((participant) => {
-            const { id: participantId, streams, newJoiner } = participant;
-
-            streams.forEach((stream) => {
-                const { id: streamId, state: streamState } = stream;
-                let newState: StreamState | undefined = undefined;
-
-                // Determine the new state of the client, equivalent of "reactAcceptStreams"
-
-                const isInSameRoomOrGroupOrClientBroadcasting = true; // TODO: Remove once breakout is implemented
-
-                if (isInSameRoomOrGroupOrClientBroadcasting) {
-                    if (streamState !== "done_accept") {
-                        newState = `${newJoiner && streamId === "0" ? "new" : "to"}_accept`;
-                    }
-                } else if (myselfBroadcasting) {
-                    if (streamState !== "done_accept") {
-                        newState = `${newJoiner && streamId === "0" ? "done" : "old"}_accept`;
-                    }
-                } else {
-                    if (streamState !== "done_unaccept") {
-                        newState = "to_unaccept";
-                    }
-                }
-
-                if (!newState) {
-                    return;
-                }
-
-                if (
-                    newState === "to_accept" ||
-                    (newState === "new_accept" && shouldAcceptNewClients) ||
-                    (newState === "old_accept" && !shouldAcceptNewClients)
-                ) {
-                    console.log(`Accepting stream ${streamId} from ${participantId}`);
-                    rtcManager.acceptNewStream({
-                        streamId: streamId === "0" ? participantId : streamId,
-                        clientId: participantId,
-                        shouldAddLocalVideo: streamId === "0",
-                        activeBreakout,
-                    });
-                } else if (newState === "new_accept" || newState === "old_accept") {
-                    // do nothing - let this be marked as done_accept as the rtcManager
-                    // will trigger accept from other end
-                } else if (newState === "to_unaccept") {
-                    console.log(`Disconnecting stream ${streamId} from ${participantId}`);
-                    rtcManager.disconnect(streamId === "0" ? participantId : streamId, activeBreakout);
-                } else if (newState !== "done_accept") {
-                    console.warn(`Stream state not handled: ${newState} for ${participantId}-${streamId}`);
-                    return;
-                } else {
-                    // done_accept
-                }
-
-                // Update stream state
-                participant.updateStreamState(streamId, streamState.replace(/to_|new_|old_/, "done_") as StreamState);
-            });
-        });
+    if (!rtcManager) {
+        throw new Error("No rtc manager");
     }
-);
+
+    const activeBreakout = false;
+    const shouldAcceptNewClients = rtcManager.shouldAcceptStreamsFromBothSides?.();
+
+    const updates: StreamStatusUpdate[] = [];
+
+    for (const { clientId, streamId, state } of payload) {
+        const participant = remoteParticipants.find((p) => p.id === clientId);
+        if (!participant) continue;
+        if (
+            state === "to_accept" ||
+            (state === "new_accept" && shouldAcceptNewClients) ||
+            (state === "old_accept" && !shouldAcceptNewClients) // these are done to enable broadcast in legacy/p2p
+        ) {
+            rtcManager.acceptNewStream({
+                streamId: streamId === "0" ? clientId : streamId,
+                clientId,
+                shouldAddLocalVideo: streamId === "0",
+                activeBreakout,
+            });
+        } else if (state === "new_accept" || state === "old_accept") {
+            // do nothing - let this be marked as done_accept as the rtcManager
+            // will trigger accept from other end
+        } else if (state === "to_unaccept") {
+            rtcManager?.disconnect(streamId === "0" ? clientId : streamId, activeBreakout);
+        } else if (state !== "done_accept") {
+            continue;
+            // console.warn(`Stream state not handled: ${state} for ${clientId}-${streamId}`);
+        } else {
+            // done_accept
+        }
+        updates.push({ clientId, streamId, state: state.replace(/to_|new_|old_/, "done_") as StreamState });
+        //participant.updateStreamState(streamId, state.replace(/to_|new_|old_/, "done_") as StreamState);
+    }
+
+    dispatch(streamStatusUpdated(updates));
+});
 
 export const doConnectRtc = createAppAsyncThunk(
     "rtcConnection/doConnectRtc",
@@ -275,33 +246,39 @@ createReactor((_, { dispatch, getState }) => {
 // react accept streams
 createReactor((_, { dispatch, getState }) => {
     const rtcConnection = selectRtcConnectionRaw(getState());
-    const oldRemoteParticipants = selectRemoteParticipants(getState());
     const remoteParticipants = selectRemoteParticipants(getState());
 
-    if (rtcConnection.status !== "ready" || oldRemoteParticipants === remoteParticipants) {
+    if (rtcConnection.status !== "ready") {
         return;
     }
 
-    let shouldAcceptStreams = false;
+    const shouldAcceptStreams = true;
+    const upd = [];
+    // This should actually use remoteClientViews for its handling
+    for (const client of remoteParticipants) {
+        const { streams, id: clientId, newJoiner } = client;
 
-    remoteParticipants.forEach((participant) => {
-        const { streams } = participant;
-        const isInSameRoomOrGroupOrClientBroadcasting = true; // TODO: Remove once breakout is implemented
-
-        streams.forEach((stream) => {
-            const { state: streamState } = stream;
-
-            if (isInSameRoomOrGroupOrClientBroadcasting) {
-                if (streamState === "done_accept") return;
-                shouldAcceptStreams = true;
+        for (let i = 0; i < streams.length; i++) {
+            const streamId = streams[i].id;
+            const state = streams[i].state;
+            if (shouldAcceptStreams) {
+                // Already connected
+                if (state === "done_accept") continue;
+                upd.push({
+                    clientId,
+                    streamId,
+                    state: `${newJoiner && streamId === "0" ? "new" : "to"}_accept` as StreamState,
+                });
             } else {
-                if (streamState === "done_unaccept") return;
-                shouldAcceptStreams = true;
+                // Already disconnected
+                if (state === "done_unaccept") continue;
+                upd.push({ clientId, streamId, state: "to_unaccept" as StreamState });
             }
-        });
-    });
+        }
+    }
 
-    if (shouldAcceptStreams) {
-        dispatch(doHandleAcceptStreams());
+    if (0 < upd.length) {
+        console.log("Handle accept streams");
+        dispatch(doHandleAcceptStreams(upd));
     }
 });

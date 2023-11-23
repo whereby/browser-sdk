@@ -11,12 +11,12 @@ import { createServices } from "../../services";
 import { doAppJoin } from "./redux/slices/app";
 import { selectRoomConnectionStatus } from "./redux/slices/roomConnection";
 import {
-    doAcceptWaitingParticipant,
-    doRejectWaitingParticipant,
+    // doAcceptWaitingParticipant,
+    // doRejectWaitingParticipant,
     selectRemoteParticipants,
-    selectScreenshares,
-    selectWaitingParticipants,
-} from "./redux/slices/room";
+    //selectScreenshares,
+    //selectWaitingParticipants,
+} from "./redux/slices/remoteParticipants";
 import { doSendChatMessage, selectChatMessages } from "./redux/slices/chat";
 import {
     doEnableAudio,
@@ -233,7 +233,7 @@ export default class RoomConnection extends TypedEventTarget {
                                 detail: {
                                     localParticipant: this.localParticipant,
                                     remoteParticipants: this.remoteParticipants,
-                                    waitingParticipants: selectWaitingParticipants(state),
+                                    waitingParticipants: [], //selectWaitingParticipants(state),
                                 },
                             })
                         );
@@ -266,7 +266,7 @@ export default class RoomConnection extends TypedEventTarget {
                 this.dispatchEvent(new RoomConnectionEvent("chat_messages_changed", { detail: chatMessages }));
             }
 
-            const waitingParticipants = selectWaitingParticipants(state);
+            const waitingParticipants: WaitingParticipant[] = []; // selectWaitingParticipants(state);
 
             if (waitingParticipants !== this.waitingParticipants) {
                 this.waitingParticipants = waitingParticipants;
@@ -277,7 +277,7 @@ export default class RoomConnection extends TypedEventTarget {
                 );
             }
 
-            const screenshares = selectScreenshares(state);
+            const screenshares: Screenshare[] = []; //selectScreenshares(state);
 
             if (screenshares !== this.screenshares) {
                 this.screenshares = screenshares;
@@ -400,11 +400,11 @@ export default class RoomConnection extends TypedEventTarget {
     }
 
     public acceptWaitingParticipant(participantId: string) {
-        this._store.dispatch(doAcceptWaitingParticipant({ participantId }));
+        // this._store.dispatch(doAcceptWaitingParticipant({ participantId }));
     }
 
     public rejectWaitingParticipant(participantId: string) {
-        this._store.dispatch(doRejectWaitingParticipant({ participantId }));
+        // this._store.dispatch(doRejectWaitingParticipant({ participantId }));
     }
 
     public updateStreamResolution({ streamId, width, height }: { streamId?: string; width: number; height: number }) {
