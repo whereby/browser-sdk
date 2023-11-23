@@ -8,7 +8,7 @@ import RtcManagerDispatcher, {
     RtcManagerCreatedPayload,
     RtcStreamAddedPayload,
 } from "@whereby/jslib-media/src/webrtc/RtcManagerDispatcher";
-import { startAppListening } from "../listenerMiddleware";
+import { createReactor } from "../listenerMiddleware";
 import { StreamState } from "~/lib/RoomParticipant";
 import { doParticipantStreamAdded, selectRemoteParticipants } from "./room";
 import { selectAppLocalMedia } from "./app";
@@ -263,60 +263,45 @@ export const { doRtcManagerDestroyed } = rtcConnectionSlice.actions;
 
 export const selectRtcConnectionRaw = (state: RootState) => state.rtcConnection;
 
-startAppListening({
-    predicate: (action, currentState) => {
-        const rtcConnection = selectRtcConnectionRaw(currentState);
-        const signalConnection = selectSignalConnectionRaw(currentState);
+createReactor((_, { dispatch, getState }) => {
+    const rtcConnection = selectRtcConnectionRaw(getState());
+    const signalConnection = selectSignalConnectionRaw(getState());
 
-        if (
-            !rtcConnection.dispatcherCreated &&
-            !rtcConnection.isCreatingDispatcher &&
-            signalConnection.isListeningForEvents &&
-            signalConnection.socket
-        ) {
-            return true;
-        }
-        return false;
-    },
-    effect: (action, { dispatch, cancelActiveListeners }) => {
-        cancelActiveListeners();
+    if (!rtcConnection.dispatcherCreated && !rtcConnection.isCreatingDispatcher && signalConnection.socket) {
         dispatch(doConnectRtc());
-    },
+    }
 });
 
 // react accept streams
-startAppListening({
-    predicate: (_action, currentState, previousState) => {
-        const rtcConnection = selectRtcConnectionRaw(currentState);
-        const oldRemoteParticipants = selectRemoteParticipants(previousState);
-        const remoteParticipants = selectRemoteParticipants(currentState);
+createReactor((_, { dispatch, getState }) => {
+    const rtcConnection = selectRtcConnectionRaw(getState());
+    const oldRemoteParticipants = selectRemoteParticipants(getState());
+    const remoteParticipants = selectRemoteParticipants(getState());
 
-        if (rtcConnection.status !== "ready" || oldRemoteParticipants === remoteParticipants) {
-            return false;
-        }
+    if (rtcConnection.status !== "ready" || oldRemoteParticipants === remoteParticipants) {
+        return;
+    }
 
-        let shouldAcceptStreams = false;
+    let shouldAcceptStreams = false;
 
-        remoteParticipants.forEach((participant) => {
-            const { streams } = participant;
-            const isInSameRoomOrGroupOrClientBroadcasting = true; // TODO: Remove once breakout is implemented
+    remoteParticipants.forEach((participant) => {
+        const { streams } = participant;
+        const isInSameRoomOrGroupOrClientBroadcasting = true; // TODO: Remove once breakout is implemented
 
-            streams.forEach((stream) => {
-                const { state: streamState } = stream;
+        streams.forEach((stream) => {
+            const { state: streamState } = stream;
 
-                if (isInSameRoomOrGroupOrClientBroadcasting) {
-                    if (streamState === "done_accept") return;
-                    shouldAcceptStreams = true;
-                } else {
-                    if (streamState === "done_unaccept") return;
-                    shouldAcceptStreams = true;
-                }
-            });
+            if (isInSameRoomOrGroupOrClientBroadcasting) {
+                if (streamState === "done_accept") return;
+                shouldAcceptStreams = true;
+            } else {
+                if (streamState === "done_unaccept") return;
+                shouldAcceptStreams = true;
+            }
         });
+    });
 
-        return shouldAcceptStreams;
-    },
-    effect: (_action, { dispatch }) => {
+    if (shouldAcceptStreams) {
         dispatch(doHandleAcceptStreams());
-    },
+    }
 });
