@@ -11,8 +11,8 @@ import { createServices } from "../../services";
 import { doAppJoin } from "./redux/slices/app";
 import { selectRoomConnectionStatus } from "./redux/slices/roomConnection";
 import {
-    doAcceptWaitingParticipant,
-    doRejectWaitingParticipant,
+    // doAcceptWaitingParticipant,
+    // doRejectWaitingParticipant,
     selectRemoteParticipants,
     //selectScreenshares,
     //selectWaitingParticipants,
@@ -400,11 +400,11 @@ export default class RoomConnection extends TypedEventTarget {
     }
 
     public acceptWaitingParticipant(participantId: string) {
-        this._store.dispatch(doAcceptWaitingParticipant({ participantId }));
+        // this._store.dispatch(doAcceptWaitingParticipant({ participantId }));
     }
 
     public rejectWaitingParticipant(participantId: string) {
-        this._store.dispatch(doRejectWaitingParticipant({ participantId }));
+        // this._store.dispatch(doRejectWaitingParticipant({ participantId }));
     }
 
     public updateStreamResolution({ streamId, width, height }: { streamId?: string; width: number; height: number }) {
