@@ -1,7 +1,7 @@
 import { PayloadAction, createSlice } from "@reduxjs/toolkit";
 
 import { ConnectionStatus } from "../../../RoomConnection";
-import { startAppListening } from "../listenerMiddleware";
+import { createReactor, startAppListening } from "../listenerMiddleware";
 import { RootState } from "../store";
 import { createAppAsyncThunk } from "../asyncThunk";
 import {
@@ -99,18 +99,12 @@ export const { doRoomConnectionStatusChanged } = roomConnectionSlice.actions;
 export const selectRoomConnectionRaw = (state: RootState) => state.roomConnection;
 export const selectRoomConnectionStatus = (state: RootState) => state.roomConnection.status;
 
-startAppListening({
-    predicate: (_, currentState) => {
-        const hasFetchedDeviceCredentials = selectHasFetchedDeviceCredentials(currentState);
-        const hasOrganizationIdFetched = !!selectOrganizationId(currentState);
-        const roomConnectionStatus = selectRoomConnectionStatus(currentState);
+createReactor((_, { dispatch, getState }) => {
+    const hasFetchedDeviceCredentials = selectHasFetchedDeviceCredentials(getState());
+    const hasOrganizationIdFetched = selectOrganizationId(getState());
+    const roomConnectionStatus = selectRoomConnectionStatus(getState());
 
-        if (hasFetchedDeviceCredentials && hasOrganizationIdFetched && roomConnectionStatus !== "connecting") {
-            return true;
-        }
-        return false;
-    },
-    effect: (_, { dispatch }) => {
+    if (hasFetchedDeviceCredentials && hasOrganizationIdFetched && roomConnectionStatus !== "connecting") {
         dispatch(doConnectRoom());
-    },
+    }
 });
