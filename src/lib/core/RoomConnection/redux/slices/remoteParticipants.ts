@@ -1,11 +1,6 @@
 import { PayloadAction, createSlice } from "@reduxjs/toolkit";
 import { RootState } from "../store";
-import {
-    AudioEnabledEvent,
-    ClientMetadataReceivedEvent,
-    SignalClient,
-    VideoEnabledEvent,
-} from "@whereby/jslib-media/src/utils/ServerSocket";
+import { SignalClient } from "@whereby/jslib-media/src/utils/ServerSocket";
 import { RemoteParticipant, StreamState } from "~/lib/RoomParticipant";
 import { StreamStatusUpdate } from "./rtcConnection";
 import { signalEvents } from "./signalConnection";
@@ -120,42 +115,6 @@ export const remoteParticipantsSlice = createSlice({
                 stream,
             });
         },
-        participantAudioEnabled: (state, action: PayloadAction<AudioEnabledEvent>) => {
-            const { clientId, isAudioEnabled } = action.payload;
-            const remoteParticipant = state.remoteParticipants.find((p) => p.id === clientId);
-
-            if (!remoteParticipant) {
-                return state;
-            }
-
-            return updateParticipant(state, clientId, {
-                isAudioEnabled,
-            });
-        },
-        participantVideoEnabled: (state, action: PayloadAction<VideoEnabledEvent>) => {
-            const { clientId, isVideoEnabled } = action.payload;
-            const remoteParticipant = state.remoteParticipants.find((p) => p.id === clientId);
-
-            if (!remoteParticipant) {
-                return state;
-            }
-
-            return updateParticipant(state, clientId, {
-                isVideoEnabled,
-            });
-        },
-        participantMetadataChanged: (state, action: PayloadAction<ClientMetadataReceivedEvent>) => {
-            const { clientId, displayName } = action.payload.payload;
-            const remoteParticipant = state.remoteParticipants.find((p) => p.id === clientId);
-
-            if (!remoteParticipant) {
-                return state;
-            }
-
-            return updateParticipant(state, clientId, {
-                displayName,
-            });
-        },
     },
     extraReducers: (builder) => {
         builder.addCase(signalEvents.roomJoined, (state, action) => {
@@ -194,16 +153,31 @@ export const remoteParticipantsSlice = createSlice({
 
             return removeClient(state, clientId);
         });
+        builder.addCase(signalEvents.audioEnabled, (state, action) => {
+            const { clientId, isAudioEnabled } = action.payload;
+
+            return updateParticipant(state, clientId, {
+                isAudioEnabled,
+            });
+        });
+        builder.addCase(signalEvents.videoEnabled, (state, action) => {
+            const { clientId, isVideoEnabled } = action.payload;
+
+            return updateParticipant(state, clientId, {
+                isVideoEnabled,
+            });
+        });
+        builder.addCase(signalEvents.clientMetadataReceived, (state, action) => {
+            const { clientId, displayName } = action.payload.payload;
+
+            return updateParticipant(state, clientId, {
+                displayName,
+            });
+        });
     },
 });
 
-export const {
-    participantStreamAdded,
-    participantAudioEnabled,
-    participantVideoEnabled,
-    participantMetadataChanged,
-    streamStatusUpdated,
-} = remoteParticipantsSlice.actions;
+export const { participantStreamAdded, streamStatusUpdated } = remoteParticipantsSlice.actions;
 
 export const selectRemoteParticipantsRaw = (state: RootState) => state.remoteParticipants;
 export const selectRemoteParticipants = (state: RootState) => state.remoteParticipants.remoteParticipants;
