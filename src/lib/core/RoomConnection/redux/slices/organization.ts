@@ -2,7 +2,7 @@ import { createSlice } from "@reduxjs/toolkit";
 import { RootState } from "../store";
 import { createAppAsyncThunk } from "../asyncThunk";
 import Organization from "../../../../api/models/Organization";
-import { startAppListening } from "../listenerMiddleware";
+import { createReactor } from "../listenerMiddleware";
 import { selectAppWantsToJoin } from "./app";
 import { selectDeviceCredentialsRaw } from "./deviceCredentials";
 
@@ -67,24 +67,18 @@ export const organizationSlice = createSlice({
 export const selectOrganizationRaw = (state: RootState) => state.organization;
 export const selectOrganizationId = (state: RootState) => state.organization.data?.organizationId;
 
-startAppListening({
-    predicate: (action, currentState) => {
-        const wantsToJoin = selectAppWantsToJoin(currentState);
-        const organization = selectOrganizationRaw(currentState);
-        const deviceCredentials = selectDeviceCredentialsRaw(currentState);
+createReactor((_, { dispatch, getState }) => {
+    const wantsToJoin = selectAppWantsToJoin(getState());
+    const organization = selectOrganizationRaw(getState());
+    const deviceCredentials = selectDeviceCredentialsRaw(getState());
 
-        if (
-            wantsToJoin &&
-            !organization.data &&
-            !organization.isFetching &&
-            !organization.error &&
-            !deviceCredentials.isFetching
-        ) {
-            return true;
-        }
-        return false;
-    },
-    effect: (action, { dispatch }) => {
+    if (
+        wantsToJoin &&
+        !organization.data &&
+        !organization.isFetching &&
+        !organization.error &&
+        !deviceCredentials.isFetching
+    ) {
         dispatch(doOrganizationFetch());
-    },
+    }
 });
