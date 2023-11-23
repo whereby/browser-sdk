@@ -17,7 +17,6 @@ import {
     selectScreenshares,
     selectWaitingParticipants,
 } from "./redux/slices/room";
-import { doSignalKnock } from "./redux/slices/signalConnection";
 import { doSendChatMessage, selectChatMessages } from "./redux/slices/chat";
 import {
     doEnableAudio,
@@ -384,7 +383,7 @@ export default class RoomConnection extends TypedEventTarget {
     }
 
     public knock() {
-        this._store.dispatch(doSignalKnock());
+        //this._store.dispatch(doSignalKnock());
     }
 
     public leave() {
