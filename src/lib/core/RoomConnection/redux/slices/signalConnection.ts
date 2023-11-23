@@ -1,4 +1,4 @@
-import { createSlice, createAction, ThunkDispatch, AnyAction } from "@reduxjs/toolkit";
+import { createSlice, createAction, ThunkDispatch, AnyAction, PayloadAction } from "@reduxjs/toolkit";
 import { RootState } from "../store";
 import { createAppThunk } from "../asyncThunk";
 import { createReactor } from "../listenerMiddleware";
@@ -110,9 +110,10 @@ export const signalConnectionSlice = createSlice({
                 status: "connecting",
             };
         },
-        socketConnected: (state) => {
+        socketConnected: (state, action: PayloadAction<ServerSocket>) => {
             return {
                 ...state,
+                socket: action.payload,
                 status: "connected",
             };
         },
@@ -155,7 +156,7 @@ const doSignalSocketConnect = createAppThunk(() => {
 
         const socket = createSocket();
 
-        socket.on("connect", () => dispatch(socketConnected()));
+        socket.on("connect", () => dispatch(socketConnected(socket)));
         socket.on("device_identified", () => dispatch(deviceIdentified()));
         socket.on("disconnect", () => dispatch(doSignalDisconnect()));
         socket.getManager().on("reconnect", () => dispatch(doSignalReconnect()));
@@ -219,6 +220,7 @@ createReactor((_, { dispatch, getState }) => {
 
     if (
         deviceCredentialsRaw.data &&
+        signalConnectionRaw.status === "connected" &&
         !signalConnectionRaw.deviceIdentified &&
         !signalConnectionRaw.isIdentifyingDevice
     ) {

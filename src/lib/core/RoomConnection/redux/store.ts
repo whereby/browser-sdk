@@ -8,7 +8,7 @@ import { cloudRecordingSlice } from "./slices/cloudRecording";
 import { deviceCredentialsSlice } from "./slices/deviceCredentials";
 import { localParticipantSlice } from "./slices/localParticipant";
 import { organizationSlice } from "./slices/organization";
-import { roomSlice } from "./slices/room";
+import { remoteParticipantsSlice } from "./slices/remoteParticipants";
 import { roomConnectionSlice } from "./slices/roomConnection";
 import { signalConnectionSlice } from "./slices/signalConnection";
 import { rtcConnectionSlice } from "./slices/rtcConnection";
@@ -21,7 +21,7 @@ export const rootReducer = combineReducers({
     deviceCredentials: deviceCredentialsSlice.reducer,
     localParticipant: localParticipantSlice.reducer,
     organization: organizationSlice.reducer,
-    room: roomSlice.reducer,
+    remoteParticipants: remoteParticipantsSlice.reducer,
     roomConnection: roomConnectionSlice.reducer,
     rtcConnection: rtcConnectionSlice.reducer,
     signalConnection: signalConnectionSlice.reducer,
