@@ -5,27 +5,18 @@ import {
     AudioEnabledEvent,
     ClientLeftEvent,
     ClientMetadataReceivedEvent,
-    KnockAcceptedEvent,
-    KnockRejectedEvent,
     KnockerLeftEvent,
     NewClientEvent,
-    RoomJoinedEvent,
     RoomKnockedEvent,
     VideoEnabledEvent,
-    ScreenshareStartedEvent,
-    ScreenshareStoppedEvent,
 } from "@whereby/jslib-media/src/utils/ServerSocket";
-import { doRoomConnectionStatusChanged } from "./roomConnection";
-import { RemoteParticipant, WaitingParticipant, LocalParticipant } from "../../../../RoomParticipant";
-import { doHandleAcceptStreams, doRtcManagerDestroyed, selectRtcConnectionRaw } from "./rtcConnection";
-import { doSignalDisconnect, selectSignalConnectionRaw, signalEvents } from "./signalConnection";
-import { doAppSetRoomKey, selectAppLocalMedia } from "./app";
-import { startAppListening } from "../listenerMiddleware";
+
+import { RemoteParticipant, WaitingParticipant } from "../../../../RoomParticipant";
+import { StreamStatusUpdate } from "./rtcConnection";
+import { selectSignalConnectionRaw, signalEvents } from "./signalConnection";
 import { RtcStreamAddedPayload } from "@whereby/jslib-media/src/webrtc/RtcManagerDispatcher";
 import { Screenshare } from "~/lib/react";
-import { doSetLocalParticipant, selectSelfId } from "./localParticipant";
 import { doHandleRecorderClientJoined } from "./cloudRecording";
-import { doHandleStreamingStarted } from "./streaming";
 
 const NON_PERSON_ROLES = ["recorder", "streamer"];
 
@@ -211,9 +202,16 @@ export const remoteParticipantsSlice = createSlice({
     initialState,
     reducers: {
         streamStatusUpdated: (state, action: PayloadAction<StreamStatusUpdate[]>) => {
-            return {
-                ...state,
-            };
+            action.payload.forEach((update) => {
+                const { clientId, streamId, state: streamState } = update;
+                const remoteParticipant = state.remoteParticipants.find((p) => p.id === clientId);
+
+                if (!remoteParticipant) {
+                    return;
+                }
+
+                remoteParticipant.updateStreamState(streamId, streamState);
+            });
         },
         doParticipantStreamAdded: (state, action: PayloadAction<RtcStreamAddedPayload>) => {
             const { clientId, stream } = action.payload;
@@ -339,6 +337,7 @@ export const {
     doHandleWaitingParticipantLeft,
     doAddScreenshare,
     doRemoveScreenshare,
+    streamStatusUpdated,
 } = remoteParticipantsSlice.actions;
 
 export const selectRemoteParticipantsRaw = (state: RootState) => state.remoteParticipants;
