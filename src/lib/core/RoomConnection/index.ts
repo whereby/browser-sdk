@@ -28,6 +28,7 @@ import {
 } from "./redux/slices/localParticipant";
 import { doStartCloudRecording, doStopCloudRecording, selectCloudRecordingRaw } from "./redux/slices/cloudRecording";
 import { selectStreamingRaw } from "./redux/slices/streaming";
+import { doAcceptWaitingParticipant, doRejectWaitingParticipant } from "./redux/slices/waitingParticipants";
 
 export interface RoomConnectionOptions {
     displayName?: string; // Might not be needed at all
@@ -400,11 +401,11 @@ export default class RoomConnection extends TypedEventTarget {
     }
 
     public acceptWaitingParticipant(participantId: string) {
-        // this._store.dispatch(doAcceptWaitingParticipant({ participantId }));
+        this._store.dispatch(doAcceptWaitingParticipant({ participantId }));
     }
 
     public rejectWaitingParticipant(participantId: string) {
-        // this._store.dispatch(doRejectWaitingParticipant({ participantId }));
+        this._store.dispatch(doRejectWaitingParticipant({ participantId }));
     }
 
     public updateStreamResolution({ streamId, width, height }: { streamId?: string; width: number; height: number }) {
