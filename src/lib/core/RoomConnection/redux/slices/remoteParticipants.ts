@@ -1,20 +1,25 @@
 import { PayloadAction, createSlice } from "@reduxjs/toolkit";
 import { RootState } from "../store";
-import { createAppAsyncThunk } from "../asyncThunk";
 import {
     AudioEnabledEvent,
-    ClientLeftEvent,
     ClientMetadataReceivedEvent,
-    NewClientEvent,
+    SignalClient,
     VideoEnabledEvent,
 } from "@whereby/jslib-media/src/utils/ServerSocket";
 import { RemoteParticipant, StreamState } from "~/lib/RoomParticipant";
 import { StreamStatusUpdate } from "./rtcConnection";
 import { signalEvents } from "./signalConnection";
 import { RtcStreamAddedPayload } from "@whereby/jslib-media/src/webrtc/RtcManagerDispatcher";
-import { doHandleRecorderClientJoined } from "./cloudRecording";
 
 const NON_PERSON_ROLES = ["recorder", "streamer"];
+
+export interface RemoteParticipantState {
+    remoteParticipants: RemoteParticipant[];
+}
+
+const initialState: RemoteParticipantState = {
+    remoteParticipants: [],
+};
 
 function findParticipant(state: RemoteParticipantState, participantId: string) {
     const index = state.remoteParticipants.findIndex((c) => c.id === participantId);
@@ -39,6 +44,31 @@ function updateParticipant(state: RemoteParticipantState, participantId: string,
     };
 }
 
+function addParticipant(state: RemoteParticipantState, participant: SignalClient) {
+    const { participant: foundParticipant } = findParticipant(state, participant.id);
+
+    if (foundParticipant) {
+        console.warn(`Client already existing ${participant.id}. Ignoring`);
+        return state;
+    }
+
+    const remoteParticipant: RemoteParticipant = {
+        id: participant.id,
+        displayName: participant.displayName,
+        isAudioEnabled: participant.isAudioEnabled,
+        isVideoEnabled: participant.isVideoEnabled,
+        isLocalParticipant: false,
+        stream: null,
+        streams: participant.streams.map((streamId) => ({ id: streamId, state: "new_accept" })),
+        newJoiner: true,
+    };
+
+    return {
+        ...state,
+        remoteParticipants: [...state.remoteParticipants, remoteParticipant],
+    };
+}
+
 function updateStreamState(
     state: RemoteParticipantState,
     participantId: string,
@@ -58,44 +88,12 @@ function updateStreamState(
     return updateParticipant(state, participantId, { streams });
 }
 
-export interface RemoteParticipantState {
-    remoteParticipants: RemoteParticipant[];
+function removeClient(state: RemoteParticipantState, participantId: string) {
+    return {
+        ...state,
+        remoteParticipants: state.remoteParticipants.filter((c) => c.id !== participantId),
+    };
 }
-
-const initialState: RemoteParticipantState = {
-    remoteParticipants: [],
-};
-
-export const doHandleNewClient = createAppAsyncThunk(
-    "room/doHandleNewClient",
-    async (payload: NewClientEvent, { dispatch }) => {
-        const { client } = payload;
-
-        if (client.role.roleName === "recorder") {
-            dispatch(doHandleRecorderClientJoined({ client }));
-        }
-        if (client.role.roleName === "streamer") {
-            // this._handleStreamingStarted();
-        }
-        if (NON_PERSON_ROLES.includes(client.role.roleName)) {
-            return;
-        }
-        const remoteParticipant: RemoteParticipant = {
-            id: client.id,
-            displayName: client.displayName,
-            isAudioEnabled: client.isAudioEnabled,
-            isVideoEnabled: client.isVideoEnabled,
-            isLocalParticipant: false,
-            stream: null,
-            streams: client.streams.map((streamId) => ({ id: streamId, state: "new_accept" })),
-            newJoiner: true,
-        };
-
-        return {
-            remoteParticipant,
-        };
-    }
-);
 
 export const remoteParticipantsSlice = createSlice({
     name: "remoteParticipants",
@@ -110,7 +108,7 @@ export const remoteParticipantsSlice = createSlice({
 
             return newState;
         },
-        doParticipantStreamAdded: (state, action: PayloadAction<RtcStreamAddedPayload>) => {
+        participantStreamAdded: (state, action: PayloadAction<RtcStreamAddedPayload>) => {
             const { clientId, stream } = action.payload;
             const remoteParticipant = state.remoteParticipants.find((p) => p.id === clientId);
 
@@ -122,7 +120,7 @@ export const remoteParticipantsSlice = createSlice({
                 stream,
             });
         },
-        doParticipantAudioEnabled: (state, action: PayloadAction<AudioEnabledEvent>) => {
+        participantAudioEnabled: (state, action: PayloadAction<AudioEnabledEvent>) => {
             const { clientId, isAudioEnabled } = action.payload;
             const remoteParticipant = state.remoteParticipants.find((p) => p.id === clientId);
 
@@ -134,7 +132,7 @@ export const remoteParticipantsSlice = createSlice({
                 isAudioEnabled,
             });
         },
-        doParticipantVideoEnabled: (state, action: PayloadAction<VideoEnabledEvent>) => {
+        participantVideoEnabled: (state, action: PayloadAction<VideoEnabledEvent>) => {
             const { clientId, isVideoEnabled } = action.payload;
             const remoteParticipant = state.remoteParticipants.find((p) => p.id === clientId);
 
@@ -146,7 +144,7 @@ export const remoteParticipantsSlice = createSlice({
                 isVideoEnabled,
             });
         },
-        doParticipantMetadataChanged: (state, action: PayloadAction<ClientMetadataReceivedEvent>) => {
+        participantMetadataChanged: (state, action: PayloadAction<ClientMetadataReceivedEvent>) => {
             const { clientId, displayName } = action.payload.payload;
             const remoteParticipant = state.remoteParticipants.find((p) => p.id === clientId);
 
@@ -157,15 +155,6 @@ export const remoteParticipantsSlice = createSlice({
             return updateParticipant(state, clientId, {
                 displayName,
             });
-        },
-        doHandleClientLeft: (state, action: PayloadAction<ClientLeftEvent>) => {
-            const { clientId } = action.payload;
-            const remoteParticipants = state.remoteParticipants.filter((p) => p.id !== clientId);
-
-            return {
-                ...state,
-                remoteParticipants,
-            };
         },
     },
     extraReducers: (builder) => {
@@ -191,19 +180,30 @@ export const remoteParticipantsSlice = createSlice({
                     })),
             };
         });
+        builder.addCase(signalEvents.newClient, (state, action) => {
+            const { client } = action.payload;
+
+            if (NON_PERSON_ROLES.includes(client.role.roleName)) {
+                return state;
+            }
+
+            return addParticipant(state, client);
+        });
+        builder.addCase(signalEvents.clientLeft, (state, action) => {
+            const { clientId } = action.payload;
+
+            return removeClient(state, clientId);
+        });
     },
 });
 
 export const {
-    doParticipantStreamAdded,
-    doParticipantAudioEnabled,
-    doParticipantVideoEnabled,
-    doParticipantMetadataChanged,
-    doHandleClientLeft,
+    participantStreamAdded,
+    participantAudioEnabled,
+    participantVideoEnabled,
+    participantMetadataChanged,
     streamStatusUpdated,
 } = remoteParticipantsSlice.actions;
 
 export const selectRemoteParticipantsRaw = (state: RootState) => state.remoteParticipants;
 export const selectRemoteParticipants = (state: RootState) => state.remoteParticipants.remoteParticipants;
-//export const selectWaitingParticipants = (state: RootState) => state.room.waitingParticipants;
-//export const selectScreenshares = (state: RootState) => state.room.screenshares;
