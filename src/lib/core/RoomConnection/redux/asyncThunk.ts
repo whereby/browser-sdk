@@ -17,6 +17,6 @@ export function createAppAsyncThunk<ReturnType, ArgType = undefined>(
 
 export type AppThunk<ReturnType = void> = ThunkAction<ReturnType, RootState, unknown, AnyAction>;
 
-export function createAppThunk(thunk: (...args: unknown[]) => AppThunk) {
+export function createAppThunk<A = void>(thunk: (args: A) => AppThunk) {
     return thunk;
 }
