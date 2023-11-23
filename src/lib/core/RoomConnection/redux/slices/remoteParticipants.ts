@@ -18,7 +18,7 @@ import {
 import { doRoomConnectionStatusChanged } from "./roomConnection";
 import { RemoteParticipant, WaitingParticipant, LocalParticipant } from "../../../../RoomParticipant";
 import { doHandleAcceptStreams, doRtcManagerDestroyed, selectRtcConnectionRaw } from "./rtcConnection";
-import { doSignalDisconnect, selectSignalConnectionRaw } from "./signalConnection";
+import { doSignalDisconnect, selectSignalConnectionRaw, signalEvents } from "./signalConnection";
 import { doAppSetRoomKey, selectAppLocalMedia } from "./app";
 import { startAppListening } from "../listenerMiddleware";
 import { RtcStreamAddedPayload } from "@whereby/jslib-media/src/webrtc/RtcManagerDispatcher";
@@ -67,55 +67,7 @@ const initialState: RoomState = {
     screenshares: [],
 };
 
-export const doRoomJoined = createAppAsyncThunk(
-    "room/doRoomJoined",
-    async (payload: RoomJoinedEvent, { dispatch, getState }) => {
-        const { error, isLocked, room, selfId } = payload;
-        const localMedia = selectAppLocalMedia(getState());
-
-        if (error === "room_locked" && isLocked) {
-            //dispatch(doRoomConnectionStatusChanged({ status: "room_locked" }));
-            throw new Error("room_locked");
-        }
-
-        if (room) {
-            const { clients, knockers } = room;
-
-            const localClient = clients.find((c) => c.id === selfId);
-            if (!localClient) throw new Error("Missing local client");
-
-            const recorderClient = clients.find((c) => c.role.roleName === "recorder");
-            if (recorderClient) {
-                dispatch(doHandleRecorderClientJoined({ client: recorderClient }));
-            }
-
-            const streamerClient = clients.find((c) => c.role.roleName === "streamer");
-            if (streamerClient) {
-                dispatch(doHandleStreamingStarted());
-            }
-
-            const remoteParticipants = clients
-                .filter((c) => c.id !== selfId)
-                .filter((c) => !NON_PERSON_ROLES.includes(c.role.roleName))
-                .map((c) => new RemoteParticipant({ ...c, newJoiner: false }));
-
-            const localParticipant = new LocalParticipant({ ...localClient, stream: localMedia?.stream || undefined });
-
-            dispatch(doSetLocalParticipant(localParticipant));
-
-            return {
-                localParticipant,
-                remoteParticipants,
-                waitingParticipants: knockers.map((knocker) => ({
-                    id: knocker.clientId,
-                    displayName: knocker.displayName,
-                })),
-            };
-        }
-    }
-);
-
-export const doRoomLeft = createAppAsyncThunk("room/doRoomLeft", async (payload, { dispatch, getState }) => {
+/*export const doRoomLeft = createAppAsyncThunk("remoteParticipants/doRoomLeft", async (payload, { dispatch, getState }) => {
     dispatch(doRoomConnectionStatusChanged({ status: "disconnecting" }));
     const state = getState();
     const rtcManager = selectRtcConnectionRaw(state).rtcManager;
@@ -134,9 +86,9 @@ export const doRoomLeft = createAppAsyncThunk("room/doRoomLeft", async (payload,
     if (socket) {
         dispatch(doSignalDisconnect());
     }
-});
+});*/
 
-export const doHandleKnockHandled = createAppAsyncThunk(
+/*export const doHandleKnockHandled = createAppAsyncThunk(
     "room/doHandleKnockHandled",
     async (payload: KnockAcceptedEvent | KnockRejectedEvent, { dispatch, getState }) => {
         const { clientId, resolution } = payload;
@@ -154,9 +106,9 @@ export const doHandleKnockHandled = createAppAsyncThunk(
             dispatch(doRoomConnectionStatusChanged({ status: "knock_rejected" }));
         }
     }
-);
+);*/
 
-export const doHandleScreenshareStarted = createAppAsyncThunk(
+/*export const doHandleScreenshareStarted = createAppAsyncThunk(
     "room/doHandleScreenshareStarted",
     async (payload: ScreenshareStartedEvent, { dispatch, getState }) => {
         const { clientId: participantId, streamId: id, hasAudioTrack } = payload;
@@ -183,9 +135,9 @@ export const doHandleScreenshareStarted = createAppAsyncThunk(
             isLocal: false,
         };
     }
-);
+);*/
 
-export const doHandleScreenshareStopped = createAppAsyncThunk(
+/*export const doHandleScreenshareStopped = createAppAsyncThunk(
     "room/doHandleScreenshareStopped",
     async (payload: ScreenshareStoppedEvent, { getState }) => {
         const { clientId: participantId, streamId: id } = payload;
@@ -200,7 +152,7 @@ export const doHandleScreenshareStopped = createAppAsyncThunk(
 
         return id;
     }
-);
+);*/
 
 export const doAcceptWaitingParticipant = createAppAsyncThunk(
     "room/doAcceptWaitingParticipant",
@@ -254,10 +206,15 @@ export const doHandleNewClient = createAppAsyncThunk(
     }
 );
 
-export const roomSlice = createSlice({
-    name: "room",
+export const remoteParticipantsSlice = createSlice({
+    name: "remoteParticipants",
     initialState,
     reducers: {
+        streamStatusUpdated: (state, action: PayloadAction<StreamStatusUpdate[]>) => {
+            return {
+                ...state,
+            };
+        },
         doParticipantStreamAdded: (state, action: PayloadAction<RtcStreamAddedPayload>) => {
             const { clientId, stream } = action.payload;
             const remoteParticipant = state.remoteParticipants.find((p) => p.id === clientId);
@@ -356,38 +313,17 @@ export const roomSlice = createSlice({
         },
     },
     extraReducers: (builder) => {
-        builder.addCase(doRoomJoined.fulfilled, (state, action) => {
-            if (!action.payload) return state;
+        builder.addCase(signalEvents.roomJoined, (state, action) => {
+            if (!action.payload?.room) return state;
+            const selfId = action.payload.selfId;
+            const { clients } = action.payload.room;
 
             return {
                 ...state,
-                localParticipant: action.payload.localParticipant,
-                remoteParticipants: action.payload.remoteParticipants,
-                waitingParticipants: action.payload.waitingParticipants,
-            };
-        });
-        builder.addCase(doHandleScreenshareStarted.fulfilled, (state, action) => {
-            if (!action.payload) return state;
-
-            return {
-                ...state,
-                screenshares: [...state.screenshares, action.payload],
-            };
-        });
-        builder.addCase(doHandleScreenshareStopped.fulfilled, (state, action) => {
-            if (!action.payload) return state;
-
-            return {
-                ...state,
-                screenshares: state.screenshares.filter((s) => s.id !== action.payload),
-            };
-        });
-        builder.addCase(doHandleNewClient.fulfilled, (state, action) => {
-            if (!action.payload) return state;
-
-            return {
-                ...state,
-                remoteParticipants: [...state.remoteParticipants, action.payload.remoteParticipant],
+                remoteParticipants: clients
+                    .filter((c) => c.id !== selfId)
+                    .filter((c) => !NON_PERSON_ROLES.includes(c.role.roleName))
+                    .map((c) => new RemoteParticipant({ ...c, newJoiner: false })),
             };
         });
     },
@@ -403,16 +339,9 @@ export const {
     doHandleWaitingParticipantLeft,
     doAddScreenshare,
     doRemoveScreenshare,
-} = roomSlice.actions;
+} = remoteParticipantsSlice.actions;
 
-export const selectRoomRaw = (state: RootState) => state.room;
-export const selectRemoteParticipants = (state: RootState) => state.room.remoteParticipants;
-export const selectWaitingParticipants = (state: RootState) => state.room.waitingParticipants;
-export const selectScreenshares = (state: RootState) => state.room.screenshares;
-
-startAppListening({
-    actionCreator: doRoomJoined.fulfilled,
-    effect: (action, { dispatch }) => {
-        dispatch(doRoomConnectionStatusChanged({ status: "connected" }));
-    },
-});
+export const selectRemoteParticipantsRaw = (state: RootState) => state.remoteParticipants;
+export const selectRemoteParticipants = (state: RootState) => state.remoteParticipants.remoteParticipants;
+//export const selectWaitingParticipants = (state: RootState) => state.room.waitingParticipants;
+//export const selectScreenshares = (state: RootState) => state.room.screenshares;

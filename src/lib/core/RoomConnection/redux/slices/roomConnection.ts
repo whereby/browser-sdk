@@ -1,7 +1,7 @@
 import { PayloadAction, createSlice } from "@reduxjs/toolkit";
 
 import { ConnectionStatus } from "../../../RoomConnection";
-import { createReactor, startAppListening } from "../listenerMiddleware";
+import { createReactor } from "../listenerMiddleware";
 import { RootState } from "../store";
 import { createAppAsyncThunk } from "../asyncThunk";
 import {
@@ -11,10 +11,8 @@ import {
     selectAppRoomName,
     selectAppSdkVersion,
 } from "./app";
-import { selectHasFetchedDeviceCredentials } from "./deviceCredentials";
 import { selectOrganizationId } from "./organization";
-import { doRoomJoined } from "./room";
-import { selectSignalConnectionRaw } from "./signalConnection";
+import { selectSignalConnectionRaw, signalEvents } from "./signalConnection";
 
 export interface RoomConnectionState {
     status: ConnectionStatus;
@@ -45,17 +43,11 @@ export const roomConnectionSlice = createSlice({
             };
         });
 
-        builder.addCase(doRoomJoined.fulfilled, (state) => {
+        builder.addCase(signalEvents.roomJoined, (state) => {
+            //TODO: Handle error
             return {
                 ...state,
                 status: "connected",
-            };
-        });
-
-        builder.addCase(doRoomJoined.rejected, (state) => {
-            return {
-                ...state,
-                status: "room_locked", // TODO: fix, we might have other errors
             };
         });
     },
@@ -100,11 +92,11 @@ export const selectRoomConnectionRaw = (state: RootState) => state.roomConnectio
 export const selectRoomConnectionStatus = (state: RootState) => state.roomConnection.status;
 
 createReactor((_, { dispatch, getState }) => {
-    const hasFetchedDeviceCredentials = selectHasFetchedDeviceCredentials(getState());
     const hasOrganizationIdFetched = selectOrganizationId(getState());
     const roomConnectionStatus = selectRoomConnectionStatus(getState());
+    const signalIdentified = selectSignalConnectionRaw(getState()).deviceIdentified;
 
-    if (hasFetchedDeviceCredentials && hasOrganizationIdFetched && roomConnectionStatus !== "connecting") {
+    if (signalIdentified && hasOrganizationIdFetched && roomConnectionStatus === "initializing") {
         dispatch(doConnectRoom());
     }
 });

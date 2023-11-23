@@ -5,7 +5,7 @@ import { LocalParticipant } from "~/lib/react";
 import { selectSignalConnectionRaw } from "./signalConnection";
 import { selectAppLocalMedia } from "./app";
 import { selectRtcConnectionRaw } from "./rtcConnection";
-import { doAddScreenshare, doRemoveScreenshare } from "./room";
+import { doAddScreenshare, doRemoveScreenshare } from "./remoteParticipants";
 
 export interface LocalParticipantState extends LocalParticipant {
     isScreenSharing: boolean;
