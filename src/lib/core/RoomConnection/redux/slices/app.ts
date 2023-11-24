@@ -1,6 +1,8 @@
 import { PayloadAction, createSlice } from "@reduxjs/toolkit";
 import { RootState } from "../store";
 import LocalMedia from "~/lib/LocalMedia";
+import { createAppThunk } from "../asyncThunk";
+import { doSignalDisconnect } from "./signalConnection";
 
 export interface AppState {
     wantsToJoin: boolean;
@@ -38,6 +40,9 @@ export const appSlice = createSlice({
                 wantsToJoin: true,
             };
         },
+        appLeft: (state) => {
+            return { ...state, wantsToJoin: false };
+        },
         doAppSetRoomKey: (state, action: PayloadAction<string>) => {
             return {
                 ...state,
@@ -47,7 +52,12 @@ export const appSlice = createSlice({
     },
 });
 
-export const { doAppJoin, doAppSetRoomKey } = appSlice.actions;
+export const { doAppJoin, appLeft, doAppSetRoomKey } = appSlice.actions;
+
+export const doAppLeave = createAppThunk(() => (dispatch) => {
+    dispatch(doSignalDisconnect());
+    dispatch(appLeft());
+});
 
 export const selectAppRaw = (state: RootState) => state.app;
 export const selectAppWantsToJoin = (state: RootState) => state.app.wantsToJoin;
