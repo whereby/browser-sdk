@@ -4,15 +4,11 @@ import { ConnectionStatus } from "../../../RoomConnection";
 import { createReactor } from "../listenerMiddleware";
 import { RootState } from "../store";
 import { createAppAsyncThunk } from "../asyncThunk";
-import {
-    selectAppDisplayName,
-    selectAppLocalMedia,
-    selectAppRoomKey,
-    selectAppRoomName,
-    selectAppSdkVersion,
-} from "./app";
+import { selectAppDisplayName, selectAppRoomKey, selectAppRoomName, selectAppSdkVersion } from "./app";
+
 import { selectOrganizationId } from "./organization";
 import { selectSignalConnectionRaw, signalEvents } from "./signalConnection";
+import { selectLocalMediaInstance, selectLocalMediaStarted } from "./localMedia";
 
 export interface RoomConnectionState {
     status: ConnectionStatus;
@@ -61,13 +57,13 @@ export const doConnectRoom = createAppAsyncThunk("roomConnection/doConnectRoom",
     const displayName = selectAppDisplayName(state);
     const sdkVersion = selectAppSdkVersion(state);
     const organizationId = selectOrganizationId(state);
-    const localMedia = selectAppLocalMedia(state);
+    const localMedia = selectLocalMediaInstance(state);
 
     socket?.emit("join_room", {
         avatarUrl: null,
         config: {
-            isAudioEnabled: localMedia?.isMicrophoneEnabled || false,
-            isVideoEnabled: localMedia?.isCameraEnabled || false,
+            isAudioEnabled: localMedia?.isMicrophoneEnabled() || false,
+            isVideoEnabled: localMedia?.isCameraEnabled() || false,
         },
         deviceCapabilities: { canScreenshare: true },
         displayName: displayName,
@@ -95,8 +91,9 @@ createReactor((_, { dispatch, getState }) => {
     const hasOrganizationIdFetched = selectOrganizationId(getState());
     const roomConnectionStatus = selectRoomConnectionStatus(getState());
     const signalIdentified = selectSignalConnectionRaw(getState()).deviceIdentified;
+    const localMediaStarted = selectLocalMediaStarted(getState());
 
-    if (signalIdentified && hasOrganizationIdFetched && roomConnectionStatus === "initializing") {
+    if (localMediaStarted && signalIdentified && hasOrganizationIdFetched && roomConnectionStatus === "initializing") {
         dispatch(doConnectRoom());
     }
 });
