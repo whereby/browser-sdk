@@ -8,7 +8,7 @@ type Logger = Pick<Console, "debug" | "error" | "log" | "warn" | "info">;
 // new
 import { createStore } from "./redux/store";
 import { createServices } from "../../services";
-import { doAppJoin } from "./redux/slices/app";
+import { doAppJoin, doAppLeave } from "./redux/slices/app";
 import { selectRoomConnectionStatus } from "./redux/slices/roomConnection";
 import {
     // doAcceptWaitingParticipant,
@@ -389,7 +389,7 @@ export default class RoomConnection extends TypedEventTarget {
     }
 
     public leave() {
-        // this._store.dispatch(doRoomLeft());
+        this._store.dispatch(doAppLeave());
         // this._unsubscribe();
     }
 
