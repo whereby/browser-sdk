@@ -3,8 +3,9 @@ import { RootState } from "../store";
 import { createAppAsyncThunk } from "../asyncThunk";
 import { LocalParticipant } from "~/lib/react";
 import { selectSignalConnectionRaw } from "./signalConnection";
-import { selectAppLocalMedia } from "./app";
 import { selectRtcConnectionRaw } from "./rtcConnection";
+import { selectLocalMediaInstance } from "./localMedia";
+import { doAppJoin } from "./app";
 // import { doAddScreenshare, doRemoveScreenshare } from "./remoteParticipants";
 
 export interface LocalParticipantState extends LocalParticipant {
@@ -65,7 +66,7 @@ export const doStartScreenshare = createAppAsyncThunk(
     async (payload, { dispatch, getState }) => {
         const state = getState();
         const rtcManager = selectRtcConnectionRaw(state).rtcManager;
-        const localMedia = selectAppLocalMedia(state);
+        const localMedia = selectLocalMediaInstance(state);
         const selfId = selectSelfId(state);
 
         const screenshareStream = localMedia?.screenshareStream || (await localMedia?.startScreenshare());
@@ -103,7 +104,7 @@ export const doStopScreenshare = createAppAsyncThunk(
     async (payload, { dispatch, getState }) => {
         const state = getState();
         const rtcManager = selectRtcConnectionRaw(state).rtcManager;
-        const localMedia = selectAppLocalMedia(state);
+        const localMedia = selectLocalMediaInstance(state);
 
         const screenshareStream = localMedia?.screenshareStream;
 
@@ -127,6 +128,13 @@ export const localParticipantSlice = createSlice({
         },
     },
     extraReducers: (builder) => {
+        builder.addCase(doAppJoin, (state, action) => {
+            return {
+                ...state,
+                displayName: action.payload.displayName,
+            };
+        });
+
         builder.addCase(doEnableAudio.fulfilled, (state, action) => {
             return {
                 ...state,

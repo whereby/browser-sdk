@@ -8,7 +8,6 @@ export interface AppState {
     roomKey: string | null;
     displayName: string | null;
     sdkVersion: string | null;
-    localMedia: LocalMedia | null;
 }
 
 const initialState: AppState = {
@@ -17,7 +16,6 @@ const initialState: AppState = {
     roomKey: null,
     displayName: null,
     sdkVersion: null,
-    localMedia: null,
 };
 
 export const appSlice = createSlice({
@@ -57,4 +55,3 @@ export const selectAppRoomName = (state: RootState) => state.app.roomName;
 export const selectAppRoomKey = (state: RootState) => state.app.roomKey;
 export const selectAppDisplayName = (state: RootState) => state.app.displayName;
 export const selectAppSdkVersion = (state: RootState) => state.app.sdkVersion;
-export const selectAppLocalMedia = (state: RootState) => state.app.localMedia;

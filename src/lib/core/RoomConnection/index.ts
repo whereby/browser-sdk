@@ -29,6 +29,7 @@ import {
 import { doStartCloudRecording, doStopCloudRecording, selectCloudRecordingRaw } from "./redux/slices/cloudRecording";
 import { selectStreamingRaw } from "./redux/slices/streaming";
 import { doAcceptWaitingParticipant, doRejectWaitingParticipant } from "./redux/slices/waitingParticipants";
+import { selectLocalMediaStream } from "./redux/slices/localMedia";
 
 export interface RoomConnectionOptions {
     displayName?: string; // Might not be needed at all
@@ -258,7 +259,7 @@ export default class RoomConnection extends TypedEventTarget {
             const localParticipant = selectLocalParticipantRaw(state);
 
             if (localParticipant !== this.localParticipant) {
-                this.localParticipant = localParticipant;
+                this.localParticipant = { ...localParticipant, stream: selectLocalMediaStream(state) };
             }
 
             const chatMessages = selectChatMessages(state);

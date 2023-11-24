@@ -10,8 +10,8 @@ import RtcManagerDispatcher, {
 } from "@whereby/jslib-media/src/webrtc/RtcManagerDispatcher";
 import { createReactor } from "../listenerMiddleware";
 import { participantStreamAdded, selectRemoteParticipants, streamStatusUpdated } from "./remoteParticipants";
-import { selectAppLocalMedia } from "./app";
 import { StreamState } from "~/lib/RoomParticipant";
+import { selectLocalMediaInstance } from "./localMedia";
 
 export interface RtcConnectionState {
     error: unknown;
@@ -51,7 +51,7 @@ export const doRtcManagerCreated = createAppAsyncThunk(
     "rtcConnection/doRtcManagerCreated",
     async (payload: RtcManagerCreatedPayload, { getState }) => {
         const { rtcManager } = payload;
-        const localMedia = selectAppLocalMedia(getState());
+        const localMedia = selectLocalMediaInstance(getState());
 
         localMedia?.addRtcManager(rtcManager);
 
@@ -157,7 +157,7 @@ export const doConnectRtc = createAppAsyncThunk(
         const state = getState();
         const socket = selectSignalConnectionRaw(state).socket;
         const dispatcher = selectRtcConnectionRaw(state).rtcManagerDispatcher;
-        const localMedia = selectAppLocalMedia(state);
+        const localMedia = selectLocalMediaInstance(state);
 
         if (dispatcher) {
             throw new Error("RTC dispatcher already exists");
@@ -278,7 +278,6 @@ createReactor((_, { dispatch, getState }) => {
     }
 
     if (0 < upd.length) {
-        console.log("Handle accept streams");
         dispatch(doHandleAcceptStreams(upd));
     }
 });
