@@ -1,4 +1,4 @@
-import { AnyAction, createSlice, PayloadAction, ThunkDispatch } from "@reduxjs/toolkit";
+import { AnyAction, createAction, createSlice, PayloadAction, ThunkDispatch } from "@reduxjs/toolkit";
 import { RootState } from "../store";
 import { createAppThunk } from "../asyncThunk";
 import RtcManager from "@whereby/jslib-media/src/webrtc/RtcManager";
@@ -9,10 +9,20 @@ import RtcManagerDispatcher, {
     RtcStreamAddedPayload,
 } from "@whereby/jslib-media/src/webrtc/RtcManagerDispatcher";
 import { createReactor } from "../listenerMiddleware";
-import { participantStreamAdded, selectRemoteParticipants, streamStatusUpdated } from "./remoteParticipants";
+import { selectRemoteParticipants, streamStatusUpdated } from "./remoteParticipants";
 import { StreamState } from "~/lib/RoomParticipant";
 import { selectLocalMediaInstance, selectLocalMediaStarted } from "./localMedia";
 import { selectAppWantsToJoin } from "./app";
+
+function createRtcEventAction<T>(name: string) {
+    return createAction<T>(`rtcConnection/event/${name}`);
+}
+
+export const rtcEvents = {
+    rtcManagerCreated: createRtcEventAction<RtcManagerCreatedPayload>("rtcManagerCreated"),
+    rtcManagerDestroyed: createRtcEventAction<void>("rtcManagerDestroyed"),
+    streamAdded: createRtcEventAction<RtcStreamAddedPayload>("streamAdded"),
+};
 
 export const createWebRtcEmitter = (dispatch: ThunkDispatch<RootState, unknown, AnyAction>) => {
     return {
@@ -20,7 +30,7 @@ export const createWebRtcEmitter = (dispatch: ThunkDispatch<RootState, unknown, 
             if (eventName === "rtc_manager_created") {
                 dispatch(doRtcManagerCreated(data as RtcManagerCreatedPayload));
             } else if (eventName === "stream_added") {
-                dispatch(doStreamAdded(data as RtcStreamAddedPayload));
+                dispatch(rtcEvents.streamAdded(data as RtcStreamAddedPayload));
             } else if (eventName === "rtc_manager_destroyed") {
                 dispatch(rtcManagerDestroyed());
             } else {
@@ -33,6 +43,7 @@ export const createWebRtcEmitter = (dispatch: ThunkDispatch<RootState, unknown, 
 /**
  * Reducer
  */
+
 export interface RtcConnectionState {
     dispatcherCreated: boolean;
     error: unknown;
@@ -198,33 +209,6 @@ const doHandleAcceptStreams = createAppThunk((payload: StreamStatusUpdate[]) => 
     dispatch(streamStatusUpdated(updates));
 });
 
-export const doStreamAdded = createAppThunk((payload: RtcStreamAddedPayload) => (dispatch, getState) => {
-    const state = getState();
-    const remoteParticipants = selectRemoteParticipants(state);
-
-    const { clientId, stream, streamId, streamType } = payload;
-
-    if (!streamId) {
-        payload.streamId = stream.id;
-    }
-
-    const remoteParticipant = remoteParticipants.find((p) => p.id === clientId);
-    if (!remoteParticipant) {
-        return;
-    }
-
-    const remoteParticipantStream =
-        remoteParticipant.streams.find((s) => s.id === streamId) || remoteParticipant.streams[0];
-
-    if (
-        (remoteParticipant.stream && remoteParticipant.stream.id === streamId) ||
-        (!remoteParticipant.stream && streamType === "webcam") ||
-        (!remoteParticipant.stream && !streamType && remoteParticipant.streams.indexOf(remoteParticipantStream) < 1)
-    ) {
-        dispatch(participantStreamAdded({ clientId, streamId: stream.id, stream, streamType }));
-    }
-});
-
 export const doRtcManagerCreated = createAppThunk((payload: RtcManagerCreatedPayload) => (dispatch, getState) => {
     const { rtcManager } = payload;
     const localMedia = selectLocalMediaInstance(getState());
@@ -319,7 +303,6 @@ createReactor((_, { dispatch, getState }) => {
             }
         }
     }
-
     if (0 < upd.length) {
         dispatch(doHandleAcceptStreams(upd));
     }
