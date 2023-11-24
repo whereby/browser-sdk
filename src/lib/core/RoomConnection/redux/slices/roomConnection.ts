@@ -78,7 +78,6 @@ export const doConnectRoom = createAppAsyncThunk("roomConnection/doConnectRoom",
         externalId: null,
     });
 
-    localMedia?.start();
     return true;
 });
 
