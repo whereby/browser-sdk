@@ -183,6 +183,7 @@ export const doSignalIdentifyDevice = createAppThunk(
 
 export const doSignalDisconnect = createAppThunk(() => (dispatch, getState) => {
     const socket = selectSignalConnectionRaw(getState()).socket;
+    socket?.emit("leave_room");
     socket?.disconnect();
     dispatch(socketDisconnected());
 });
