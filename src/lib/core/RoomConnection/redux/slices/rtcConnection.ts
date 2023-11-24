@@ -12,6 +12,7 @@ import { createReactor } from "../listenerMiddleware";
 import { participantStreamAdded, selectRemoteParticipants, streamStatusUpdated } from "./remoteParticipants";
 import { StreamState } from "~/lib/RoomParticipant";
 import { selectLocalMediaInstance, selectLocalMediaStarted } from "./localMedia";
+import { selectAppWantsToJoin } from "./app";
 
 export const createWebRtcEmitter = (dispatch: ThunkDispatch<RootState, unknown, AnyAction>) => {
     return {
@@ -62,6 +63,11 @@ export const rtcConnectionSlice = createSlice({
     name: "rtcConnection",
     initialState,
     reducers: {
+        rtcDisconnected: () => {
+            return {
+                ...initialState,
+            };
+        },
         rtcDispatcherCreated: (state, action: PayloadAction<RtcManagerDispatcher>) => {
             return {
                 ...state,
@@ -97,7 +103,7 @@ export const rtcConnectionSlice = createSlice({
 /**
  * Action creators
  */
-export const { rtcDispatcherCreated, rtcManagerCreated, rtcManagerDestroyed, rtcManagerInitialized } =
+export const { rtcDispatcherCreated, rtcDisconnected, rtcManagerCreated, rtcManagerDestroyed, rtcManagerInitialized } =
     rtcConnectionSlice.actions;
 
 export const doConnectRtc = createAppThunk(() => (dispatch, getState) => {
@@ -137,6 +143,14 @@ export const doConnectRtc = createAppThunk(() => (dispatch, getState) => {
     });
 
     dispatch(rtcDispatcherCreated(rtcManagerDispatcher));
+});
+
+export const doDisconnectRtc = createAppThunk(() => (dispatch, getState) => {
+    const { rtcManager } = selectRtcConnectionRaw(getState());
+    if (rtcManager) {
+        rtcManager.disconnectAll();
+    }
+    dispatch(rtcDisconnected());
 });
 
 const doHandleAcceptStreams = createAppThunk((payload: StreamStatusUpdate[]) => (dispatch, getState) => {
@@ -259,6 +273,16 @@ createReactor((_, { dispatch, getState }) => {
 
     if (localMediaStarted && rtcManager && !rtcManagerInitialized) {
         dispatch(doRtcManagerInitialize());
+    }
+});
+
+// Disonnect and clean up
+createReactor((_, { dispatch, getState }) => {
+    const { status } = selectRtcConnectionRaw(getState());
+    const wantsToJoin = selectAppWantsToJoin(getState());
+
+    if (!wantsToJoin && !["", "disconnected"].includes(status)) {
+        dispatch(doDisconnectRtc());
     }
 });
 
