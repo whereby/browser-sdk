@@ -3,12 +3,16 @@ import { PayloadAction, createSlice } from "@reduxjs/toolkit";
 import { ConnectionStatus } from "../../../RoomConnection";
 import { createReactor } from "../listenerMiddleware";
 import { RootState } from "../store";
-import { createAppAsyncThunk } from "../asyncThunk";
+import { createAppThunk } from "../asyncThunk";
 import { selectAppDisplayName, selectAppRoomKey, selectAppRoomName, selectAppSdkVersion } from "./app";
 
 import { selectOrganizationId } from "./organization";
 import { selectSignalConnectionRaw, signalEvents } from "./signalConnection";
 import { selectLocalMediaInstance, selectLocalMediaStarted } from "./localMedia";
+
+/**
+ * Reducer
+ */
 
 export interface RoomConnectionState {
     status: ConnectionStatus;
@@ -24,21 +28,14 @@ export const roomConnectionSlice = createSlice({
     initialState,
     name: "roomConnection",
     reducers: {
-        doRoomConnectionStatusChanged: (state, action: PayloadAction<{ status: ConnectionStatus }>) => {
+        connectionStatusChanged: (state, action: PayloadAction<ConnectionStatus>) => {
             return {
                 ...state,
-                status: action.payload.status,
+                status: action.payload,
             };
         },
     },
     extraReducers: (builder) => {
-        builder.addCase(doConnectRoom.pending, (state) => {
-            return {
-                ...state,
-                status: "connecting",
-            };
-        });
-
         builder.addCase(signalEvents.roomJoined, (state) => {
             //TODO: Handle error
             return {
@@ -49,7 +46,13 @@ export const roomConnectionSlice = createSlice({
     },
 });
 
-export const doConnectRoom = createAppAsyncThunk("roomConnection/doConnectRoom", async (_, { getState }) => {
+/**
+ * Action creators
+ */
+
+const { connectionStatusChanged } = roomConnectionSlice.actions;
+
+export const doConnectRoom = createAppThunk(() => (dispatch, getState) => {
     const state = getState();
     const socket = selectSignalConnectionRaw(state).socket;
     const roomName = selectAppRoomName(state);
@@ -78,13 +81,19 @@ export const doConnectRoom = createAppAsyncThunk("roomConnection/doConnectRoom",
         externalId: null,
     });
 
-    return true;
+    dispatch(connectionStatusChanged("connecting"));
 });
 
-export const { doRoomConnectionStatusChanged } = roomConnectionSlice.actions;
+/**
+ * Selectors
+ */
 
 export const selectRoomConnectionRaw = (state: RootState) => state.roomConnection;
 export const selectRoomConnectionStatus = (state: RootState) => state.roomConnection.status;
+
+/**
+ * Reactors
+ */
 
 createReactor((_, { dispatch, getState }) => {
     const hasOrganizationIdFetched = selectOrganizationId(getState());

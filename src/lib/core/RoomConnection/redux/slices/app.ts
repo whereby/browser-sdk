@@ -4,6 +4,9 @@ import LocalMedia from "~/lib/LocalMedia";
 import { createAppThunk } from "../asyncThunk";
 import { doSignalDisconnect } from "./signalConnection";
 
+/**
+ * Reducer
+ */
 export interface AppState {
     wantsToJoin: boolean;
     roomName: string | null;
@@ -52,6 +55,9 @@ export const appSlice = createSlice({
     },
 });
 
+/**
+ * Action creators
+ */
 export const { doAppJoin, appLeft, doAppSetRoomKey } = appSlice.actions;
 
 export const doAppLeave = createAppThunk(() => (dispatch) => {
@@ -59,6 +65,9 @@ export const doAppLeave = createAppThunk(() => (dispatch) => {
     dispatch(appLeft());
 });
 
+/**
+ * Selectors
+ */
 export const selectAppRaw = (state: RootState) => state.app;
 export const selectAppWantsToJoin = (state: RootState) => state.app.wantsToJoin;
 export const selectAppRoomName = (state: RootState) => state.app.roomName;
