@@ -16,6 +16,19 @@ const initialState: RemoteParticipantState = {
     remoteParticipants: [],
 };
 
+function createParticipant(client: SignalClient, newJoiner = false): RemoteParticipant {
+    const { streams, ...rest } = client;
+
+    return {
+        ...rest,
+        stream: null,
+        streams: streams.map((streamId) => ({ id: streamId, state: newJoiner ? "new_accept" : "to_accept" })),
+        isLocalParticipant: false,
+        presentationStream: null,
+        newJoiner,
+    };
+}
+
 function findParticipant(state: RemoteParticipantState, participantId: string) {
     const index = state.remoteParticipants.findIndex((c) => c.id === participantId);
     return { index, participant: state.remoteParticipants[index] };
@@ -39,7 +52,7 @@ function updateParticipant(state: RemoteParticipantState, participantId: string,
     };
 }
 
-function addParticipant(state: RemoteParticipantState, participant: SignalClient) {
+function addParticipant(state: RemoteParticipantState, participant: RemoteParticipant) {
     const { participant: foundParticipant } = findParticipant(state, participant.id);
 
     if (foundParticipant) {
@@ -47,21 +60,9 @@ function addParticipant(state: RemoteParticipantState, participant: SignalClient
         return state;
     }
 
-    const remoteParticipant: RemoteParticipant = {
-        id: participant.id,
-        displayName: participant.displayName,
-        isAudioEnabled: participant.isAudioEnabled,
-        isVideoEnabled: participant.isVideoEnabled,
-        isLocalParticipant: false,
-        stream: null,
-        streams: participant.streams.map((streamId) => ({ id: streamId, state: "new_accept" })),
-        newJoiner: true,
-        presentationStream: null,
-    };
-
     return {
         ...state,
-        remoteParticipants: [...state.remoteParticipants, remoteParticipant],
+        remoteParticipants: [...state.remoteParticipants, participant],
     };
 }
 
@@ -110,7 +111,7 @@ function removeStreamId(state: RemoteParticipantState, participantId: string, st
         return state;
     }
     const currentStreamId = participant.stream && participant.stream.id;
-    const presentationId = participant.presentationStream?.id;
+    const presentationId = participant.presentationStream?.inboundId || participant.presentationStream?.id;
     const idIdx = participant.streams.findIndex((s) => s.id === streamId);
 
     return updateParticipant(state, participantId, {
@@ -196,17 +197,7 @@ export const remoteParticipantsSlice = createSlice({
                 remoteParticipants: clients
                     .filter((c) => c.id !== selfId)
                     .filter((c) => !NON_PERSON_ROLES.includes(c.role.roleName))
-                    .map((c) => ({
-                        id: c.id,
-                        displayName: c.displayName,
-                        isAudioEnabled: c.isAudioEnabled,
-                        isVideoEnabled: c.isVideoEnabled,
-                        isLocalParticipant: false,
-                        stream: null,
-                        streams: c.streams.map((streamId) => ({ id: streamId, state: "new_accept" })),
-                        newJoiner: false,
-                        presentationStream: null,
-                    })),
+                    .map((c) => createParticipant(c)),
             };
         });
         builder.addCase(rtcEvents.streamAdded, (state, action) => {
@@ -219,7 +210,7 @@ export const remoteParticipantsSlice = createSlice({
                 return state;
             }
 
-            return addParticipant(state, client);
+            return addParticipant(state, createParticipant(client, true));
         });
         builder.addCase(signalEvents.clientLeft, (state, action) => {
             const { clientId } = action.payload;
