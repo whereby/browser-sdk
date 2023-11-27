@@ -4,6 +4,9 @@ import { WaitingParticipant } from "~/lib/RoomParticipant";
 import { createAppThunk } from "../asyncThunk";
 import { selectSignalConnectionSocket, signalEvents } from "./signalConnection";
 
+/**
+ * Reducer
+ */
 export interface WaitingParticipantsState {
     waitingParticipants: WaitingParticipant[];
 }
@@ -34,6 +37,10 @@ export const waitingParticipantsSlice = createSlice({
     },
 });
 
+/**
+ * Action creators
+ */
+
 export const doAcceptWaitingParticipant = createAppThunk(
     (payload: { participantId: string }) => (dispatch, getState) => {
         const { participantId } = payload;
@@ -61,5 +68,9 @@ export const doRejectWaitingParticipant = createAppThunk(
         });
     }
 );
+
+/**
+ * Selectors
+ */
 
 export const selectWaitingParticipantsRaw = (state: RootState) => state.waitingParticipants;

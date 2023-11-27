@@ -5,6 +5,10 @@ import { createReactor } from "../listenerMiddleware";
 import { selectAppWantsToJoin } from "./app";
 import { Credentials } from "~/lib/api";
 
+/**
+ * Reducer
+ */
+
 export interface DeviceCredentialsState {
     isFetching: boolean;
     data?: Credentials | null;
@@ -14,19 +18,6 @@ const initialState: DeviceCredentialsState = {
     isFetching: false,
     data: null,
 };
-
-export const doGetDeviceCredentials = createAppAsyncThunk(
-    "deviceCredentials/doGetDeviceCredentials",
-    async (payload, { extra }) => {
-        try {
-            const deviceCredentials = await extra.services.credentialsService.getCredentials();
-
-            return deviceCredentials;
-        } catch (error) {
-            console.error(error);
-        }
-    }
-);
 
 export const deviceCredentialsSlice = createSlice({
     name: "deviceCredentials",
@@ -56,8 +47,33 @@ export const deviceCredentialsSlice = createSlice({
     },
 });
 
+/**
+ * Action creators
+ */
+
+export const doGetDeviceCredentials = createAppAsyncThunk(
+    "deviceCredentials/doGetDeviceCredentials",
+    async (payload, { extra }) => {
+        try {
+            const deviceCredentials = await extra.services.credentialsService.getCredentials();
+
+            return deviceCredentials;
+        } catch (error) {
+            console.error(error);
+        }
+    }
+);
+
+/**
+ * Selectors
+ */
+
 export const selectDeviceCredentialsRaw = (state: RootState) => state.deviceCredentials;
 export const selectHasFetchedDeviceCredentials = (state: RootState) => !!state.deviceCredentials.data?.credentials;
+
+/**
+ * Reactors
+ */
 
 export const shouldFetchDeviceCredentials = (
     wantsToJoin: boolean,
