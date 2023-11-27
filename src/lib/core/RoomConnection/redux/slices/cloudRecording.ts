@@ -1,9 +1,11 @@
 import { createSlice } from "@reduxjs/toolkit";
 import { RootState } from "../store";
-import { createAppAsyncThunk } from "../asyncThunk";
-import { selectSignalConnectionRaw } from "./signalConnection";
-import { CloudRecordingStartedEvent, SignalClient } from "@whereby/jslib-media/src/utils/ServerSocket";
+import { createAppThunk } from "../asyncThunk";
+import { selectSignalConnectionRaw, signalEvents } from "./signalConnection";
 
+/**
+ * Reducer
+ */
 export interface CloudRecordingState {
     isRecording: boolean;
     error: unknown;
@@ -16,62 +18,17 @@ const initialState: CloudRecordingState = {
     startedAt: undefined,
 };
 
-export const doStartCloudRecording = createAppAsyncThunk(
-    "cloudRecording/doStartCloudRecording",
-    async (_, { getState }) => {
-        const state = getState();
-        const socket = selectSignalConnectionRaw(state).socket;
-
-        socket?.emit("start_recording", {
-            recording: "cloud",
-        });
-
-        return true;
-    }
-);
-
-export const doStopCloudRecording = createAppAsyncThunk(
-    "cloudRecording/doStopCloudRecording",
-    async (_, { getState }) => {
-        const state = getState();
-        const socket = selectSignalConnectionRaw(state).socket;
-
-        socket?.emit("stop_recording");
-
-        return true;
-    }
-);
-
-export const doHandleCloudRecordingStarted = createAppAsyncThunk(
-    "cloudRecording/doHandleCloudRecordingStarted",
-    async (payload: CloudRecordingStartedEvent) => {
-        // Only handle the start failure event here. The recording is
-        // considered started when the recorder client joins.
-        if (payload.error) {
-            return { error: payload.error };
-        }
-        return null;
-    }
-);
-
-export const doHandleRecorderClientJoined = createAppAsyncThunk(
-    "cloudRecording/doHandleCloudRecordingClientJoined",
-    async (payload: { client: SignalClient }) => {
-        const { client } = payload;
-
-        return {
-            startedAt: client.startedCloudRecordingAt
-                ? new Date(client.startedCloudRecordingAt).getTime()
-                : new Date().getTime(),
-        };
-    }
-);
-
 export const cloudRecordingSlice = createSlice({
     name: "cloudRecording",
     initialState,
     reducers: {
-        doHandleCloudRecordingStopped: (state) => {
+        recordingStarted: (state) => {
+            return {
+                ...state,
+                isRecording: true,
+            };
+        },
+        recordingStopped: (state) => {
             return {
                 ...state,
                 isRecording: false,
@@ -79,42 +36,68 @@ export const cloudRecordingSlice = createSlice({
         },
     },
     extraReducers: (builder) => {
-        builder.addCase(doStartCloudRecording.fulfilled, (state) => {
-            return {
-                ...state,
-                isRecording: true,
-            };
-        });
-        builder.addCase(doStopCloudRecording.fulfilled, (state) => {
+        builder.addCase(signalEvents.cloudRecordingStopped, (state) => {
             return {
                 ...state,
                 isRecording: false,
             };
         });
-        builder.addCase(doHandleCloudRecordingStarted.fulfilled, (state, action) => {
-            if (!action.payload) {
+        builder.addCase(signalEvents.cloudRecordingStarted, (state, action) => {
+            const { payload } = action;
+
+            if (!payload.error) {
                 return state;
             }
+
             return {
                 ...state,
                 isRecording: false,
-                error: action.payload.error,
+                error: payload.error,
             };
         });
-        builder.addCase(doHandleRecorderClientJoined.fulfilled, (state, action) => {
-            if (!action.payload) {
-                return state;
+
+        builder.addCase(signalEvents.newClient, (state, { payload }) => {
+            const { client } = payload;
+            if (client.role?.roleName === "recorder") {
+                return {
+                    ...state,
+                    status: "recording",
+                    startedAt: client.startedCloudRecordingAt
+                        ? new Date(client.startedCloudRecordingAt).getTime()
+                        : new Date().getTime(),
+                };
             }
-            return {
-                ...state,
-                isRecording: true,
-                error: null,
-                startedAt: action.payload.startedAt,
-            };
+            return state;
         });
     },
 });
 
-export const { doHandleCloudRecordingStopped } = cloudRecordingSlice.actions;
+/**
+ * Action creators
+ */
+export const { recordingStarted, recordingStopped } = cloudRecordingSlice.actions;
 
+export const doStartCloudRecording = createAppThunk(() => (dispatch, getState) => {
+    const state = getState();
+    const socket = selectSignalConnectionRaw(state).socket;
+
+    socket?.emit("start_recording", {
+        recording: "cloud",
+    });
+
+    dispatch(recordingStarted());
+});
+
+export const doStopCloudRecording = createAppThunk(() => (dispatch, getState) => {
+    const state = getState();
+    const socket = selectSignalConnectionRaw(state).socket;
+
+    socket?.emit("stop_recording");
+
+    dispatch(recordingStopped());
+});
+
+/**
+ * Selectors
+ */
 export const selectCloudRecordingRaw = (state: RootState) => state.cloudRecording;

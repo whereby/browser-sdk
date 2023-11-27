@@ -8,13 +8,9 @@ import { RtcStreamAddedPayload } from "@whereby/jslib-media/src/webrtc/RtcManage
 
 const NON_PERSON_ROLES = ["recorder", "streamer"];
 
-export interface RemoteParticipantState {
-    remoteParticipants: RemoteParticipant[];
-}
-
-const initialState: RemoteParticipantState = {
-    remoteParticipants: [],
-};
+/**
+ * State mapping utils
+ */
 
 function createParticipant(client: SignalClient, newJoiner = false): RemoteParticipant {
     const { streams, ...rest } = client;
@@ -160,6 +156,18 @@ function addStream(state: RemoteParticipantState, payload: RtcStreamAddedPayload
     });
 }
 
+/**
+ * Reducer
+ */
+
+export interface RemoteParticipantState {
+    remoteParticipants: RemoteParticipant[];
+}
+
+const initialState: RemoteParticipantState = {
+    remoteParticipants: [],
+};
+
 export const remoteParticipantsSlice = createSlice({
     name: "remoteParticipants",
     initialState,
@@ -251,8 +259,16 @@ export const remoteParticipantsSlice = createSlice({
     },
 });
 
+/**
+ * Action creators
+ */
+
 export const { participantStreamAdded, participantStreamIdAdded, streamStatusUpdated } =
     remoteParticipantsSlice.actions;
+
+/**
+ * Selectors
+ */
 
 export const selectRemoteParticipantsRaw = (state: RootState) => state.remoteParticipants;
 export const selectRemoteParticipants = (state: RootState) => state.remoteParticipants.remoteParticipants;

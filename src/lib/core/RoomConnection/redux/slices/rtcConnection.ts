@@ -114,6 +114,7 @@ export const rtcConnectionSlice = createSlice({
 /**
  * Action creators
  */
+
 export const { rtcDispatcherCreated, rtcDisconnected, rtcManagerCreated, rtcManagerDestroyed, rtcManagerInitialized } =
     rtcConnectionSlice.actions;
 
@@ -237,11 +238,13 @@ export const doRtcManagerInitialize = createAppThunk(() => (dispatch, getState) 
 /**
  * Selectors
  */
+
 export const selectRtcConnectionRaw = (state: RootState) => state.rtcConnection;
 
 /**
  * Reactors
  */
+
 createReactor((_, { dispatch, getState }) => {
     const rtcConnection = selectRtcConnectionRaw(getState());
     const signalConnection = selectSignalConnectionRaw(getState());
