@@ -8,6 +8,7 @@ import { createReactor } from "../listenerMiddleware";
 /**
  * State & reducer
  */
+
 export interface LocalMediaState {
     isStarting: boolean;
     hasStarted: boolean;
@@ -52,6 +53,7 @@ export const localMediaSlice = createSlice({
 /**
  * Action creators
  */
+
 export const { started, starting } = localMediaSlice.actions;
 
 export const doLocalMediaStart = createAppThunk(() => async (dispatch, getState) => {
@@ -68,19 +70,21 @@ export const doLocalMediaStart = createAppThunk(() => async (dispatch, getState)
 /**
  * Selectors
  */
+
 export const selectLocalMediaRaw = (state: RootState) => state.localMedia;
 export const selectLocalMediaInstance = (state: RootState) => state.localMedia.localMediaInstance;
 export const selectLocalMediaStream = (state: RootState) => state.localMedia.localMediaInstance?.stream;
 export const selectLocalMediaStarted = (state: RootState) => state.localMedia.hasStarted;
 
-export const selectLocalMediaShouldStart = createSelector([selectLocalMediaRaw], (raw) => {
+/**
+ * Reactors
+ */
+
+export const selectLocalMediaShouldStart = createSelector(selectLocalMediaRaw, (raw) => {
     const { hasStarted, isStarting, localMediaInstance } = raw;
     return !!localMediaInstance && !hasStarted && !isStarting;
 });
 
-/**
- * Reactors
- */
 createReactor((_, { dispatch, getState }) => {
     if (selectLocalMediaShouldStart(getState())) {
         dispatch(doLocalMediaStart());

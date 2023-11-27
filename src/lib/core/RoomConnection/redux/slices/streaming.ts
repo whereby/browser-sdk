@@ -1,6 +1,10 @@
 import { createSlice } from "@reduxjs/toolkit";
 import { RootState } from "../store";
 
+/**
+ * Reducer
+ */
+
 export interface StreamingState {
     isStreaming: boolean;
     error: unknown;
@@ -38,6 +42,14 @@ export const streamingSlice = createSlice({
     },
 });
 
+/**
+ * Action creators
+ */
+
 export const { doHandleStreamingStarted, doHandleStreamingStopped } = streamingSlice.actions;
+
+/**
+ * Selectors
+ */
 
 export const selectStreamingRaw = (state: RootState) => state.streaming;
