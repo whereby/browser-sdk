@@ -6,6 +6,10 @@ import { createReactor } from "../listenerMiddleware";
 import { selectAppWantsToJoin } from "./app";
 import { selectDeviceCredentialsRaw } from "./deviceCredentials";
 
+/**
+ * Reducer
+ */
+
 export interface OrganizationState {
     data: Organization | null | undefined;
     isFetching: boolean;
@@ -17,23 +21,6 @@ const initialState: OrganizationState = {
     isFetching: false,
     error: null,
 };
-
-export const doOrganizationFetch = createAppAsyncThunk(
-    "organization/doOrganizationFetch",
-    async (payload, { extra }) => {
-        try {
-            const organization = await extra.services.organizationServiceCache.fetchOrganization();
-
-            if (!organization) {
-                throw new Error("Invalid room url");
-            }
-
-            return organization;
-        } catch (error) {
-            console.error(error);
-        }
-    }
-);
 
 export const organizationSlice = createSlice({
     initialState,
@@ -64,8 +51,34 @@ export const organizationSlice = createSlice({
     },
 });
 
+/**
+ * Action creators
+ */
+
+export const doOrganizationFetch = createAppAsyncThunk("organization/doOrganizationFetch", async (_, { extra }) => {
+    try {
+        const organization = await extra.services.organizationServiceCache.fetchOrganization();
+
+        if (!organization) {
+            throw new Error("Invalid room url");
+        }
+
+        return organization;
+    } catch (error) {
+        console.error(error);
+    }
+});
+
+/**
+ * Selectors
+ */
+
 export const selectOrganizationRaw = (state: RootState) => state.organization;
 export const selectOrganizationId = (state: RootState) => state.organization.data?.organizationId;
+
+/**
+ * Reducers
+ */
 
 createReactor((_, { dispatch, getState }) => {
     const wantsToJoin = selectAppWantsToJoin(getState());
