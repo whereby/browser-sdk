@@ -21,7 +21,7 @@ import ServerSocket, {
     VideoEnabledEvent,
 } from "@whereby/jslib-media/src/utils/ServerSocket";
 import { Credentials } from "~/lib/api";
-import { selectAppWantsToJoin } from "./app";
+import { appLeft, selectAppWantsToJoin } from "./app";
 
 function createSignalEventAction<T>(name: string) {
     return createAction<T>(`signalConnection/event/${name}`);
@@ -137,6 +137,15 @@ export const signalConnectionSlice = createSlice({
                 isIdentifyingDevice: false,
             };
         },
+    },
+    extraReducers: (builder) => {
+        builder.addCase(appLeft, (state) => {
+            return {
+                ...state,
+                socket: null,
+                status: "disconnected",
+            };
+        });
     },
 });
 
