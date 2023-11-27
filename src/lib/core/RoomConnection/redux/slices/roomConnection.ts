@@ -95,13 +95,21 @@ export const selectRoomConnectionStatus = (state: RootState) => state.roomConnec
  * Reactors
  */
 
-createReactor((_, { dispatch, getState }) => {
-    const hasOrganizationIdFetched = selectOrganizationId(getState());
-    const roomConnectionStatus = selectRoomConnectionStatus(getState());
-    const signalIdentified = selectSignalConnectionRaw(getState()).deviceIdentified;
-    const localMediaStarted = selectLocalMediaStarted(getState());
+createReactor(
+    [selectOrganizationId, selectRoomConnectionStatus, selectSignalConnectionRaw, selectLocalMediaStarted],
+    (_, { dispatch, getState }) => {
+        const hasOrganizationIdFetched = selectOrganizationId(getState());
+        const roomConnectionStatus = selectRoomConnectionStatus(getState());
+        const signalIdentified = selectSignalConnectionRaw(getState()).deviceIdentified;
+        const localMediaStarted = selectLocalMediaStarted(getState());
 
-    if (localMediaStarted && signalIdentified && hasOrganizationIdFetched && roomConnectionStatus === "initializing") {
-        dispatch(doConnectRoom());
+        if (
+            localMediaStarted &&
+            signalIdentified &&
+            hasOrganizationIdFetched &&
+            roomConnectionStatus === "initializing"
+        ) {
+            dispatch(doConnectRoom());
+        }
     }
-});
+);
