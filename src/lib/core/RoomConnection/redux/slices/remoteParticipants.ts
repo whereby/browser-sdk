@@ -56,6 +56,7 @@ function addParticipant(state: RemoteParticipantState, participant: SignalClient
         stream: null,
         streams: participant.streams.map((streamId) => ({ id: streamId, state: "new_accept" })),
         newJoiner: true,
+        presentationStream: null,
     };
 
     return {
@@ -102,24 +103,23 @@ function addStreamId(state: RemoteParticipantState, participantId: string, strea
     });
 }
 
-// function removeStreamId(state: RemoteParticipantState, participantId: string, streamId: string) {
-//     const { participant } = findParticipant(state, participantId);
-//     if (!participant) {
-//         console.error(`No participant ${participantId} found to remove stream ${streamId}`);
-//         return state;
-//     }
-//     const currentStreamId = participant.stream && participant.stream.id;
-//     const presentationId = client.presentationStream?.inboundId || client.presentationStream?.id;
-//     const idIdx = client.streamIds.indexOf(streamId);
+function removeStreamId(state: RemoteParticipantState, participantId: string, streamId: string) {
+    const { participant } = findParticipant(state, participantId);
+    if (!participant) {
+        console.error(`No participant ${participantId} found to remove stream ${streamId}`);
+        return state;
+    }
+    const currentStreamId = participant.stream && participant.stream.id;
+    const presentationId = participant.presentationStream?.id;
+    const idIdx = participant.streams.findIndex((s) => s.id === streamId);
 
-//     return updateClient(state, clientId, {
-//         streamIds: client.streamIds.filter((_, i) => i !== idIdx),
-//         streamState: client.streamState.filter((_, i) => i !== idIdx),
-//         ...(currentStreamId === streamId && { stream: null, audioOnlyStream: null }),
-//         ...(presentationId === streamId && { presentationStream: null }),
-//         ...meta,
-//     });
-// }
+    return updateParticipant(state, participantId, {
+        streams: participant.streams.filter((_, i) => i !== idIdx),
+        ...(currentStreamId === streamId && { stream: null }),
+        ...(presentationId === streamId && { presentationStream: null }),
+    });
+}
+
 function addStream(state: RemoteParticipantState, payload: RtcStreamAddedPayload) {
     const { clientId, stream, streamType } = payload;
     let { streamId } = payload;
@@ -153,7 +153,10 @@ function addStream(state: RemoteParticipantState, payload: RtcStreamAddedPayload
     ) {
         return updateParticipant(state, clientId, { stream });
     }
-    // update screenshare state on remote participant
+    // screen share
+    return updateParticipant(state, clientId, {
+        presentationStream: stream,
+    });
 }
 
 export const remoteParticipantsSlice = createSlice({
@@ -202,6 +205,7 @@ export const remoteParticipantsSlice = createSlice({
                         stream: null,
                         streams: c.streams.map((streamId) => ({ id: streamId, state: "new_accept" })),
                         newJoiner: false,
+                        presentationStream: null,
                     })),
             };
         });
@@ -245,11 +249,13 @@ export const remoteParticipantsSlice = createSlice({
         });
         builder.addCase(signalEvents.screenshareStarted, (state, action) => {
             const { clientId, streamId } = action.payload;
-            const { participant } = findParticipant(state, clientId);
 
-            return updateParticipant(state, clientId, {
-                streams: [...participant.streams, { id: streamId, state: "to_accept" }],
-            });
+            return addStreamId(state, clientId, streamId);
+        });
+        builder.addCase(signalEvents.screenshareStopped, (state, action) => {
+            const { clientId, streamId } = action.payload;
+
+            return removeStreamId(state, clientId, streamId);
         });
     },
 });

@@ -144,6 +144,7 @@ function convertRemoteParticipantToRemoteParticipantState(p: RemoteParticipant):
         isLocalParticipant: p.isLocalParticipant,
         isVideoEnabled: p.isVideoEnabled,
         stream: p.stream,
+        presentationStream: p.presentationStream,
     };
 }
 
