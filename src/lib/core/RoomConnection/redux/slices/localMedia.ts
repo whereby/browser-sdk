@@ -85,7 +85,7 @@ export const selectLocalMediaShouldStart = createSelector(selectLocalMediaRaw, (
     return !!localMediaInstance && !hasStarted && !isStarting;
 });
 
-createReactor((_, { dispatch, getState }) => {
+createReactor([selectLocalMediaShouldStart], (_, { dispatch, getState }) => {
     if (selectLocalMediaShouldStart(getState())) {
         dispatch(doLocalMediaStart());
     }
