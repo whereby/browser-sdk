@@ -1,5 +1,5 @@
 import { createListenerMiddleware, addListener } from "@reduxjs/toolkit";
-import type { TypedStartListening, TypedAddListener, ListenerEffect, AnyAction } from "@reduxjs/toolkit";
+import type { TypedStartListening, TypedAddListener, ListenerEffect, AnyAction, Selector } from "@reduxjs/toolkit";
 
 import type { RootState, AppDispatch } from "./store";
 import { createServices } from "../../../services";
@@ -26,14 +26,30 @@ export const addAppListener = addListener as TypedAddListener<RootState, AppDisp
  *   }
  * }));
  * ```
+ * @param selectors. The selectors to be used to check if the state has changed.
  * @param callback. The callback to be called on every action.
  * @returns The unsubscribe function.
  */
+// export const createReactor = (
+//     callback: ListenerEffect<AnyAction, RootState, AppDispatch, ReturnType<typeof createServices>>
+// ) => {
+//     return startAppListening({
+//         predicate: () => true,
+//         effect: callback,
+//     });
+// };
+
 export const createReactor = (
+    selectors: Selector<RootState, unknown>[],
     callback: ListenerEffect<AnyAction, RootState, AppDispatch, ReturnType<typeof createServices>>
 ) => {
     return startAppListening({
-        predicate: () => true,
+        predicate: (action, currentState, previousState) => {
+            const previousValues = selectors.map((selector) => selector(previousState));
+            const currentValues = selectors.map((selector) => selector(currentState));
+
+            return previousValues.some((value, index) => value !== currentValues[index]);
+        },
         effect: callback,
     });
 };

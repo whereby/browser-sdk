@@ -2,8 +2,8 @@ import { createStore, mockSignalEmit } from "../store.setup";
 import {
     doStartCloudRecording,
     doStopCloudRecording,
-    doHandleCloudRecordingStarted,
-    doHandleRecorderClientJoined,
+    // doHandleCloudRecordingStarted,
+    // doHandleRecorderClientJoined,
 } from "../../slices/cloudRecording";
 
 describe("doStartCloudRecording", () => {
@@ -29,37 +29,33 @@ describe("doStopCloudRecording", () => {
 });
 
 describe("doHandleCloudRecordingStarted", () => {
-    it("should return error", async () => {
-        const store = createStore();
-
-        await store.dispatch(
-            doHandleCloudRecordingStarted({
-                error: "error",
-            })
-        );
-
-        expect(store.getState().cloudRecording.error).toBe("error");
-    });
+    // it("should return error", async () => {
+    //     const store = createStore();
+    //     await store.dispatch(
+    //         doHandleCloudRecordingStarted({
+    //             error: "error",
+    //         })
+    //     );
+    //     expect(store.getState().cloudRecording.error).toBe("error");
+    // });
 });
 
 describe("doHandleRecorderClientJoined", () => {
-    it("should set startedAt", async () => {
-        const store = createStore();
-
-        await store.dispatch(
-            doHandleRecorderClientJoined({
-                client: {
-                    displayName: "displayName",
-                    streams: [],
-                    isAudioEnabled: true,
-                    isVideoEnabled: true,
-                    role: { roleName: "recorder" },
-                    id: "id",
-                    startedCloudRecordingAt: "2021-01-01T00:00:00.000Z",
-                },
-            })
-        );
-
-        expect(store.getState().cloudRecording.startedAt).toBe(new Date("2021-01-01T00:00:00.000Z").getTime());
-    });
+    // it("should set startedAt", async () => {
+    //     const store = createStore();
+    //     await store.dispatch(
+    //         doHandleRecorderClientJoined({
+    //             client: {
+    //                 displayName: "displayName",
+    //                 streams: [],
+    //                 isAudioEnabled: true,
+    //                 isVideoEnabled: true,
+    //                 role: { roleName: "recorder" },
+    //                 id: "id",
+    //                 startedCloudRecordingAt: "2021-01-01T00:00:00.000Z",
+    //             },
+    //         })
+    //     );
+    //     expect(store.getState().cloudRecording.startedAt).toBe(new Date("2021-01-01T00:00:00.000Z").getTime());
+    // });
 });

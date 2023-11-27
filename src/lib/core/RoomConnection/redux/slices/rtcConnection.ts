@@ -245,7 +245,7 @@ export const selectRtcConnectionRaw = (state: RootState) => state.rtcConnection;
  * Reactors
  */
 
-createReactor((_, { dispatch, getState }) => {
+createReactor([selectRtcConnectionRaw, selectSignalConnectionRaw], (_, { dispatch, getState }) => {
     const rtcConnection = selectRtcConnectionRaw(getState());
     const signalConnection = selectSignalConnectionRaw(getState());
 
@@ -254,7 +254,7 @@ createReactor((_, { dispatch, getState }) => {
     }
 });
 
-createReactor((_, { dispatch, getState }) => {
+createReactor([selectRtcConnectionRaw, selectLocalMediaStarted], (_, { dispatch, getState }) => {
     const { rtcManager, rtcManagerInitialized } = selectRtcConnectionRaw(getState());
     const localMediaStarted = selectLocalMediaStarted(getState());
 
@@ -264,7 +264,7 @@ createReactor((_, { dispatch, getState }) => {
 });
 
 // Disonnect and clean up
-createReactor((_, { dispatch, getState }) => {
+createReactor([selectRtcConnectionRaw, selectAppWantsToJoin], (_, { dispatch, getState }) => {
     const { status } = selectRtcConnectionRaw(getState());
     const wantsToJoin = selectAppWantsToJoin(getState());
 
@@ -274,7 +274,7 @@ createReactor((_, { dispatch, getState }) => {
 });
 
 // react accept streams
-createReactor((_, { dispatch, getState }) => {
+createReactor([selectRtcConnectionRaw, selectRemoteParticipants], (_, { dispatch, getState }) => {
     const rtcConnection = selectRtcConnectionRaw(getState());
     const remoteParticipants = selectRemoteParticipants(getState());
 
