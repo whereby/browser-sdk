@@ -13,11 +13,11 @@ export const startAppListening = listenerMiddleware.startListening as AppStartLi
 export const addAppListener = addListener as TypedAddListener<RootState, AppDispatch>;
 
 /**
- * Creates a reactor that will be called on every action.
+ * Creates a reactor that will be called whenever the provided selectors change.
  * Every reactor needs to update a piece of state that it depends on, to avoid infinite loops.
  * example:
  * ```ts
- * createReactor((action, { dispatch, getState }) => {
+ * createReactor([selectState], (action, { dispatch, getState }) => {
  *   const stateField = selectState(getState());
  *
  *   if (stateField !== "some value") {
@@ -30,15 +30,6 @@ export const addAppListener = addListener as TypedAddListener<RootState, AppDisp
  * @param callback. The callback to be called on every action.
  * @returns The unsubscribe function.
  */
-// export const createReactor = (
-//     callback: ListenerEffect<AnyAction, RootState, AppDispatch, ReturnType<typeof createServices>>
-// ) => {
-//     return startAppListening({
-//         predicate: () => true,
-//         effect: callback,
-//     });
-// };
-
 export const createReactor = (
     selectors: Selector<RootState, unknown>[],
     callback: ListenerEffect<AnyAction, RootState, AppDispatch, ReturnType<typeof createServices>>

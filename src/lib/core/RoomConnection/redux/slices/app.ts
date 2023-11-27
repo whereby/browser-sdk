@@ -1,8 +1,6 @@
 import { PayloadAction, createSlice } from "@reduxjs/toolkit";
 import { RootState } from "../store";
 import LocalMedia from "~/lib/LocalMedia";
-import { createAppThunk } from "../asyncThunk";
-import { doSignalDisconnect } from "./signalConnection";
 
 /**
  * Reducer
@@ -59,11 +57,6 @@ export const appSlice = createSlice({
  * Action creators
  */
 export const { doAppJoin, appLeft, doAppSetRoomKey } = appSlice.actions;
-
-export const doAppLeave = createAppThunk(() => (dispatch) => {
-    dispatch(doSignalDisconnect());
-    dispatch(appLeft());
-});
 
 /**
  * Selectors
