@@ -51,6 +51,7 @@ export interface RemoteParticipant {
     stream: MediaStream | null;
     streams: Stream[];
     newJoiner: boolean;
+    presentationStream: (MediaStream & { inboundId?: string }) | null;
 }
 
 export class LocalParticipant extends RoomParticipant {
