@@ -1,5 +1,5 @@
 import { PayloadAction, createSlice } from "@reduxjs/toolkit";
-import { RootState } from "../store";
+import { RootState } from "../../../redux/store";
 import { SignalClient } from "@whereby/jslib-media/src/utils/ServerSocket";
 import { RemoteParticipant, StreamState } from "~/lib/RoomParticipant";
 import { StreamStatusUpdate, rtcEvents } from "./rtcConnection";

@@ -1,20 +1,21 @@
 import { PreloadedState, combineReducers, configureStore } from "@reduxjs/toolkit";
 import { listenerMiddleware } from "./listenerMiddleware";
-import { createServices } from "../../../services";
+import { createServices } from "../../services";
 
-import { appSlice } from "./slices/app";
-import { chatSlice } from "./slices/chat";
-import { cloudRecordingSlice } from "./slices/cloudRecording";
-import { deviceCredentialsSlice } from "./slices/deviceCredentials";
-import { localMediaSlice } from "./slices/localMedia";
-import { localParticipantSlice } from "./slices/localParticipant";
-import { organizationSlice } from "./slices/organization";
-import { remoteParticipantsSlice } from "./slices/remoteParticipants";
-import { roomConnectionSlice } from "./slices/roomConnection";
-import { signalConnectionSlice } from "./slices/signalConnection";
-import { rtcConnectionSlice } from "./slices/rtcConnection";
-import { streamingSlice } from "./slices/streaming";
-import { waitingParticipantsSlice } from "./slices/waitingParticipants";
+import { appSlice } from "../RoomConnection/redux/slices/app";
+import { chatSlice } from "../RoomConnection/redux/slices/chat";
+import { cloudRecordingSlice } from "../RoomConnection/redux/slices/cloudRecording";
+import { deviceCredentialsSlice } from "../RoomConnection/redux/slices/deviceCredentials";
+import { localMediaSlice } from "../LocalMedia/slices/localMedia";
+//import { localMediaSlice } from "../RoomConnection/redux/slices/localMedia";
+import { localParticipantSlice } from "../RoomConnection/redux/slices/localParticipant";
+import { organizationSlice } from "../RoomConnection/redux/slices/organization";
+import { remoteParticipantsSlice } from "../RoomConnection/redux/slices/remoteParticipants";
+import { roomConnectionSlice } from "../RoomConnection/redux/slices/roomConnection";
+import { signalConnectionSlice } from "../RoomConnection/redux/slices/signalConnection";
+import { rtcConnectionSlice } from "../RoomConnection/redux/slices/rtcConnection";
+import { streamingSlice } from "../RoomConnection/redux/slices/streaming";
+import { waitingParticipantsSlice } from "../RoomConnection/redux/slices/waitingParticipants";
 
 export const rootReducer = combineReducers({
     app: appSlice.reducer,
@@ -52,5 +53,6 @@ export const createStore = ({
     });
 };
 
+export type RootReducer = typeof rootReducer;
 export type RootState = ReturnType<typeof rootReducer>;
 export type AppDispatch = ReturnType<typeof createStore>["dispatch"];

@@ -1,14 +1,14 @@
 import { PayloadAction, createSlice } from "@reduxjs/toolkit";
 
 import { ConnectionStatus } from "../../../RoomConnection";
-import { createReactor } from "../listenerMiddleware";
-import { RootState } from "../store";
-import { createAppThunk } from "../asyncThunk";
+import { createReactor } from "../../../redux/listenerMiddleware";
+import { RootState } from "../../../redux/store";
+import { createAppThunk } from "../../../redux/asyncThunk";
 import { selectAppDisplayName, selectAppRoomKey, selectAppRoomName, selectAppSdkVersion } from "./app";
 
 import { selectOrganizationId } from "./organization";
 import { selectSignalConnectionRaw, signalEvents } from "./signalConnection";
-import { selectLocalMediaInstance, selectLocalMediaStarted } from "./localMedia";
+import { selectLocalMediaInstance, selectLocalMediaStarted } from "./localMedia-old";
 
 /**
  * Reducer

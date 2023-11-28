@@ -6,7 +6,7 @@ import LocalMedia, { LocalMediaOptions } from "../../LocalMedia";
 
 type Logger = Pick<Console, "debug" | "error" | "log" | "warn" | "info">;
 // new
-import { createStore } from "./redux/store";
+import { createStore } from "../redux/store";
 import { createServices } from "../../services";
 import { appLeft, doAppJoin } from "./redux/slices/app";
 import { selectRoomConnectionStatus } from "./redux/slices/roomConnection";
@@ -29,7 +29,7 @@ import {
 import { doStartCloudRecording, doStopCloudRecording, selectCloudRecordingRaw } from "./redux/slices/cloudRecording";
 import { selectStreamingRaw } from "./redux/slices/streaming";
 import { doAcceptWaitingParticipant, doRejectWaitingParticipant } from "./redux/slices/waitingParticipants";
-import { selectLocalMediaStream } from "./redux/slices/localMedia";
+import { selectLocalMediaStream } from "./redux/slices/localMedia-old";
 
 export interface RoomConnectionOptions {
     displayName?: string; // Might not be needed at all
