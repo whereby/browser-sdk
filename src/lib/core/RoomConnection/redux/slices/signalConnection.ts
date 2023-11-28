@@ -1,6 +1,6 @@
 import { createSlice, createAction, ThunkDispatch, AnyAction, PayloadAction } from "@reduxjs/toolkit";
 import { RootState } from "../store";
-import { createAppThunk } from "../asyncThunk";
+import { createAppThunk } from "../../../redux/asyncThunk";
 import { createReactor } from "../listenerMiddleware";
 import { selectDeviceCredentialsRaw } from "./deviceCredentials";
 
