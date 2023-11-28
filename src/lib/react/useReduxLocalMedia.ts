@@ -20,7 +20,8 @@ import {
     selectMicrophoneDevices,
     selectSpeakerDevices,
 } from "../core/LocalMedia/slices/localMedia";
-import { observeStore, store } from "../core/LocalMedia/store";
+import { createStore, observeStore, Store } from "../core/redux/store";
+import { createServices } from "../services";
 
 interface LocalMediaState {
     currentCameraDeviceId?: string;
@@ -44,7 +45,7 @@ interface LocalMediaActions {
     toggleMicrophoneEnabled: (enabled?: boolean) => void;
 }
 
-export type LocalMediaRef = { state: LocalMediaState; actions: LocalMediaActions };
+export type LocalMediaRef = { state: LocalMediaState; actions: LocalMediaActions; store: Store };
 
 export type UseLocalMediaOptions = LocalMediaOptions;
 
@@ -107,6 +108,10 @@ const initialState: LocalMediaState = {
 export default function useLocalMedia(
     optionsOrStream: UseLocalMediaOptions | MediaStream = { audio: true, video: true }
 ): LocalMediaRef {
+    const [store] = useState<Store>(() => {
+        const services = createServices("https://team.whereby.com/havardholvik");
+        return createStore({ injectServices: services });
+    });
     const [localMediaState, setLocalMediaState] = useState(initialState);
     useEffect(() => {
         const unsubscribe = observeStore(store, selectLocalMediaState, setLocalMediaState);
@@ -138,5 +143,6 @@ export default function useLocalMedia(
             toggleCameraEnabled,
             toggleMicrophoneEnabled,
         },
+        store,
     };
 }
