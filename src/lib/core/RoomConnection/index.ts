@@ -6,7 +6,7 @@ import LocalMedia, { LocalMediaOptions } from "../../LocalMedia";
 
 type Logger = Pick<Console, "debug" | "error" | "log" | "warn" | "info">;
 // new
-import { createStore } from "./redux/store";
+import { createStore, Store } from "../redux/store";
 import { createServices } from "../../services";
 import { appLeft, doAppJoin } from "./redux/slices/app";
 import { selectRoomConnectionStatus } from "./redux/slices/roomConnection";
@@ -29,14 +29,14 @@ import {
 import { doStartCloudRecording, doStopCloudRecording, selectCloudRecordingRaw } from "./redux/slices/cloudRecording";
 import { selectStreamingRaw } from "./redux/slices/streaming";
 import { doAcceptWaitingParticipant, doRejectWaitingParticipant } from "./redux/slices/waitingParticipants";
-import { selectLocalMediaStream } from "./redux/slices/localMedia";
+import { selectLocalMediaStream } from "../LocalMedia/slices/localMedia";
 
 export interface RoomConnectionOptions {
     displayName?: string; // Might not be needed at all
     localMediaOptions?: LocalMediaOptions;
     roomKey?: string;
     logger?: Logger;
-    localMedia?: LocalMedia;
+    localMedia?: Store;
     externalId?: string;
 }
 
@@ -171,7 +171,7 @@ const noop = () => {
 
 const TypedEventTarget = EventTarget as { new (): RoomEventTarget };
 export default class RoomConnection extends TypedEventTarget {
-    public localMedia: LocalMedia;
+    public localMedia: Store;
     public localParticipant?: LocalParticipant;
     public roomUrl: URL;
     public remoteParticipants: RemoteParticipant[] = [];
@@ -192,7 +192,6 @@ export default class RoomConnection extends TypedEventTarget {
     private _roomKey: string | null;
     // private _unsubscribe: Unsubscribe;
     // Redux
-    private _store: ReturnType<typeof createStore>;
 
     constructor(
         roomUrl: string,
@@ -208,14 +207,22 @@ export default class RoomConnection extends TypedEventTarget {
         super();
         this.connectionStatus = "initializing";
 
-        // redux
-        this._store = createStore({
-            injectServices: createServices(roomUrl),
-        });
+        // Set up local media
+        if (localMedia) {
+            this.localMedia = localMedia;
+        } else if (localMediaConstraints) {
+            //console.log("Creating new fresh store");
+
+            const services = createServices(roomUrl);
+            this.localMedia = createStore({ injectServices: services });
+            this._ownsLocalMedia = true;
+        } else {
+            throw new Error("Missing constraints");
+        }
 
         // subscribe to redux store changes
-        this._store.subscribe(() => {
-            const state = this._store.getState();
+        this.localMedia.subscribe(() => {
+            const state = this.localMedia.getState();
             const connectionStatus = selectRoomConnectionStatus(state);
 
             if (connectionStatus !== this.connectionStatus) {
@@ -345,27 +352,17 @@ export default class RoomConnection extends TypedEventTarget {
         this.externalId = externalId;
         this.localMediaConstraints = localMediaConstraints;
 
-        // Set up local media
-        if (localMedia) {
-            this.localMedia = localMedia;
-        } else if (localMediaConstraints) {
-            this.localMedia = new LocalMedia(localMediaConstraints);
-            this._ownsLocalMedia = true;
-        } else {
-            throw new Error("Missing constraints");
-        }
-
         // Set up local media listeners
-        this.localMedia.addEventListener("camera_enabled", (e) => {
+        /*this.localMedia.addEventListener("camera_enabled", (e) => {
             const { enabled } = e.detail;
-            this._store.dispatch(doEnableVideo({ enabled }));
+            this.localMedia.dispatch(doEnableVideo({ enabled }));
             this.dispatchEvent(new RoomConnectionEvent("local_camera_enabled", { detail: { enabled } }));
         });
         this.localMedia.addEventListener("microphone_enabled", (e) => {
             const { enabled } = e.detail;
             this._store.dispatch(doEnableAudio({ enabled }));
             this.dispatchEvent(new RoomConnectionEvent("local_microphone_enabled", { detail: { enabled } }));
-        });
+        });*/
     }
 
     public get roomKey(): string | null {
@@ -373,13 +370,13 @@ export default class RoomConnection extends TypedEventTarget {
     }
 
     public async join() {
-        this._store.dispatch(
+        this.localMedia.dispatch(
             doAppJoin({
                 roomName: this.roomName,
                 roomKey: this._roomKey,
                 displayName: this.displayName || "Guest",
                 sdkVersion: sdkVersion || "unknown",
-                localMedia: this.localMedia,
+                //localMedia: this.localMedia,
             })
         );
     }
@@ -389,24 +386,24 @@ export default class RoomConnection extends TypedEventTarget {
     }
 
     public leave() {
-        this._store.dispatch(appLeft());
+        this.localMedia.dispatch(appLeft());
         // this._unsubscribe();
     }
 
     public sendChatMessage(text: string): void {
-        this._store.dispatch(doSendChatMessage({ text }));
+        this.localMedia.dispatch(doSendChatMessage({ text }));
     }
 
     public setDisplayName(displayName: string): void {
-        this._store.dispatch(doSetDisplayName({ displayName }));
+        this.localMedia.dispatch(doSetDisplayName({ displayName }));
     }
 
     public acceptWaitingParticipant(participantId: string) {
-        this._store.dispatch(doAcceptWaitingParticipant({ participantId }));
+        this.localMedia.dispatch(doAcceptWaitingParticipant({ participantId }));
     }
 
     public rejectWaitingParticipant(participantId: string) {
-        this._store.dispatch(doRejectWaitingParticipant({ participantId }));
+        this.localMedia.dispatch(doRejectWaitingParticipant({ participantId }));
     }
 
     public updateStreamResolution({ streamId, width, height }: { streamId?: string; width: number; height: number }) {
@@ -426,19 +423,19 @@ export default class RoomConnection extends TypedEventTarget {
     }
 
     public async startScreenshare() {
-        this._store.dispatch(doStartScreenshare());
+        this.localMedia.dispatch(doStartScreenshare());
     }
 
     public stopScreenshare() {
-        this._store.dispatch(doStopScreenshare());
+        this.localMedia.dispatch(doStopScreenshare());
     }
 
     public startCloudRecording() {
-        this._store.dispatch(doStartCloudRecording());
+        this.localMedia.dispatch(doStartCloudRecording());
         this.dispatchEvent(new RoomConnectionEvent("cloud_recording_request_started"));
     }
 
     public stopCloudRecording() {
-        this._store.dispatch(doStopCloudRecording());
+        this.localMedia.dispatch(doStopCloudRecording());
     }
 }

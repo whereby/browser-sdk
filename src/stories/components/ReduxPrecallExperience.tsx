@@ -6,7 +6,7 @@ interface PrecallExperienceProps extends LocalMediaRef {
     hideVideoPreview?: boolean;
 }
 
-export default function PrecallExperience(props: PrecallExperienceProps) {
+export default function ReduxPrecallExperience(props: PrecallExperienceProps) {
     const { state, actions, hideVideoPreview } = props;
 
     const { currentCameraDeviceId, currentMicrophoneDeviceId, cameraDevices, localStream, microphoneDevices } = state;

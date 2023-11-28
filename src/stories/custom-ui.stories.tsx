@@ -1,11 +1,11 @@
 import React, { useEffect, useRef, useState } from "react";
-import { useLocalMedia, useRoomConnection, VideoView } from "../lib/react";
-import { LocalMediaRef } from "../lib/react/useLocalMedia";
+import { useReduxLocalMedia, useRoomConnection, VideoView } from "../lib/react";
 import PrecallExperience from "./components/PrecallExperience";
 import VideoExperience from "./components/VideoExperience";
 import fakeWebcamFrame from "../lib/utils/fakeWebcamFrame";
 import fakeAudioStream from "../lib/utils/fakeAudioStream";
 import "./styles.css";
+import ReduxPrecallExperience from "./components/ReduxPrecallExperience";
 
 export default {
     title: "Examples/Custom UI",
@@ -26,7 +26,7 @@ export const StartStop = () => {
 };
 
 export const RoomConnectionWithLocalMedia = ({ roomUrl, displayName }: { roomUrl: string; displayName?: string }) => {
-    const localMedia = useLocalMedia({ audio: true, video: true });
+    const localMedia = useReduxLocalMedia({ audio: true, video: true });
     const [shouldJoin, setShouldJoin] = useState(false);
 
     if (!roomUrl || !roomUrl.match(roomRegEx)) {
@@ -44,7 +44,7 @@ export const RoomConnectionWithLocalMedia = ({ roomUrl, displayName }: { roomUrl
 };
 
 export const LocalMediaOnly = () => {
-    const localMedia = useLocalMedia();
+    const localMedia = useReduxLocalMedia();
 
     return (
         <div>
@@ -53,16 +53,20 @@ export const LocalMediaOnly = () => {
     );
 };
 
-function CanvasInRoom({ localMedia, roomUrl }: { localMedia: LocalMediaRef; roomUrl: string }) {
-    const { state } = useRoomConnection(roomUrl, { localMedia });
+export const ReduxLocalMediaOnly = () => {
+    const localMedia = useReduxLocalMedia();
 
-    return <div>Room connection status: {state.connectionStatus}</div>;
-}
+    return (
+        <div>
+            <ReduxPrecallExperience {...localMedia} />
+        </div>
+    );
+};
 
 function LocalMediaWithCanvasStream_({ canvasStream, roomUrl }: { canvasStream: MediaStream; roomUrl: string }) {
     const [shouldConnect, setShouldConnect] = useState(false);
 
-    const localMedia = useLocalMedia(canvasStream);
+    const localMedia = useReduxLocalMedia(canvasStream);
 
     return (
         <div>
@@ -76,7 +80,6 @@ function LocalMediaWithCanvasStream_({ canvasStream, roomUrl }: { canvasStream: 
             <button onClick={() => setShouldConnect(!shouldConnect)}>
                 {shouldConnect ? "Disconnect" : "Connect to room"}
             </button>
-            {shouldConnect && <CanvasInRoom localMedia={localMedia} roomUrl={roomUrl} />}
         </div>
     );
 }

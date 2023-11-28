@@ -2,7 +2,7 @@ import { createListenerMiddleware, addListener } from "@reduxjs/toolkit";
 import type { TypedStartListening, TypedAddListener, Selector } from "@reduxjs/toolkit";
 
 import type { RootState, AppDispatch } from "./store";
-import { createServices } from "../../../services";
+import { createServices } from "../../services";
 
 export const listenerMiddleware = createListenerMiddleware();
 
@@ -45,7 +45,7 @@ export const createReactor = <Selectors extends Selector<RootState, unknown>[]>(
     ) => void | Promise<void>
 ) => {
     return startAppListening({
-        predicate: (action, currentState, previousState) => {
+        predicate: (_, currentState, previousState) => {
             const previousValues = selectors.map((selector) => selector(previousState));
             const currentValues = selectors.map((selector) => selector(currentState));
 

@@ -1,7 +1,7 @@
 import { createSlice } from "@reduxjs/toolkit";
 import { ChatMessage as SignalChatMessage } from "@whereby/jslib-media/src/utils/ServerSocket";
-import { RootState } from "../store";
-import { createAppThunk } from "../asyncThunk";
+import { RootState } from "../../../redux/store";
+import { createAppThunk } from "../../../redux/thunk";
 import { selectSignalConnectionRaw, signalEvents } from "./signalConnection";
 
 export type ChatMessage = Pick<SignalChatMessage, "senderId" | "timestamp" | "text">;
