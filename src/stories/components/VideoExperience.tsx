@@ -1,7 +1,7 @@
 import React, { useState } from "react";
 import DisplayNameForm from "./DisplayNameForm";
 import { LocalMediaRef } from "../../lib/react/useReduxLocalMedia";
-import { useRoomConnection } from "../../lib/react/useRoomConnection";
+import { useRoomConnection } from "../../lib/react/useReduxRoomConnection";
 
 export default function VideoExperience({
     displayName,
@@ -20,12 +20,12 @@ export default function VideoExperience({
             video: true,
         },
         localMedia: localMedia?.store,
-        logger: console,
+        // logger: console,
     });
 
-    const { localParticipant, remoteParticipants, connectionStatus, waitingParticipants, screenshares } = state;
+    const { remoteParticipants, connectionStatus, waitingParticipants } = state;
     const {
-        knock,
+        // knock,
         sendChatMessage,
         setDisplayName,
         toggleCamera,
@@ -41,7 +41,7 @@ export default function VideoExperience({
             {connectionStatus === "room_locked" && (
                 <div style={{ color: "red" }}>
                     <span>Room locked, please knock....</span>
-                    <button onClick={() => knock()}>Knock</button>
+                    {/* <button onClick={() => knock()}>Knock</button> */}
                 </div>
             )}
             {connectionStatus === "knocking" && <span>Knocking...</span>}
@@ -73,7 +73,7 @@ export default function VideoExperience({
                         })}
                     </div>
                     <div className="container">
-                        {[localParticipant, ...remoteParticipants].map((participant, i) => (
+                        {[...remoteParticipants].map((participant, i) => (
                             <div className="participantWrapper" key={participant?.id || i}>
                                 {participant ? (
                                     <>
@@ -106,12 +106,12 @@ export default function VideoExperience({
                                 ) : null}
                             </div>
                         ))}
-                        {screenshares.map(
+                        {/* {screenshares.map(
                             (s) =>
                                 s.stream && (
                                     <VideoView style={{ width: 200, height: "auto" }} key={s.id} stream={s.stream} />
                                 )
-                        )}
+                        )} */}
                     </div>
                     <div className="controls">
                         <button onClick={() => toggleCamera()}>Toggle camera</button>
