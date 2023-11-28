@@ -6,7 +6,7 @@ import { selectSignalConnectionRaw } from "./signalConnection";
 import { selectRtcConnectionRaw } from "./rtcConnection";
 import { selectLocalMediaInstance } from "./localMedia-old";
 import { doAppJoin } from "./app";
-import { selectScreenshareStream } from "~/lib/core/LocalMedia/slices/localMedia";
+import { selectScreenshareStream } from "../../../LocalMedia/slices/localMedia";
 // import { doAddScreenshare, doRemoveScreenshare } from "./remoteParticipants";
 
 export interface LocalParticipantState extends LocalParticipant {
