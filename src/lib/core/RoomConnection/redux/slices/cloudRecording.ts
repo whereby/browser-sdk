@@ -1,6 +1,6 @@
 import { createSlice } from "@reduxjs/toolkit";
 import { RootState } from "../../../redux/store";
-import { createAppThunk } from "../../../redux/asyncThunk";
+import { createAppThunk } from "../../../redux/thunk";
 import { selectSignalConnectionRaw, signalEvents } from "./signalConnection";
 
 /**
