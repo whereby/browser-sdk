@@ -1,11 +1,12 @@
 import React, { useEffect, useRef, useState } from "react";
-import { useLocalMedia, useRoomConnection, VideoView } from "../lib/react";
+import { useLocalMedia, useReduxLocalMedia, useRoomConnection, VideoView } from "../lib/react";
 import { LocalMediaRef } from "../lib/react/useLocalMedia";
 import PrecallExperience from "./components/PrecallExperience";
 import VideoExperience from "./components/VideoExperience";
 import fakeWebcamFrame from "../lib/utils/fakeWebcamFrame";
 import fakeAudioStream from "../lib/utils/fakeAudioStream";
 import "./styles.css";
+import ReduxPrecallExperience from "./components/ReduxPrecallExperience";
 
 export default {
     title: "Examples/Custom UI",
@@ -49,6 +50,16 @@ export const LocalMediaOnly = () => {
     return (
         <div>
             <PrecallExperience {...localMedia} />
+        </div>
+    );
+};
+
+export const ReduxLocalMediaOnly = () => {
+    const localMedia = useReduxLocalMedia();
+
+    return (
+        <div>
+            <ReduxPrecallExperience {...localMedia} />
         </div>
     );
 };

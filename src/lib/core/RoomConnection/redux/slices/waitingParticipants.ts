@@ -1,7 +1,7 @@
 import { createSlice } from "@reduxjs/toolkit";
 import { RootState } from "../store";
 import { WaitingParticipant } from "~/lib/RoomParticipant";
-import { createAppThunk } from "../asyncThunk";
+import { createAppThunk } from "../../../redux/asyncThunk";
 import { selectSignalConnectionSocket, signalEvents } from "./signalConnection";
 
 /**

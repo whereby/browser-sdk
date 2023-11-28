@@ -1,9 +1,9 @@
 import { createSlice, createSelector } from "@reduxjs/toolkit";
-import { RootState } from "../store";
-import { createAppThunk } from "../asyncThunk";
+import { RootState } from "../../../redux/store";
+import { createAppThunk } from "../../../redux/asyncThunk";
 import LocalMedia from "~/lib/LocalMedia";
-import { doAppJoin, selectAppRoomKey } from "./app";
-import { createReactor } from "../listenerMiddleware";
+import { doAppJoin } from "./app";
+import { createReactor } from "../../../redux/listenerMiddleware";
 
 /**
  * State & reducer
@@ -22,7 +22,7 @@ const initialState: LocalMediaState = {
 };
 
 export const localMediaSlice = createSlice({
-    name: "localMedia",
+    name: "localMedia-old",
     initialState,
     reducers: {
         starting: (state) => {
@@ -57,13 +57,13 @@ export const localMediaSlice = createSlice({
 export const { started, starting } = localMediaSlice.actions;
 
 export const doLocalMediaStart = createAppThunk(() => async (dispatch, getState) => {
-    const { localMediaInstance } = selectLocalMediaRaw(getState());
-    if (!localMediaInstance) {
+    //const { localMediaInstance } = selectLocalMediaRaw(getState());
+    /*if (!localMediaInstance) {
         return;
     }
 
     dispatch(starting());
-    await localMediaInstance.start();
+    await localMediaInstance.start();*/
     dispatch(started());
 });
 
@@ -72,17 +72,18 @@ export const doLocalMediaStart = createAppThunk(() => async (dispatch, getState)
  */
 
 export const selectLocalMediaRaw = (state: RootState) => state.localMedia;
-export const selectLocalMediaInstance = (state: RootState) => state.localMedia.localMediaInstance;
-export const selectLocalMediaStream = (state: RootState) => state.localMedia.localMediaInstance?.stream;
-export const selectLocalMediaStarted = (state: RootState) => state.localMedia.hasStarted;
+export const selectLocalMediaInstance = () => undefined;
+export const selectLocalMediaStream = () => undefined;
+export const selectLocalMediaStarted = () => false;
 
 /**
  * Reactors
  */
 
 export const selectLocalMediaShouldStart = createSelector(selectLocalMediaRaw, (raw) => {
-    const { hasStarted, isStarting, localMediaInstance } = raw;
-    return !!localMediaInstance && !hasStarted && !isStarting;
+    //const { hasStarted, isStarting, localMediaInstance } = raw;
+    //return !!localMediaInstance && !hasStarted && !isStarting;
+    return false;
 });
 
 createReactor([selectLocalMediaShouldStart], ({ dispatch }, localMediaShouldStart) => {
