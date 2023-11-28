@@ -1,10 +1,10 @@
 import { PayloadAction, createSlice } from "@reduxjs/toolkit";
-import { RootState } from "../store";
-import { createAppAsyncThunk } from "../asyncThunk";
+import { RootState } from "../../../redux/store";
+import { createAppAsyncThunk } from "../../../redux/asyncThunk";
 import { LocalParticipant } from "~/lib/react";
 import { selectSignalConnectionRaw } from "./signalConnection";
 import { selectRtcConnectionRaw } from "./rtcConnection";
-import { selectLocalMediaInstance } from "./localMedia";
+import { selectLocalMediaInstance } from "./localMedia-old";
 import { doAppJoin } from "./app";
 // import { doAddScreenshare, doRemoveScreenshare } from "./remoteParticipants";
 

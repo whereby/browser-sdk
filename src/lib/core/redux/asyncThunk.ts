@@ -1,6 +1,6 @@
 import { createAsyncThunk, AsyncThunk, AsyncThunkPayloadCreator, ThunkAction, AnyAction } from "@reduxjs/toolkit";
 import { RootState, AppDispatch } from "./store";
-import { createServices } from "../../../services";
+import { createServices } from "../../services";
 
 export type ThunkConfig = {
     state: RootState;

@@ -1,6 +1,6 @@
 import { AnyAction, createAction, createSlice, PayloadAction, ThunkDispatch } from "@reduxjs/toolkit";
 import { RootState } from "../store";
-import { createAppThunk } from "../asyncThunk";
+import { createAppThunk } from "../../../redux/asyncThunk";
 import RtcManager from "@whereby/jslib-media/src/webrtc/RtcManager";
 import { selectSignalConnectionRaw } from "./signalConnection";
 import RtcManagerDispatcher, {
@@ -11,7 +11,7 @@ import RtcManagerDispatcher, {
 import { createReactor } from "../listenerMiddleware";
 import { selectRemoteParticipants, streamStatusUpdated } from "./remoteParticipants";
 import { StreamState } from "~/lib/RoomParticipant";
-import { selectLocalMediaInstance, selectLocalMediaStarted } from "./localMedia";
+import { selectLocalMediaInstance, selectLocalMediaStarted } from "./localMedia-old";
 import { selectAppWantsToJoin } from "./app";
 
 function createRtcEventAction<T>(name: string) {
