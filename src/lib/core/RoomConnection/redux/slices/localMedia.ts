@@ -2,7 +2,7 @@ import { createSlice, createSelector } from "@reduxjs/toolkit";
 import { RootState } from "../store";
 import { createAppThunk } from "../asyncThunk";
 import LocalMedia from "~/lib/LocalMedia";
-import { doAppJoin } from "./app";
+import { doAppJoin, selectAppRoomKey } from "./app";
 import { createReactor } from "../listenerMiddleware";
 
 /**
@@ -85,8 +85,8 @@ export const selectLocalMediaShouldStart = createSelector(selectLocalMediaRaw, (
     return !!localMediaInstance && !hasStarted && !isStarting;
 });
 
-createReactor([selectLocalMediaShouldStart], (_, { dispatch, getState }) => {
-    if (selectLocalMediaShouldStart(getState())) {
+createReactor([selectLocalMediaShouldStart], ({ dispatch }, localMediaShouldStart) => {
+    if (localMediaShouldStart) {
         dispatch(doLocalMediaStart());
     }
 });
