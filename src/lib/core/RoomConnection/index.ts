@@ -29,7 +29,7 @@ import {
 import { doStartCloudRecording, doStopCloudRecording, selectCloudRecordingRaw } from "./redux/slices/cloudRecording";
 import { selectStreamingRaw } from "./redux/slices/streaming";
 import { doAcceptWaitingParticipant, doRejectWaitingParticipant } from "./redux/slices/waitingParticipants";
-import { selectLocalMediaStream } from "./redux/slices/localMedia-old";
+import { selectLocalMediaStream } from "../LocalMedia/slices/localMedia";
 
 export interface RoomConnectionOptions {
     displayName?: string; // Might not be needed at all
@@ -211,7 +211,7 @@ export default class RoomConnection extends TypedEventTarget {
         if (localMedia) {
             this.localMedia = localMedia;
         } else if (localMediaConstraints) {
-            console.log("Creating new fresh store");
+            //console.log("Creating new fresh store");
 
             const services = createServices(roomUrl);
             this.localMedia = createStore({ injectServices: services });
@@ -266,7 +266,7 @@ export default class RoomConnection extends TypedEventTarget {
             const localParticipant = selectLocalParticipantRaw(state);
 
             if (localParticipant !== this.localParticipant) {
-                //this.localParticipant = { ...localParticipant, stream: selectLocalMediaStream(state) };
+                this.localParticipant = { ...localParticipant, stream: selectLocalMediaStream(state) };
             }
 
             const chatMessages = selectChatMessages(state);
@@ -355,7 +355,7 @@ export default class RoomConnection extends TypedEventTarget {
         // Set up local media listeners
         /*this.localMedia.addEventListener("camera_enabled", (e) => {
             const { enabled } = e.detail;
-            this._store.dispatch(doEnableVideo({ enabled }));
+            this.localMedia.dispatch(doEnableVideo({ enabled }));
             this.dispatchEvent(new RoomConnectionEvent("local_camera_enabled", { detail: { enabled } }));
         });
         this.localMedia.addEventListener("microphone_enabled", (e) => {
@@ -386,24 +386,24 @@ export default class RoomConnection extends TypedEventTarget {
     }
 
     public leave() {
-        this._store.dispatch(appLeft());
+        this.localMedia.dispatch(appLeft());
         // this._unsubscribe();
     }
 
     public sendChatMessage(text: string): void {
-        this._store.dispatch(doSendChatMessage({ text }));
+        this.localMedia.dispatch(doSendChatMessage({ text }));
     }
 
     public setDisplayName(displayName: string): void {
-        this._store.dispatch(doSetDisplayName({ displayName }));
+        this.localMedia.dispatch(doSetDisplayName({ displayName }));
     }
 
     public acceptWaitingParticipant(participantId: string) {
-        this._store.dispatch(doAcceptWaitingParticipant({ participantId }));
+        this.localMedia.dispatch(doAcceptWaitingParticipant({ participantId }));
     }
 
     public rejectWaitingParticipant(participantId: string) {
-        this._store.dispatch(doRejectWaitingParticipant({ participantId }));
+        this.localMedia.dispatch(doRejectWaitingParticipant({ participantId }));
     }
 
     public updateStreamResolution({ streamId, width, height }: { streamId?: string; width: number; height: number }) {
@@ -423,19 +423,19 @@ export default class RoomConnection extends TypedEventTarget {
     }
 
     public async startScreenshare() {
-        this._store.dispatch(doStartScreenshare());
+        this.localMedia.dispatch(doStartScreenshare());
     }
 
     public stopScreenshare() {
-        this._store.dispatch(doStopScreenshare());
+        this.localMedia.dispatch(doStopScreenshare());
     }
 
     public startCloudRecording() {
-        this._store.dispatch(doStartCloudRecording());
+        this.localMedia.dispatch(doStartCloudRecording());
         this.dispatchEvent(new RoomConnectionEvent("cloud_recording_request_started"));
     }
 
     public stopCloudRecording() {
-        this._store.dispatch(doStopCloudRecording());
+        this.localMedia.dispatch(doStopCloudRecording());
     }
 }

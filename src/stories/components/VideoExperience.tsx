@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 import DisplayNameForm from "./DisplayNameForm";
-import { LocalMediaRef } from "../../lib/react/useLocalMedia";
+import { LocalMediaRef } from "../../lib/react/useReduxLocalMedia";
 import { useRoomConnection } from "../../lib/react/useRoomConnection";
 
 export default function VideoExperience({
@@ -19,7 +19,7 @@ export default function VideoExperience({
             audio: true,
             video: true,
         },
-        localMedia,
+        localMedia: localMedia?.store,
         logger: console,
     });
 

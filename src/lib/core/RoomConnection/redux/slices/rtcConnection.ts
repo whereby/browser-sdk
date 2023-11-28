@@ -11,12 +11,12 @@ import RtcManagerDispatcher, {
 import { createReactor } from "../../../redux/listenerMiddleware";
 import { selectRemoteParticipants, streamStatusUpdated } from "./remoteParticipants";
 import { StreamState } from "~/lib/RoomParticipant";
-import { selectLocalMediaInstance, selectLocalMediaStarted } from "./localMedia-old";
 import { selectAppWantsToJoin } from "./app";
 import {
     selectIsCameraEnabled,
     selectIsMicrophoneEnabled,
     selectLocalMediaStream,
+    selectLocalMediaStatus,
 } from "../../../LocalMedia/slices/localMedia";
 
 function createRtcEventAction<T>(name: string) {
@@ -255,9 +255,9 @@ createReactor([selectRtcConnectionRaw, selectSignalConnectionRaw], ({ dispatch }
 });
 
 createReactor(
-    [selectRtcConnectionRaw, selectLocalMediaStarted],
-    ({ dispatch }, { rtcManager, rtcManagerInitialized }, localMediaStarted) => {
-        if (localMediaStarted && rtcManager && !rtcManagerInitialized) {
+    [selectRtcConnectionRaw, selectLocalMediaStatus],
+    ({ dispatch }, { rtcManager, rtcManagerInitialized }, localMediaStatus) => {
+        if (localMediaStatus === "started" && rtcManager && !rtcManagerInitialized) {
             dispatch(doRtcManagerInitialize());
         }
     }

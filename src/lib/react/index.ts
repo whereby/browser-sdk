@@ -1,9 +1,6 @@
-export { default as VideoElement } from "./VideoElement";
-export { default as useLocalMedia } from "./useLocalMedia";
+export { default as VideoView } from "./VideoView";
 export { useRoomConnection } from "./useRoomConnection";
 export { default as useReduxLocalMedia } from "./useReduxLocalMedia";
-
-export type { LocalMediaRef as UseLocalMediaResult } from "./useLocalMedia";
 
 export type {
     ChatMessageState as ChatMessage,
