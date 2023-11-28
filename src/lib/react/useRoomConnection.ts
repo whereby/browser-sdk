@@ -1,6 +1,6 @@
 import React, { useEffect, useReducer, useState } from "react";
 import VideoView from "./VideoView";
-import { LocalMediaRef } from "./useLocalMedia";
+
 import RoomConnection, {
     ChatMessage,
     CloudRecordingState,
@@ -10,6 +10,7 @@ import RoomConnection, {
     LiveStreamState,
 } from "..//core/RoomConnection";
 import { LocalParticipant, RemoteParticipant, Screenshare, WaitingParticipant } from "../RoomParticipant";
+import { Store } from "../core/redux/store";
 
 export type RemoteParticipantState = Omit<
     RemoteParticipant,
@@ -270,7 +271,7 @@ function reducer(state: RoomConnectionState, action: RoomConnectionEvent): RoomC
 }
 
 interface UseRoomConnectionOptions extends Omit<RoomConnectionOptions, "localMedia"> {
-    localMedia?: LocalMediaRef;
+    localMedia?: Store;
 }
 
 interface RoomConnectionActions {
@@ -315,7 +316,7 @@ export function useRoomConnection(
         () =>
             new RoomConnection(roomUrl, {
                 ...roomConnectionOptions,
-                localMedia: roomConnectionOptions?.localMedia?._ref || undefined,
+                localMedia: roomConnectionOptions.localMedia || undefined,
             })
     );
     const [state, dispatch] = useReducer(reducer, initialState);
@@ -463,10 +464,10 @@ export function useRoomConnection(
                 dispatch({ type: "LOCAL_CLIENT_DISPLAY_NAME_CHANGED", payload: { displayName } });
             },
             toggleCamera: (enabled) => {
-                roomConnection.localMedia.toggleCameraEnabled(enabled);
+                //roomConnection.localMedia.toggleCameraEnabled(enabled);
             },
             toggleMicrophone: (enabled) => {
-                roomConnection.localMedia.toggleMichrophoneEnabled(enabled);
+                //roomConnection.localMedia.toggleMichrophoneEnabled(enabled);
             },
             acceptWaitingParticipant: (participantId) => {
                 roomConnection.acceptWaitingParticipant(participantId);

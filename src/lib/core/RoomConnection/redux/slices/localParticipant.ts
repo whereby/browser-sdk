@@ -4,7 +4,7 @@ import { createAppAsyncThunk } from "../../../redux/thunk";
 import { LocalParticipant } from "~/lib/react";
 import { selectSignalConnectionRaw } from "./signalConnection";
 import { selectRtcConnectionRaw } from "./rtcConnection";
-import { selectLocalMediaInstance } from "./localMedia-old";
+
 import { doAppJoin } from "./app";
 import { selectScreenshareStream } from "../../../LocalMedia/slices/localMedia";
 // import { doAddScreenshare, doRemoveScreenshare } from "./remoteParticipants";
