@@ -56,3 +56,21 @@ export const createStore = ({
 export type RootReducer = typeof rootReducer;
 export type RootState = ReturnType<typeof rootReducer>;
 export type AppDispatch = ReturnType<typeof createStore>["dispatch"];
+
+export type Store = ReturnType<typeof createStore>;
+
+export const observeStore = <T>(store: Store, select: (state: RootState) => T, onChange: (result: T) => void) => {
+    let currentState: T;
+
+    function handleChange() {
+        const nextState = select(store.getState());
+        if (nextState !== currentState) {
+            currentState = nextState;
+            onChange(currentState);
+        }
+    }
+
+    const unsubscribe = store.subscribe(handleChange);
+    handleChange();
+    return unsubscribe;
+};
