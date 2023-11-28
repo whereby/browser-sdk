@@ -3,7 +3,7 @@ import { RootState } from "../store";
 import { createAppAsyncThunk } from "../asyncThunk";
 import { createReactor } from "../listenerMiddleware";
 import { Credentials } from "~/lib/api";
-import { selectAppRaw, selectAppWantsToJoin } from "./app";
+import { selectAppWantsToJoin } from "./app";
 /**
  * Reducer
  */
@@ -84,10 +84,7 @@ export const shouldFetchDeviceCredentials = (
     return false;
 };
 
-createReactor([selectAppRaw, selectDeviceCredentialsRaw], (_, { dispatch, getState }) => {
-    const wantsToJoin = selectAppWantsToJoin(getState());
-    const deviceCredentials = selectDeviceCredentialsRaw(getState());
-
+createReactor([selectAppWantsToJoin, selectDeviceCredentialsRaw], ({ dispatch }, wantsToJoin, deviceCredentials) => {
     if (shouldFetchDeviceCredentials(wantsToJoin, deviceCredentials.isFetching, deviceCredentials.data)) {
         dispatch(doGetDeviceCredentials());
     }
