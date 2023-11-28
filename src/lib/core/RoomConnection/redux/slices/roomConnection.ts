@@ -3,12 +3,13 @@ import { PayloadAction, createSlice } from "@reduxjs/toolkit";
 import { ConnectionStatus } from "../../../RoomConnection";
 import { createReactor } from "../../../redux/listenerMiddleware";
 import { RootState } from "../../../redux/store";
-import { createAppThunk } from "../../../redux/asyncThunk";
+import { createAppThunk } from "../../../redux/thunk";
 import { selectAppDisplayName, selectAppRoomKey, selectAppRoomName, selectAppSdkVersion } from "./app";
 
 import { selectOrganizationId } from "./organization";
 import { selectSignalConnectionRaw, signalEvents } from "./signalConnection";
 import { selectLocalMediaInstance, selectLocalMediaStarted } from "./localMedia-old";
+import { selectIsCameraEnabled, selectIsMicrophoneEnabled } from "~/lib/core/LocalMedia/slices/localMedia";
 
 /**
  * Reducer
@@ -60,13 +61,14 @@ export const doConnectRoom = createAppThunk(() => (dispatch, getState) => {
     const displayName = selectAppDisplayName(state);
     const sdkVersion = selectAppSdkVersion(state);
     const organizationId = selectOrganizationId(state);
-    const localMedia = selectLocalMediaInstance(state);
+    const isCameraEnabled = selectIsCameraEnabled(getState());
+    const isMicrophoneEnabled = selectIsMicrophoneEnabled(getState());
 
     socket?.emit("join_room", {
         avatarUrl: null,
         config: {
-            isAudioEnabled: localMedia?.isMicrophoneEnabled() || false,
-            isVideoEnabled: localMedia?.isCameraEnabled() || false,
+            isAudioEnabled: isMicrophoneEnabled,
+            isVideoEnabled: isCameraEnabled,
         },
         deviceCapabilities: { canScreenshare: true },
         displayName: displayName,
