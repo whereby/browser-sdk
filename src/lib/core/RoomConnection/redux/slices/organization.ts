@@ -80,18 +80,17 @@ export const selectOrganizationId = (state: RootState) => state.organization.dat
  * Reducers
  */
 
-createReactor((_, { dispatch, getState }) => {
-    const wantsToJoin = selectAppWantsToJoin(getState());
-    const organization = selectOrganizationRaw(getState());
-    const deviceCredentials = selectDeviceCredentialsRaw(getState());
-
-    if (
-        wantsToJoin &&
-        !organization.data &&
-        !organization.isFetching &&
-        !organization.error &&
-        !deviceCredentials.isFetching
-    ) {
-        dispatch(doOrganizationFetch());
+createReactor(
+    [selectAppWantsToJoin, selectOrganizationRaw, selectDeviceCredentialsRaw],
+    ({ dispatch }, wantsToJoin, organization, deviceCredentials) => {
+        if (
+            wantsToJoin &&
+            !organization.data &&
+            !organization.isFetching &&
+            !organization.error &&
+            !deviceCredentials.isFetching
+        ) {
+            dispatch(doOrganizationFetch());
+        }
     }
-});
+);

@@ -2,7 +2,6 @@ import { createSlice, createAction, ThunkDispatch, AnyAction, PayloadAction } fr
 import { RootState } from "../store";
 import { createAppThunk } from "../asyncThunk";
 import { createReactor } from "../listenerMiddleware";
-import { selectAppWantsToJoin } from "./app";
 import { selectDeviceCredentialsRaw } from "./deviceCredentials";
 
 import ServerSocket, {
@@ -22,6 +21,7 @@ import ServerSocket, {
     VideoEnabledEvent,
 } from "@whereby/jslib-media/src/utils/ServerSocket";
 import { Credentials } from "~/lib/api";
+import { appLeft, selectAppWantsToJoin } from "./app";
 
 function createSignalEventAction<T>(name: string) {
     return createAction<T>(`signalConnection/event/${name}`);
@@ -138,6 +138,15 @@ export const signalConnectionSlice = createSlice({
             };
         },
     },
+    extraReducers: (builder) => {
+        builder.addCase(appLeft, (state) => {
+            return {
+                ...state,
+                socket: null,
+                status: "disconnected",
+            };
+        });
+    },
 });
 
 export const { deviceIdentifying, deviceIdentified, socketConnected, socketConnecting, socketDisconnected } =
@@ -206,25 +215,22 @@ export const selectSignalConnectionSocket = (state: RootState) => state.signalCo
  * Reactors
  */
 
-createReactor((_, { dispatch, getState }) => {
-    const wantsToJoin = selectAppWantsToJoin(getState());
-    const signalConnectionStatus = selectSignalStatus(getState());
-
-    if (wantsToJoin && signalConnectionStatus === "") {
+createReactor([selectAppWantsToJoin, selectSignalStatus], ({ dispatch }, wantsToJoin, signalStatus) => {
+    if (wantsToJoin && signalStatus === "") {
         dispatch(doSignalSocketConnect());
     }
 });
 
-createReactor((_, { dispatch, getState }) => {
-    const deviceCredentialsRaw = selectDeviceCredentialsRaw(getState());
-    const signalConnectionRaw = selectSignalConnectionRaw(getState());
-
-    if (
-        deviceCredentialsRaw.data &&
-        signalConnectionRaw.status === "connected" &&
-        !signalConnectionRaw.deviceIdentified &&
-        !signalConnectionRaw.isIdentifyingDevice
-    ) {
-        dispatch(doSignalIdentifyDevice({ deviceCredentials: deviceCredentialsRaw.data }));
+createReactor(
+    [selectDeviceCredentialsRaw, selectSignalConnectionRaw],
+    ({ dispatch }, deviceCredentialsRaw, signalConnectionRaw) => {
+        if (
+            deviceCredentialsRaw.data &&
+            signalConnectionRaw.status === "connected" &&
+            !signalConnectionRaw.deviceIdentified &&
+            !signalConnectionRaw.isIdentifyingDevice
+        ) {
+            dispatch(doSignalIdentifyDevice({ deviceCredentials: deviceCredentialsRaw.data }));
+        }
     }
-});
+);

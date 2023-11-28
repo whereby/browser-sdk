@@ -245,39 +245,30 @@ export const selectRtcConnectionRaw = (state: RootState) => state.rtcConnection;
  * Reactors
  */
 
-createReactor((_, { dispatch, getState }) => {
-    const rtcConnection = selectRtcConnectionRaw(getState());
-    const signalConnection = selectSignalConnectionRaw(getState());
-
+createReactor([selectRtcConnectionRaw, selectSignalConnectionRaw], ({ dispatch }, rtcConnection, signalConnection) => {
     if (!rtcConnection.dispatcherCreated && !rtcConnection.isCreatingDispatcher && signalConnection.socket) {
         dispatch(doConnectRtc());
     }
 });
 
-createReactor((_, { dispatch, getState }) => {
-    const { rtcManager, rtcManagerInitialized } = selectRtcConnectionRaw(getState());
-    const localMediaStarted = selectLocalMediaStarted(getState());
-
-    if (localMediaStarted && rtcManager && !rtcManagerInitialized) {
-        dispatch(doRtcManagerInitialize());
+createReactor(
+    [selectRtcConnectionRaw, selectLocalMediaStarted],
+    ({ dispatch }, { rtcManager, rtcManagerInitialized }, localMediaStarted) => {
+        if (localMediaStarted && rtcManager && !rtcManagerInitialized) {
+            dispatch(doRtcManagerInitialize());
+        }
     }
-});
+);
 
 // Disonnect and clean up
-createReactor((_, { dispatch, getState }) => {
-    const { status } = selectRtcConnectionRaw(getState());
-    const wantsToJoin = selectAppWantsToJoin(getState());
-
+createReactor([selectRtcConnectionRaw, selectAppWantsToJoin], ({ dispatch }, { status }, wantsToJoin) => {
     if (!wantsToJoin && !["", "disconnected"].includes(status)) {
         dispatch(doDisconnectRtc());
     }
 });
 
 // react accept streams
-createReactor((_, { dispatch, getState }) => {
-    const rtcConnection = selectRtcConnectionRaw(getState());
-    const remoteParticipants = selectRemoteParticipants(getState());
-
+createReactor([selectRtcConnectionRaw, selectRemoteParticipants], ({ dispatch }, rtcConnection, remoteParticipants) => {
     if (rtcConnection.status !== "ready") {
         return;
     }
