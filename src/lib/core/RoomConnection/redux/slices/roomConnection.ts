@@ -97,12 +97,7 @@ export const selectRoomConnectionStatus = (state: RootState) => state.roomConnec
 
 createReactor(
     [selectOrganizationId, selectRoomConnectionStatus, selectSignalConnectionRaw, selectLocalMediaStarted],
-    (_, { dispatch, getState }) => {
-        const hasOrganizationIdFetched = selectOrganizationId(getState());
-        const roomConnectionStatus = selectRoomConnectionStatus(getState());
-        const signalIdentified = selectSignalConnectionRaw(getState()).deviceIdentified;
-        const localMediaStarted = selectLocalMediaStarted(getState());
-
+    ({ dispatch }, hasOrganizationIdFetched, roomConnectionStatus, signalIdentified, localMediaStarted) => {
         if (
             localMediaStarted &&
             signalIdentified &&

@@ -215,25 +215,22 @@ export const selectSignalConnectionSocket = (state: RootState) => state.signalCo
  * Reactors
  */
 
-createReactor([selectAppWantsToJoin, selectSignalStatus], (_, { dispatch, getState }) => {
-    const wantsToJoin = selectAppWantsToJoin(getState());
-    const signalConnectionStatus = selectSignalStatus(getState());
-
-    if (wantsToJoin && signalConnectionStatus === "") {
+createReactor([selectAppWantsToJoin, selectSignalStatus], ({ dispatch }, wantsToJoin, signalStatus) => {
+    if (wantsToJoin && signalStatus === "") {
         dispatch(doSignalSocketConnect());
     }
 });
 
-createReactor([selectDeviceCredentialsRaw, selectSignalConnectionRaw], (_, { dispatch, getState }) => {
-    const deviceCredentialsRaw = selectDeviceCredentialsRaw(getState());
-    const signalConnectionRaw = selectSignalConnectionRaw(getState());
-
-    if (
-        deviceCredentialsRaw.data &&
-        signalConnectionRaw.status === "connected" &&
-        !signalConnectionRaw.deviceIdentified &&
-        !signalConnectionRaw.isIdentifyingDevice
-    ) {
-        dispatch(doSignalIdentifyDevice({ deviceCredentials: deviceCredentialsRaw.data }));
+createReactor(
+    [selectDeviceCredentialsRaw, selectSignalConnectionRaw],
+    ({ dispatch }, deviceCredentialsRaw, signalConnectionRaw) => {
+        if (
+            deviceCredentialsRaw.data &&
+            signalConnectionRaw.status === "connected" &&
+            !signalConnectionRaw.deviceIdentified &&
+            !signalConnectionRaw.isIdentifyingDevice
+        ) {
+            dispatch(doSignalIdentifyDevice({ deviceCredentials: deviceCredentialsRaw.data }));
+        }
     }
-});
+);
