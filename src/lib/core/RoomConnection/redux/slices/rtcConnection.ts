@@ -1,6 +1,6 @@
 import { AnyAction, createAction, createSlice, PayloadAction, ThunkDispatch } from "@reduxjs/toolkit";
-import { RootState } from "../store";
-import { createAppThunk } from "../../../redux/asyncThunk";
+import { RootState } from "../../../redux/store";
+import { createAppThunk } from "../../../redux/thunk";
 import RtcManager from "@whereby/jslib-media/src/webrtc/RtcManager";
 import { selectSignalConnectionRaw } from "./signalConnection";
 import RtcManagerDispatcher, {
@@ -8,11 +8,16 @@ import RtcManagerDispatcher, {
     RtcManagerCreatedPayload,
     RtcStreamAddedPayload,
 } from "@whereby/jslib-media/src/webrtc/RtcManagerDispatcher";
-import { createReactor } from "../listenerMiddleware";
+import { createReactor } from "../../../redux/listenerMiddleware";
 import { selectRemoteParticipants, streamStatusUpdated } from "./remoteParticipants";
 import { StreamState } from "~/lib/RoomParticipant";
 import { selectLocalMediaInstance, selectLocalMediaStarted } from "./localMedia-old";
 import { selectAppWantsToJoin } from "./app";
+import {
+    selectIsCameraEnabled,
+    selectIsMicrophoneEnabled,
+    selectLocalMediaStream,
+} from "~/lib/core/LocalMedia/slices/localMedia";
 
 function createRtcEventAction<T>(name: string) {
     return createAction<T>(`rtcConnection/event/${name}`);
@@ -122,7 +127,8 @@ export const doConnectRtc = createAppThunk(() => (dispatch, getState) => {
     const state = getState();
     const socket = selectSignalConnectionRaw(state).socket;
     const dispatcher = selectRtcConnectionRaw(state).rtcManagerDispatcher;
-    const localMedia = selectLocalMediaInstance(state);
+    const isCameraEnabled = selectIsCameraEnabled(state);
+    const isMicrophoneEnabled = selectIsMicrophoneEnabled(state);
 
     if (dispatcher) {
         return;
@@ -130,8 +136,8 @@ export const doConnectRtc = createAppThunk(() => (dispatch, getState) => {
 
     const webrtcProvider = {
         getMediaConstraints: () => ({
-            audio: localMedia?.isMicrophoneEnabled() || false,
-            video: localMedia?.isCameraEnabled() || false,
+            audio: isMicrophoneEnabled,
+            video: isCameraEnabled,
         }),
         deferrable(clientId: string) {
             return !clientId;
@@ -212,24 +218,21 @@ const doHandleAcceptStreams = createAppThunk((payload: StreamStatusUpdate[]) => 
 
 export const doRtcManagerCreated = createAppThunk((payload: RtcManagerCreatedPayload) => (dispatch, getState) => {
     const { rtcManager } = payload;
-    const localMedia = selectLocalMediaInstance(getState());
+    //const localMedia = selectLocalMediaInstance(getState());
 
-    localMedia?.addRtcManager(rtcManager);
+    //localMedia?.addRtcManager(rtcManager);
 
     dispatch(rtcManagerCreated(rtcManager));
 });
 
 export const doRtcManagerInitialize = createAppThunk(() => (dispatch, getState) => {
-    const localMedia = selectLocalMediaInstance(getState());
+    const localMediaStream = selectLocalMediaStream(getState());
     const rtcManager = selectRtcConnectionRaw(getState()).rtcManager;
+    const isCameraEnabled = selectIsCameraEnabled(getState());
+    const isMicrophoneEnabled = selectIsMicrophoneEnabled(getState());
 
-    if (localMedia?.stream && rtcManager) {
-        rtcManager.addNewStream(
-            "0",
-            localMedia.stream,
-            !localMedia.isMicrophoneEnabled(),
-            !localMedia.isCameraEnabled()
-        );
+    if (localMediaStream && rtcManager) {
+        rtcManager.addNewStream("0", localMediaStream, !isMicrophoneEnabled, !isCameraEnabled);
     }
 
     dispatch(rtcManagerInitialized());

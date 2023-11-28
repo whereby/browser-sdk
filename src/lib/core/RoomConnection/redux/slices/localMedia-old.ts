@@ -1,6 +1,6 @@
 import { createSlice, createSelector } from "@reduxjs/toolkit";
 import { RootState } from "../../../redux/store";
-import { createAppThunk } from "../../../redux/asyncThunk";
+import { createAppThunk } from "../../../redux/thunk";
 import LocalMedia from "~/lib/LocalMedia";
 import { doAppJoin } from "./app";
 import { createReactor } from "../../../redux/listenerMiddleware";

@@ -1,7 +1,7 @@
 import { PayloadAction, createSlice } from "@reduxjs/toolkit";
 import { RootState } from "../../../redux/store";
 import LocalMedia from "~/lib/LocalMedia";
-import { createAppThunk } from "../../../redux/asyncThunk";
+import { createAppThunk } from "../../../redux/thunk";
 import { doSignalDisconnect } from "./signalConnection";
 
 /**

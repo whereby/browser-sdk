@@ -1,11 +1,12 @@
 import { PayloadAction, createSlice } from "@reduxjs/toolkit";
 import { RootState } from "../../../redux/store";
-import { createAppAsyncThunk } from "../../../redux/asyncThunk";
+import { createAppAsyncThunk } from "../../../redux/thunk";
 import { LocalParticipant } from "~/lib/react";
 import { selectSignalConnectionRaw } from "./signalConnection";
 import { selectRtcConnectionRaw } from "./rtcConnection";
 import { selectLocalMediaInstance } from "./localMedia-old";
 import { doAppJoin } from "./app";
+import { selectScreenshareStream } from "~/lib/core/LocalMedia/slices/localMedia";
 // import { doAddScreenshare, doRemoveScreenshare } from "./remoteParticipants";
 
 export interface LocalParticipantState extends LocalParticipant {
@@ -66,10 +67,10 @@ export const doStartScreenshare = createAppAsyncThunk(
     async (payload, { dispatch, getState }) => {
         const state = getState();
         const rtcManager = selectRtcConnectionRaw(state).rtcManager;
-        const localMedia = selectLocalMediaInstance(state);
         const selfId = selectSelfId(state);
+        const screenshareStream = selectScreenshareStream(state);
 
-        const screenshareStream = localMedia?.screenshareStream || (await localMedia?.startScreenshare());
+        //const screenshareStream = localMedia?.screenshareStream || (await localMedia?.startScreenshare());
 
         if (screenshareStream) {
             const onEnded = () => {
@@ -104,15 +105,14 @@ export const doStopScreenshare = createAppAsyncThunk(
     async (payload, { dispatch, getState }) => {
         const state = getState();
         const rtcManager = selectRtcConnectionRaw(state).rtcManager;
-        const localMedia = selectLocalMediaInstance(state);
 
-        const screenshareStream = localMedia?.screenshareStream;
+        //const screenshareStream = localMedia?.screenshareStream;
 
-        if (screenshareStream && localMedia.screenshareStream) {
+        /*if (screenshareStream && localMedia.screenshareStream) {
             rtcManager?.removeStream(localMedia.screenshareStream.id, localMedia.screenshareStream, null);
             localMedia.stopScreenshare();
             // dispatch(doRemoveScreenshare(screenshareStream.id));
-        }
+        }*/
     }
 );
 
