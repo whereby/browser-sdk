@@ -1,7 +1,7 @@
 import RtcManager from "@whereby/jslib-media/src/webrtc/RtcManager";
 import { createSelector, createSlice, PayloadAction } from "@reduxjs/toolkit";
 import { getStream } from "@whereby/jslib-media/src/webrtc/MediaDevices";
-import { createAppAsyncThunk } from "../../redux/thunk";
+import { createAppAsyncThunk, createAppThunk } from "../../redux/thunk";
 import { RootState } from "../../redux/store";
 import { createReactor, startAppListening } from "../../redux/listenerMiddleware";
 import { selectAppWantsToJoin } from "../../RoomConnection/redux/slices/app";
@@ -44,7 +44,7 @@ export interface LocalMediaState {
     options?: LocalMediaOptions;
     rtcManagers: RtcManager[];
     screenshareStream?: MediaStream;
-    status: "stopped" | "starting" | "started" | "error";
+    status: "" | "stopped" | "starting" | "started" | "error";
     startError?: unknown;
     stream?: MediaStream;
 }
@@ -57,7 +57,7 @@ const initialState: LocalMediaState = {
     isTogglingCamera: false,
     microphoneEnabled: false,
     rtcManagers: [],
-    status: "stopped",
+    status: "",
 };
 
 export const selectCameraDeviceError = (state: RootState) => state.localMedia.cameraDeviceError;
@@ -118,17 +118,6 @@ const reactToggleMicrophone = createAppAsyncThunk("localMedia/doToggleMicrophone
     audioTrack.enabled = enabled;
 });
 
-startAppListening({
-    predicate: (action, currentState, previousState) => {
-        const oldValue = selectIsMicrophoneEnabled(previousState);
-        const newValue = selectIsMicrophoneEnabled(currentState);
-        return oldValue !== newValue;
-    },
-    effect: (action, { dispatch }) => {
-        dispatch(reactToggleMicrophone());
-    },
-});
-
 const reactToggleCamera = createAppAsyncThunk("localMedia/doToggleCamera", async (_, { getState, rejectWithValue }) => {
     const state = getState();
     const stream = selectLocalMediaStream(state);
@@ -184,21 +173,6 @@ const reactToggleCamera = createAppAsyncThunk("localMedia/doToggleCamera", async
     }
 });
 
-startAppListening({
-    predicate: (_action, currentState, previousState) => {
-        const isToggling = selectIsToggleCamera(currentState);
-        if (isToggling) {
-            return false;
-        }
-        const oldValue = selectIsCameraEnabled(previousState);
-        const newValue = selectIsCameraEnabled(currentState);
-        return oldValue !== newValue;
-    },
-    effect: (_action, { dispatch }) => {
-        dispatch(reactToggleCamera());
-    },
-});
-
 const reactSetDevice = createAppAsyncThunk(
     "localMedia/reactSetDevice",
     async ({ audio, video }: { audio: boolean; video: boolean }, { getState, rejectWithValue }) => {
@@ -245,27 +219,6 @@ const reactSetDevice = createAppAsyncThunk(
     }
 );
 
-startAppListening({
-    predicate: (_action, currentState, previousState) => {
-        const oldValue = selectCurrentCameraDeviceId(previousState);
-        const newValue = selectCurrentCameraDeviceId(currentState);
-        return oldValue !== newValue;
-    },
-    effect: (_action, { dispatch }) => {
-        dispatch(reactSetDevice({ audio: false, video: true }));
-    },
-});
-startAppListening({
-    predicate: (_action, currentState, previousState) => {
-        const oldValue = selectCurrentMicrophoneDeviceId(previousState);
-        const newValue = selectCurrentMicrophoneDeviceId(currentState);
-        return oldValue !== newValue;
-    },
-    effect: (_action, { dispatch }) => {
-        dispatch(reactSetDevice({ audio: true, video: false }));
-    },
-});
-
 const doUpdateDeviceList = createAppAsyncThunk("localMedia/doUpdateDeviceList", async (_, { rejectWithValue }) => {
     try {
         const devices = await navigator.mediaDevices.enumerateDevices();
@@ -275,15 +228,15 @@ const doUpdateDeviceList = createAppAsyncThunk("localMedia/doUpdateDeviceList", 
     }
 });
 
-const reactStartLocalMedia = createAppAsyncThunk(
-    "localMedia/reactStartLocalMedia",
-    async (_, { getState, dispatch, rejectWithValue }) => {
+export const doStartLocalMedia = createAppAsyncThunk(
+    "localMedia/doStartLocalMedia",
+    async (payload: LocalMediaOptions, { getState, dispatch, rejectWithValue }) => {
         try {
             let state = getState();
-            const localMediaOptions = selectLocalMediaOptions(state);
-            if (localMediaOptions) {
+
+            if (payload) {
                 // get permission first
-                await navigator.mediaDevices.getUserMedia(localMediaOptions);
+                await navigator.mediaDevices.getUserMedia(payload);
                 // then update devices
                 await dispatch(doUpdateDeviceList());
                 // then get new state
@@ -295,27 +248,11 @@ const reactStartLocalMedia = createAppAsyncThunk(
                 await getStream(
                     {
                         ...constraintsOptions,
-                        audioId: localMediaOptions.audio,
-                        videoId: localMediaOptions.video,
+                        audioId: payload.audio,
+                        videoId: payload.video,
                     },
                     { replaceStream: stream }
                 );
-
-                const cameraTrack = stream.getVideoTracks()[0];
-                if (cameraTrack) {
-                    dispatch(doToggleCameraEnabled({ enabled: cameraTrack.enabled }));
-                    dispatch(doSetCurrentCameraDeviceId({ deviceId: cameraTrack.getSettings().deviceId }));
-                }
-
-                const microphoneTrack = stream.getAudioTracks()[0];
-                if (microphoneTrack) {
-                    dispatch(doToggleMicrophoneEnabled({ enabled: microphoneTrack.enabled }));
-                    dispatch(
-                        doSetCurrentMicrophoneDeviceId({
-                            deviceId: microphoneTrack.getSettings().deviceId,
-                        })
-                    );
-                }
 
                 return { stream };
             }
@@ -324,19 +261,6 @@ const reactStartLocalMedia = createAppAsyncThunk(
         }
     }
 );
-
-startAppListening({
-    predicate: (action, currentState, previousState) => {
-        const oldValue = selectLocalMediaStatus(previousState);
-        const newValue = selectLocalMediaStatus(currentState);
-        return (
-            action.type === doStartLocalMedia.type && ["stopped", "error"].includes(oldValue) && newValue === "starting"
-        );
-    },
-    effect: (_action, { dispatch }) => {
-        dispatch(reactStartLocalMedia());
-    },
-});
 
 export const localMediaSlice = createSlice({
     name: "localMedia",
@@ -368,15 +292,6 @@ export const localMediaSlice = createSlice({
         },
         doSetLocalMediaOptions(state, action: PayloadAction<{ options: LocalMediaOptions }>) {
             state.options = action.payload.options;
-        },
-        doStartLocalMedia(state, action: PayloadAction<{ optionsOrStream: LocalMediaOptions | MediaStream }>) {
-            const optionsOrStream = action.payload.optionsOrStream;
-            state.status = "starting";
-            if (optionsOrStream instanceof MediaStream) {
-                state.stream = optionsOrStream;
-            } else {
-                state.options = optionsOrStream;
-            }
         },
     },
     extraReducers: (builder) => {
@@ -425,20 +340,22 @@ export const localMediaSlice = createSlice({
                     devices: action.payload.devices,
                 };
             })
-            .addCase(reactStartLocalMedia.pending, (state) => {
+            .addCase(doStartLocalMedia.pending, (state) => {
                 return {
                     ...state,
                     status: "starting",
                 };
             })
-            .addCase(reactStartLocalMedia.fulfilled, (state, action) => {
+            .addCase(doStartLocalMedia.fulfilled, (state, action) => {
                 return {
                     ...state,
                     stream: action.payload?.stream ?? state.stream,
                     status: "started",
+                    cameraEnabled: true,
+                    microphoneEnabled: true,
                 };
             })
-            .addCase(reactStartLocalMedia.rejected, (state, action) => {
+            .addCase(doStartLocalMedia.rejected, (state, action) => {
                 return {
                     ...state,
                     status: "error",
@@ -449,7 +366,7 @@ export const localMediaSlice = createSlice({
 });
 
 createReactor([selectAppWantsToJoin, selectLocalMediaStatus], ({ dispatch }, appWantsToJoin, status) => {
-    if (appWantsToJoin && status === "stopped") {
+    if (appWantsToJoin && status === "") {
         dispatch(doStartLocalMedia({ audio: true, video: true }));
     }
 });
@@ -461,5 +378,4 @@ export const {
     doToggleMicrophoneEnabled,
     doSetLocalMediaOptions,
     doSetLocalMediaStream,
-    doStartLocalMedia,
 } = localMediaSlice.actions;
