@@ -1,7 +1,7 @@
 import RtcManager from "@whereby/jslib-media/src/webrtc/RtcManager";
 import { createSelector, createSlice, PayloadAction } from "@reduxjs/toolkit";
 import { getStream } from "@whereby/jslib-media/src/webrtc/MediaDevices";
-import { createAppAsyncThunk } from "../../redux/asyncThunk";
+import { createAppAsyncThunk } from "../../redux/thunk";
 import { RootState } from "../../redux/store";
 import { startAppListening } from "../../redux/listenerMiddleware";
 
