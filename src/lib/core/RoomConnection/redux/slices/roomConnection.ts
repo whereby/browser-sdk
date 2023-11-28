@@ -8,8 +8,11 @@ import { selectAppDisplayName, selectAppRoomKey, selectAppRoomName, selectAppSdk
 
 import { selectOrganizationId } from "./organization";
 import { selectSignalConnectionRaw, signalEvents } from "./signalConnection";
-import { selectLocalMediaInstance, selectLocalMediaStarted } from "./localMedia-old";
-import { selectIsCameraEnabled, selectIsMicrophoneEnabled } from "~/lib/core/LocalMedia/slices/localMedia";
+import {
+    selectIsCameraEnabled,
+    selectIsMicrophoneEnabled,
+    selectLocalMediaStatus,
+} from "../../../LocalMedia/slices/localMedia";
 
 /**
  * Reducer
@@ -98,10 +101,10 @@ export const selectRoomConnectionStatus = (state: RootState) => state.roomConnec
  */
 
 createReactor(
-    [selectOrganizationId, selectRoomConnectionStatus, selectSignalConnectionRaw, selectLocalMediaStarted],
-    ({ dispatch }, hasOrganizationIdFetched, roomConnectionStatus, signalIdentified, localMediaStarted) => {
+    [selectOrganizationId, selectRoomConnectionStatus, selectSignalConnectionRaw, selectLocalMediaStatus],
+    ({ dispatch }, hasOrganizationIdFetched, roomConnectionStatus, signalIdentified, localMediaStatus) => {
         if (
-            localMediaStarted &&
+            localMediaStatus === "started" &&
             signalIdentified &&
             hasOrganizationIdFetched &&
             roomConnectionStatus === "initializing"

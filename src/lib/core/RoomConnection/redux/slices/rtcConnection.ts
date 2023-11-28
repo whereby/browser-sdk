@@ -17,7 +17,7 @@ import {
     selectIsCameraEnabled,
     selectIsMicrophoneEnabled,
     selectLocalMediaStream,
-} from "~/lib/core/LocalMedia/slices/localMedia";
+} from "../../../LocalMedia/slices/localMedia";
 
 function createRtcEventAction<T>(name: string) {
     return createAction<T>(`rtcConnection/event/${name}`);

@@ -3,7 +3,8 @@ import { createSelector, createSlice, PayloadAction } from "@reduxjs/toolkit";
 import { getStream } from "@whereby/jslib-media/src/webrtc/MediaDevices";
 import { createAppAsyncThunk } from "../../redux/thunk";
 import { RootState } from "../../redux/store";
-import { startAppListening } from "../../redux/listenerMiddleware";
+import { createReactor, startAppListening } from "../../redux/listenerMiddleware";
+import { selectAppWantsToJoin } from "../../RoomConnection/redux/slices/app";
 
 type StopResumeVideoEvent = {
     track: MediaStreamTrack;
@@ -445,6 +446,12 @@ export const localMediaSlice = createSlice({
                 };
             });
     },
+});
+
+createReactor([selectAppWantsToJoin, selectLocalMediaStatus], ({ dispatch }, appWantsToJoin, status) => {
+    if (appWantsToJoin && status === "stopped") {
+        dispatch(doStartLocalMedia({ audio: true, video: true }));
+    }
 });
 
 export const {
