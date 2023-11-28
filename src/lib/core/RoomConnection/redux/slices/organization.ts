@@ -82,11 +82,7 @@ export const selectOrganizationId = (state: RootState) => state.organization.dat
 
 createReactor(
     [selectAppWantsToJoin, selectOrganizationRaw, selectDeviceCredentialsRaw],
-    (_, { dispatch, getState }) => {
-        const wantsToJoin = selectAppWantsToJoin(getState());
-        const organization = selectOrganizationRaw(getState());
-        const deviceCredentials = selectDeviceCredentialsRaw(getState());
-
+    ({ dispatch }, wantsToJoin, organization, deviceCredentials) => {
         if (
             wantsToJoin &&
             !organization.data &&
