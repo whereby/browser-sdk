@@ -1,42 +1,36 @@
 import * as React from "react";
-import {
-    ChatMessage,
-    CloudRecordingState,
-    ConnectionStatus,
-    LiveStreamState,
-    RoomConnectionOptions,
-} from "../core/RoomConnection";
-import { LocalParticipant, RemoteParticipant, Screenshare } from "../RoomParticipant";
-import { Store, createStore, observeStore } from "../core/redux/store";
-import VideoView from "./VideoView";
-import { createServices } from "../services";
+import { ChatMessage, CloudRecordingState, ConnectionStatus, LiveStreamState, RoomConnectionOptions } from "./types";
+import { LocalParticipant, RemoteParticipant, Screenshare } from "../../RoomParticipant";
+import { Store, createStore, observeStore } from "../../core/redux/store";
+import VideoView from "../VideoView";
+import { createServices } from "../../services";
 import { createSelector } from "@reduxjs/toolkit";
-import { doSendChatMessage, selectChatMessages } from "../core/RoomConnection/redux/slices/chat";
+import { doSendChatMessage, selectChatMessages } from "../../core/redux/slices/chat";
 import {
     doStartCloudRecording,
     doStopCloudRecording,
     selectCloudRecordingRaw,
-} from "../core/RoomConnection/redux/slices/cloudRecording";
-import { selectRemoteParticipants } from "../core/RoomConnection/redux/slices/remoteParticipants";
-import { selectRoomConnectionStatus } from "../core/RoomConnection/redux/slices/roomConnection";
+} from "../../core/redux/slices/cloudRecording";
+import { selectRemoteParticipants } from "../../core/redux/slices/remoteParticipants";
+import { selectRoomConnectionStatus } from "../../core/redux/slices/roomConnection";
 import {
     doAcceptWaitingParticipant,
     doRejectWaitingParticipant,
     selectWaitingParticipants,
-} from "../core/RoomConnection/redux/slices/waitingParticipants";
+} from "../../core/redux/slices/waitingParticipants";
 import {
     doSetDisplayName,
     doStartScreenshare,
     doStopScreenshare,
     selectLocalParticipantRaw,
-} from "../core/RoomConnection/redux/slices/localParticipant";
+} from "../../core/redux/slices/localParticipant";
 import {
     doToggleCameraEnabled,
     doToggleMicrophoneEnabled,
     selectLocalMediaStream,
-} from "../core/LocalMedia/slices/localMedia";
-import { appLeft, doAppJoin } from "../core/RoomConnection/redux/slices/app";
-import { selectStreamingRaw } from "../core/RoomConnection/redux/slices/streaming";
+} from "../../core/redux/slices/localMedia";
+import { appLeft, doAppJoin } from "../../core/redux/slices/app";
+import { selectStreamingRaw } from "../../core/redux/slices/streaming";
 
 export type RemoteParticipantState = Omit<RemoteParticipant, "newJoiner" | "streams">;
 export type LocalParticipantState = LocalParticipant;

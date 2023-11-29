@@ -19,9 +19,9 @@ import {
     selectMicrophoneDeviceError,
     selectMicrophoneDevices,
     selectSpeakerDevices,
-} from "../core/LocalMedia/slices/localMedia";
-import { createStore, observeStore, Store } from "../core/redux/store";
-import { createServices } from "../services";
+} from "../../core/redux/slices/localMedia";
+import { createStore, observeStore, Store } from "../../core/redux/store";
+import { createServices } from "../../services";
 
 interface LocalMediaState {
     currentCameraDeviceId?: string;
