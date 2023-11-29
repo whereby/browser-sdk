@@ -6,7 +6,12 @@ import { selectSignalConnectionRaw } from "./signalConnection";
 import { selectRtcConnectionRaw } from "./rtcConnection";
 
 import { doAppJoin } from "./app";
-import { selectScreenshareStream } from "../../../LocalMedia/slices/localMedia";
+import {
+    doToggleCameraEnabled,
+    doToggleMicrophoneEnabled,
+    selectScreenshareStream,
+} from "../../../LocalMedia/slices/localMedia";
+import { startAppListening } from "../../../redux/listenerMiddleware";
 // import { doAddScreenshare, doRemoveScreenshare } from "./remoteParticipants";
 
 export interface LocalParticipantState extends LocalParticipant {
@@ -172,3 +177,23 @@ export const { doSetLocalParticipant } = localParticipantSlice.actions;
 
 export const selectLocalParticipantRaw = (state: RootState) => state.localParticipant;
 export const selectSelfId = (state: RootState) => state.localParticipant.id;
+
+startAppListening({
+    actionCreator: doToggleCameraEnabled,
+    effect: ({ payload }, { dispatch, getState }) => {
+        const { enabled } = payload;
+        const { isVideoEnabled } = selectLocalParticipantRaw(getState());
+
+        dispatch(doEnableVideo({ enabled: enabled || !isVideoEnabled }));
+    },
+});
+
+startAppListening({
+    actionCreator: doToggleMicrophoneEnabled,
+    effect: ({ payload }, { dispatch, getState }) => {
+        const { enabled } = payload;
+        const { isAudioEnabled } = selectLocalParticipantRaw(getState());
+
+        dispatch(doEnableAudio({ enabled: enabled || !isAudioEnabled }));
+    },
+});
