@@ -23,7 +23,7 @@ export default function VideoExperience({
         // logger: console,
     });
 
-    const { remoteParticipants, connectionStatus, waitingParticipants } = state;
+    const { localParticipant, remoteParticipants, connectionStatus, waitingParticipants } = state;
     const {
         // knock,
         sendChatMessage,
@@ -73,7 +73,7 @@ export default function VideoExperience({
                         })}
                     </div>
                     <div className="container">
-                        {[...remoteParticipants].map((participant, i) => (
+                        {[localParticipant, ...remoteParticipants].map((participant, i) => (
                             <div className="participantWrapper" key={participant?.id || i}>
                                 {participant ? (
                                     <>
