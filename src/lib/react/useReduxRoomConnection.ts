@@ -159,7 +159,7 @@ export function useRoomConnection(
         if (roomConnectionOptions.localMedia) {
             return roomConnectionOptions.localMedia;
         }
-        const services = createServices(roomUrl);
+        const services = createServices();
         return createStore({ injectServices: services });
     });
     const [roomConnectionState, setRoomConnectionState] = React.useState(initialState);
@@ -169,13 +169,12 @@ export function useRoomConnection(
         const url = new URL(roomUrl); // Throw if invalid Whereby room url
         const searchParams = new URLSearchParams(url.search);
         const roomKey = searchParams.get("roomKey");
-        const roomName = url.pathname;
 
         store.dispatch(
             doAppJoin({
-                roomName,
+                roomUrl,
                 roomKey,
-                displayName: "Guest",
+                displayName: roomConnectionOptions.displayName || "Guest",
                 sdkVersion: "1.0.0",
             })
         );
