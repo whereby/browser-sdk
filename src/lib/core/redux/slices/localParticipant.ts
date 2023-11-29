@@ -8,7 +8,6 @@ import { selectRtcConnectionRaw } from "./rtcConnection";
 import { doAppJoin } from "./app";
 import { doToggleCameraEnabled, doToggleMicrophoneEnabled, selectScreenshareStream } from "./localMedia";
 import { startAppListening } from "../listenerMiddleware";
-// import { doAddScreenshare, doRemoveScreenshare } from "./remoteParticipants";
 
 export interface LocalParticipantState extends LocalParticipant {
     isScreenSharing: boolean;

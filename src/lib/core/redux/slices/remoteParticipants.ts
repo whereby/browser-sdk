@@ -1,10 +1,11 @@
-import { PayloadAction, createSlice } from "@reduxjs/toolkit";
+import { PayloadAction, createSelector, createSlice } from "@reduxjs/toolkit";
 import { RootState } from "../store";
 import { SignalClient } from "@whereby/jslib-media/src/utils/ServerSocket";
-import { RemoteParticipant, StreamState } from "~/lib/RoomParticipant";
+import { RemoteParticipant, Screenshare, StreamState } from "~/lib/RoomParticipant";
 import { StreamStatusUpdate, rtcEvents } from "./rtcConnection";
 import { signalEvents } from "./signalConnection";
 import { RtcStreamAddedPayload } from "@whereby/jslib-media/src/webrtc/RtcManagerDispatcher";
+import { selectScreenshareStream } from "./localMedia";
 
 const NON_PERSON_ROLES = ["recorder", "streamer"];
 
@@ -272,3 +273,35 @@ export const { participantStreamAdded, participantStreamIdAdded, streamStatusUpd
 
 export const selectRemoteParticipantsRaw = (state: RootState) => state.remoteParticipants;
 export const selectRemoteParticipants = (state: RootState) => state.remoteParticipants.remoteParticipants;
+
+export const selectScreenshares = createSelector(
+    selectScreenshareStream,
+    selectRemoteParticipants,
+    (localScreenshareStream, remoteParticipants) => {
+        const screenshares: Screenshare[] = [];
+
+        if (localScreenshareStream) {
+            screenshares.push({
+                id: localScreenshareStream.id,
+                participantId: "local",
+                hasAudioTrack: localScreenshareStream.getAudioTracks().length > 0,
+                stream: localScreenshareStream,
+                isLocal: true,
+            });
+        }
+
+        for (const participant of remoteParticipants) {
+            if (participant.presentationStream) {
+                screenshares.push({
+                    id: participant.presentationStream.id,
+                    participantId: participant.id,
+                    hasAudioTrack: participant.presentationStream.getAudioTracks().length > 0,
+                    stream: participant.presentationStream,
+                    isLocal: false,
+                });
+            }
+        }
+
+        return screenshares;
+    }
+);
