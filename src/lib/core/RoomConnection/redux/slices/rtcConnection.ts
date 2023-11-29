@@ -8,7 +8,7 @@ import RtcManagerDispatcher, {
     RtcManagerCreatedPayload,
     RtcStreamAddedPayload,
 } from "@whereby/jslib-media/src/webrtc/RtcManagerDispatcher";
-import { createReactor } from "../../../redux/listenerMiddleware";
+import { createReactor, startAppListening } from "../../../redux/listenerMiddleware";
 import { selectRemoteParticipants, streamStatusUpdated } from "./remoteParticipants";
 import { StreamState } from "~/lib/RoomParticipant";
 import { selectAppWantsToJoin } from "./app";
@@ -17,6 +17,7 @@ import {
     selectIsMicrophoneEnabled,
     selectLocalMediaStream,
     selectLocalMediaStatus,
+    reactSetDevice,
 } from "../../../LocalMedia/slices/localMedia";
 
 function createRtcEventAction<T>(name: string) {
@@ -216,12 +217,8 @@ const doHandleAcceptStreams = createAppThunk((payload: StreamStatusUpdate[]) => 
     dispatch(streamStatusUpdated(updates));
 });
 
-export const doRtcManagerCreated = createAppThunk((payload: RtcManagerCreatedPayload) => (dispatch, getState) => {
+export const doRtcManagerCreated = createAppThunk((payload: RtcManagerCreatedPayload) => (dispatch) => {
     const { rtcManager } = payload;
-    //const localMedia = selectLocalMediaInstance(getState());
-
-    //localMedia?.addRtcManager(rtcManager);
-
     dispatch(rtcManagerCreated(rtcManager));
 });
 
@@ -247,6 +244,23 @@ export const selectRtcConnectionRaw = (state: RootState) => state.rtcConnection;
 /**
  * Reactors
  */
+startAppListening({
+    actionCreator: reactSetDevice.fulfilled,
+    effect: ({ payload }, { getState }) => {
+        const { replacedTracks } = payload;
+        const { rtcManager } = selectRtcConnectionRaw(getState());
+        const stream = selectLocalMediaStream(getState());
+
+        const replace = (kind: string, oldTrack: MediaStreamTrack) => {
+            const track = stream?.getTracks().find((t) => t.kind === kind);
+            return track && rtcManager?.replaceTrack(oldTrack, track);
+        };
+
+        replacedTracks?.forEach((t) => {
+            replace(t.kind, t);
+        });
+    },
+});
 
 createReactor([selectRtcConnectionRaw, selectSignalConnectionRaw], ({ dispatch }, rtcConnection, signalConnection) => {
     if (!rtcConnection.dispatcherCreated && !rtcConnection.isCreatingDispatcher && signalConnection.socket) {
