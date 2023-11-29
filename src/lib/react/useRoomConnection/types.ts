@@ -5,6 +5,33 @@ import { ChatMessage as SignalChatMessage } from "@whereby/jslib-media/src/utils
 import { LocalMediaOptions } from "../../core/redux/slices/localMedia";
 import { Store } from "../../core/redux/store";
 
+export type RemoteParticipantState = Omit<RemoteParticipant, "newJoiner" | "streams">;
+export type LocalParticipantState = LocalParticipant;
+export interface WaitingParticipantState {
+    id: string;
+    displayName: string | null;
+}
+export interface ChatMessageState {
+    senderId: string;
+    timestamp: string;
+    text: string;
+}
+export type ScreenshareState = Screenshare;
+
+type LocalScreenshareStatus = "starting" | "active";
+
+export interface RoomConnectionState {
+    chatMessages: ChatMessage[];
+    cloudRecording?: CloudRecordingState;
+    localScreenshareStatus?: LocalScreenshareStatus;
+    localParticipant?: LocalParticipantState;
+    remoteParticipants: RemoteParticipantState[];
+    // screenshares: Screenshare[];
+    connectionStatus: ConnectionStatus;
+    liveStream?: LiveStreamState;
+    waitingParticipants: WaitingParticipantState[];
+}
+
 export interface RoomConnectionOptions {
     displayName?: string; // Might not be needed at all
     localMediaOptions?: LocalMediaOptions;
