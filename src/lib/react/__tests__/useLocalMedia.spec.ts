@@ -1,6 +1,6 @@
 import { jest } from "@jest/globals";
 import { act, renderHook, waitFor } from "@testing-library/react";
-import useLocalMedia from "../useReduxLocalMedia";
+import useLocalMedia from "../useLocalMedia";
 import LocalMedia from "../../LocalMedia";
 import MockMediaStream from "../../__mocks__/MediaStream";
 
