@@ -1,5 +1,5 @@
-import { AnyAction, createAction, createSlice, PayloadAction, ThunkDispatch } from "@reduxjs/toolkit";
-import { RootState } from "../../../redux/store";
+import { createAction, createSlice, PayloadAction } from "@reduxjs/toolkit";
+import { AppDispatch, RootState } from "../../../redux/store";
 import { createAppThunk } from "../../../redux/thunk";
 import RtcManager from "@whereby/jslib-media/src/webrtc/RtcManager";
 import { selectSignalConnectionRaw } from "./signalConnection";
@@ -30,7 +30,7 @@ export const rtcEvents = {
     streamAdded: createRtcEventAction<RtcStreamAddedPayload>("streamAdded"),
 };
 
-export const createWebRtcEmitter = (dispatch: ThunkDispatch<RootState, unknown, AnyAction>) => {
+export const createWebRtcEmitter = (dispatch: AppDispatch) => {
     return {
         emit: (eventName: keyof RtcEvents, data: RtcEvents[keyof RtcEvents]) => {
             if (eventName === "rtc_manager_created") {
