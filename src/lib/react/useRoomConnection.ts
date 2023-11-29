@@ -11,6 +11,7 @@ import RoomConnection, {
 } from "..//core/RoomConnection";
 import { LocalParticipant, RemoteParticipant, Screenshare, WaitingParticipant } from "../RoomParticipant";
 import { Store } from "../core/redux/store";
+import { doToggleCameraEnabled, doToggleMicrophoneEnabled } from "../core/LocalMedia/slices/localMedia";
 
 export type RemoteParticipantState = Omit<
     RemoteParticipant,
@@ -464,10 +465,10 @@ export function useRoomConnection(
                 dispatch({ type: "LOCAL_CLIENT_DISPLAY_NAME_CHANGED", payload: { displayName } });
             },
             toggleCamera: (enabled) => {
-                //roomConnection.localMedia.toggleCameraEnabled(enabled);
+                roomConnection.localMedia.dispatch(doToggleCameraEnabled({ enabled }));
             },
             toggleMicrophone: (enabled) => {
-                //roomConnection.localMedia.toggleMichrophoneEnabled(enabled);
+                roomConnection.localMedia.dispatch(doToggleMicrophoneEnabled({ enabled }));
             },
             acceptWaitingParticipant: (participantId) => {
                 roomConnection.acceptWaitingParticipant(participantId);
