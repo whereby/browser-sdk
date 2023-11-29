@@ -1,7 +1,7 @@
 import { createSlice, createAction, ThunkDispatch, AnyAction, PayloadAction } from "@reduxjs/toolkit";
 import { RootState } from "../store";
 import { createAppThunk } from "../thunk";
-import { createReactor } from "../listenerMiddleware";
+import { createReactor, startAppListening } from "../listenerMiddleware";
 import { selectDeviceCredentialsRaw } from "./deviceCredentials";
 
 import ServerSocket, {
@@ -138,15 +138,6 @@ export const signalConnectionSlice = createSlice({
             };
         },
     },
-    extraReducers: (builder) => {
-        builder.addCase(appLeft, (state) => {
-            return {
-                ...state,
-                socket: null,
-                status: "disconnected",
-            };
-        });
-    },
 });
 
 export const { deviceIdentifying, deviceIdentified, socketConnected, socketConnecting, socketDisconnected } =
@@ -214,6 +205,12 @@ export const selectSignalConnectionSocket = (state: RootState) => state.signalCo
 /**
  * Reactors
  */
+startAppListening({
+    actionCreator: appLeft,
+    effect: (_, { dispatch }) => {
+        dispatch(doSignalDisconnect());
+    },
+});
 
 createReactor([selectAppWantsToJoin, selectSignalStatus], ({ dispatch }, wantsToJoin, signalStatus) => {
     if (wantsToJoin && signalStatus === "") {
