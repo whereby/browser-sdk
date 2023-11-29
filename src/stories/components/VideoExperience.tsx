@@ -1,7 +1,7 @@
 import React, { useState } from "react";
 import DisplayNameForm from "./DisplayNameForm";
-import { LocalMediaRef } from "../../lib/react/useReduxLocalMedia";
-import { useRoomConnection } from "../../lib/react/useReduxRoomConnection";
+import { LocalMediaRef } from "../../lib/react/useLocalMedia";
+import { useRoomConnection } from "../../lib/react/useRoomConnection";
 
 export default function VideoExperience({
     displayName,

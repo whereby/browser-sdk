@@ -1,6 +1,6 @@
 export { default as VideoView } from "./VideoView";
-export { useRoomConnection } from "./useReduxRoomConnection";
-export { default as useReduxLocalMedia } from "./useReduxLocalMedia";
+export { useRoomConnection } from "./useRoomConnection";
+export { default as useReduxLocalMedia } from "./useLocalMedia";
 
 export type {
     ChatMessageState as ChatMessage,
@@ -9,6 +9,6 @@ export type {
     RoomConnectionState as RoomConnection,
     ScreenshareState as Screenshare,
     WaitingParticipantState as WaitingParticipant,
-} from "./useReduxRoomConnection";
+} from "./useRoomConnection";
 
 export { sdkVersion } from "../version";
