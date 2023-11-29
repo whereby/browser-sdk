@@ -6,7 +6,7 @@ describe("appSlice", () => {
             const state = appSlice.reducer(
                 undefined,
                 appSlice.actions.doAppJoin({
-                    roomName: "roomName",
+                    roomUrl: "roomUrl",
                     roomKey: "roomKey",
                     displayName: "displayName",
                     sdkVersion: "sdkVersion",
