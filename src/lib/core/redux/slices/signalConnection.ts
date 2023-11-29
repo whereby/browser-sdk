@@ -1,7 +1,7 @@
 import { createSlice, createAction, ThunkDispatch, AnyAction, PayloadAction } from "@reduxjs/toolkit";
-import { RootState } from "../../../redux/store";
-import { createAppThunk } from "../../../redux/thunk";
-import { createReactor } from "../../../redux/listenerMiddleware";
+import { RootState } from "../store";
+import { createAppThunk } from "../thunk";
+import { createReactor } from "../listenerMiddleware";
 import { selectDeviceCredentialsRaw } from "./deviceCredentials";
 
 import ServerSocket, {

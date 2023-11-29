@@ -1,7 +1,7 @@
 import { createSlice } from "@reduxjs/toolkit";
-import { RootState } from "../../../redux/store";
-import { createAppAsyncThunk } from "../../../redux/thunk";
-import { createReactor } from "../../../redux/listenerMiddleware";
+import { RootState } from "../store";
+import { createAppAsyncThunk } from "../thunk";
+import { createReactor } from "../listenerMiddleware";
 import { selectAppWantsToJoin } from "./app";
 import { Credentials } from "~/lib/api";
 

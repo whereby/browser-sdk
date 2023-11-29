@@ -1,17 +1,13 @@
 import { PayloadAction, createSlice } from "@reduxjs/toolkit";
 
-import { createReactor } from "../../../redux/listenerMiddleware";
-import { RootState } from "../../../redux/store";
-import { createAppThunk } from "../../../redux/thunk";
+import { createReactor } from "../listenerMiddleware";
+import { RootState } from "../store";
+import { createAppThunk } from "../thunk";
 import { selectAppDisplayName, selectAppRoomKey, selectAppRoomName, selectAppSdkVersion } from "./app";
 
 import { selectOrganizationId } from "./organization";
 import { selectSignalConnectionRaw, signalEvents } from "./signalConnection";
-import {
-    selectIsCameraEnabled,
-    selectIsMicrophoneEnabled,
-    selectLocalMediaStatus,
-} from "../../../LocalMedia/slices/localMedia";
+import { selectIsCameraEnabled, selectIsMicrophoneEnabled, selectLocalMediaStatus } from "./localMedia";
 
 export type ConnectionStatus =
     | "initializing"

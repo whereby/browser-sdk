@@ -3,7 +3,7 @@ import { getStream } from "@whereby/jslib-media/src/webrtc/MediaDevices";
 import { createAppAsyncThunk } from "../../redux/thunk";
 import { RootState } from "../../redux/store";
 import { createReactor, startAppListening } from "../../redux/listenerMiddleware";
-import { selectAppWantsToJoin } from "../../RoomConnection/redux/slices/app";
+import { selectAppWantsToJoin } from "./app";
 
 type StopResumeVideoEvent = {
     track: MediaStreamTrack;
