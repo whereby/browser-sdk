@@ -1,41 +1,15 @@
 import { LocalParticipant, RemoteParticipant, Screenshare, WaitingParticipant } from "../../RoomParticipant";
 
 import { ChatMessage as SignalChatMessage } from "@whereby/jslib-media/src/utils/ServerSocket";
-import { sdkVersion } from "../../version";
-import LocalMedia, { LocalMediaOptions } from "../../LocalMedia";
-
-type Logger = Pick<Console, "debug" | "error" | "log" | "warn" | "info">;
-// new
-import { createStore, Store } from "../redux/store";
-import { createServices } from "../../services";
-import { appLeft, doAppJoin } from "./redux/slices/app";
-import { selectRoomConnectionStatus } from "./redux/slices/roomConnection";
-import {
-    // doAcceptWaitingParticipant,
-    // doRejectWaitingParticipant,
-    selectRemoteParticipants,
-    //selectScreenshares,
-    //selectWaitingParticipants,
-} from "./redux/slices/remoteParticipants";
-import { doSendChatMessage, selectChatMessages } from "./redux/slices/chat";
-import {
-    doEnableAudio,
-    doEnableVideo,
-    doSetDisplayName,
-    doStartScreenshare,
-    doStopScreenshare,
-    selectLocalParticipantRaw,
-} from "./redux/slices/localParticipant";
-import { doStartCloudRecording, doStopCloudRecording, selectCloudRecordingRaw } from "./redux/slices/cloudRecording";
-import { selectStreamingRaw } from "./redux/slices/streaming";
-import { doAcceptWaitingParticipant, doRejectWaitingParticipant } from "./redux/slices/waitingParticipants";
-import { selectLocalMediaStream } from "../LocalMedia/slices/localMedia";
+// import { sdkVersion } from "../../version";
+import { LocalMediaOptions } from "../LocalMedia/slices/localMedia";
+import { Store } from "../redux/store";
 
 export interface RoomConnectionOptions {
     displayName?: string; // Might not be needed at all
     localMediaOptions?: LocalMediaOptions;
     roomKey?: string;
-    logger?: Logger;
+    // logger?: Logger;
     localMedia?: Store;
     externalId?: string;
 }
@@ -136,306 +110,306 @@ export class RoomConnectionEvent<T extends RoomEventKey> extends CustomEvent<Roo
 }
 
 // cache last reported stream resolutions
-const reportedStreamResolutions = new Map<string, { width: number; height: number }>();
+// const reportedStreamResolutions = new Map<string, { width: number; height: number }>();
 
 /*
  * This is the topmost interface when dealing with Whereby.
  *
  */
-interface RoomEventTarget extends EventTarget {
-    addEventListener<K extends keyof RoomEventsMap>(
-        type: K,
-        listener: RoomEventsMap[K],
-        options?: boolean | AddEventListenerOptions
-    ): void;
-    addEventListener(
-        type: string,
-        callback: EventListenerOrEventListenerObject | null,
-        options?: EventListenerOptions | boolean
-    ): void;
-    removeEventListener<K extends keyof RoomEventsMap>(
-        type: K,
-        listener: RoomEventsMap[K],
-        options?: boolean | EventListenerOptions
-    ): void;
-    removeEventListener(
-        type: string,
-        callback: EventListenerOrEventListenerObject | null,
-        options?: EventListenerOptions | boolean
-    ): void;
-}
+// interface RoomEventTarget extends EventTarget {
+//     addEventListener<K extends keyof RoomEventsMap>(
+//         type: K,
+//         listener: RoomEventsMap[K],
+//         options?: boolean | AddEventListenerOptions
+//     ): void;
+//     addEventListener(
+//         type: string,
+//         callback: EventListenerOrEventListenerObject | null,
+//         options?: EventListenerOptions | boolean
+//     ): void;
+//     removeEventListener<K extends keyof RoomEventsMap>(
+//         type: K,
+//         listener: RoomEventsMap[K],
+//         options?: boolean | EventListenerOptions
+//     ): void;
+//     removeEventListener(
+//         type: string,
+//         callback: EventListenerOrEventListenerObject | null,
+//         options?: EventListenerOptions | boolean
+//     ): void;
+// }
 
-const noop = () => {
-    return;
-};
+// const noop = () => {
+//     return;
+// };
 
-const TypedEventTarget = EventTarget as { new (): RoomEventTarget };
-export default class RoomConnection extends TypedEventTarget {
-    public localMedia: Store;
-    public localParticipant?: LocalParticipant;
-    public roomUrl: URL;
-    public remoteParticipants: RemoteParticipant[] = [];
-    public screenshares: Screenshare[] = [];
-    public chatMessages: ChatMessage[] = [];
-    public waitingParticipants: WaitingParticipant[] = [];
-    public readonly localMediaConstraints?: MediaStreamConstraints;
-    public readonly roomName: string;
+// const TypedEventTarget = EventTarget as { new (): RoomEventTarget };
+// export default class RoomConnection extends TypedEventTarget {
+//     public localMedia: Store;
+//     public localParticipant?: LocalParticipant;
+//     public roomUrl: URL;
+//     public remoteParticipants: RemoteParticipant[] = [];
+//     public screenshares: Screenshare[] = [];
+//     public chatMessages: ChatMessage[] = [];
+//     public waitingParticipants: WaitingParticipant[] = [];
+//     public readonly localMediaConstraints?: MediaStreamConstraints;
+//     public readonly roomName: string;
 
-    private connectionStatus: ConnectionStatus;
-    private isRecording = false;
-    private isStreaming = false;
-    private selfId: string | null;
-    private logger: Logger;
-    private _ownsLocalMedia = false;
-    private displayName?: string;
-    private externalId?: string;
-    private _roomKey: string | null;
-    // private _unsubscribe: Unsubscribe;
-    // Redux
+//     private connectionStatus: ConnectionStatus;
+//     private isRecording = false;
+//     private isStreaming = false;
+//     private selfId: string | null;
+//     private logger: Logger;
+//     private _ownsLocalMedia = false;
+//     private displayName?: string;
+//     private externalId?: string;
+//     private _roomKey: string | null;
+//     // private _unsubscribe: Unsubscribe;
+//     // Redux
 
-    constructor(
-        roomUrl: string,
-        {
-            displayName,
-            localMedia,
-            localMediaOptions: localMediaConstraints,
-            logger,
-            roomKey,
-            externalId,
-        }: RoomConnectionOptions
-    ) {
-        super();
-        this.connectionStatus = "initializing";
+//     constructor(
+//         roomUrl: string,
+//         {
+//             displayName,
+//             localMedia,
+//             localMediaOptions: localMediaConstraints,
+//             logger,
+//             roomKey,
+//             externalId,
+//         }: RoomConnectionOptions
+//     ) {
+//         super();
+//         this.connectionStatus = "initializing";
 
-        // Set up local media
-        if (localMedia) {
-            this.localMedia = localMedia;
-        } else if (localMediaConstraints) {
-            //console.log("Creating new fresh store");
+//         // Set up local media
+//         if (localMedia) {
+//             this.localMedia = localMedia;
+//         } else if (localMediaConstraints) {
+//             //console.log("Creating new fresh store");
 
-            const services = createServices(roomUrl);
-            this.localMedia = createStore({ injectServices: services });
-            this._ownsLocalMedia = true;
-        } else {
-            throw new Error("Missing constraints");
-        }
+//             const services = createServices(roomUrl);
+//             this.localMedia = createStore({ injectServices: services });
+//             this._ownsLocalMedia = true;
+//         } else {
+//             throw new Error("Missing constraints");
+//         }
 
-        // subscribe to redux store changes
-        this.localMedia.subscribe(() => {
-            const state = this.localMedia.getState();
-            const connectionStatus = selectRoomConnectionStatus(state);
+//         // subscribe to redux store changes
+//         this.localMedia.subscribe(() => {
+//             const state = this.localMedia.getState();
+//             const connectionStatus = selectRoomConnectionStatus(state);
 
-            if (connectionStatus !== this.connectionStatus) {
-                this.connectionStatus = connectionStatus;
-                this.dispatchEvent(
-                    new RoomConnectionEvent("connection_status_changed", {
-                        detail: {
-                            connectionStatus: this.connectionStatus,
-                        },
-                    })
-                );
+//             if (connectionStatus !== this.connectionStatus) {
+//                 this.connectionStatus = connectionStatus;
+//                 this.dispatchEvent(
+//                     new RoomConnectionEvent("connection_status_changed", {
+//                         detail: {
+//                             connectionStatus: this.connectionStatus,
+//                         },
+//                     })
+//                 );
 
-                if (this.connectionStatus === "connected") {
-                    if (this.localParticipant) {
-                        this.dispatchEvent(
-                            new RoomConnectionEvent("room_joined", {
-                                detail: {
-                                    localParticipant: this.localParticipant,
-                                    remoteParticipants: this.remoteParticipants,
-                                    waitingParticipants: [], //selectWaitingParticipants(state),
-                                },
-                            })
-                        );
-                    }
-                }
-            }
+//                 if (this.connectionStatus === "connected") {
+//                     if (this.localParticipant) {
+//                         this.dispatchEvent(
+//                             new RoomConnectionEvent("room_joined", {
+//                                 detail: {
+//                                     localParticipant: this.localParticipant,
+//                                     remoteParticipants: this.remoteParticipants,
+//                                     waitingParticipants: [], //selectWaitingParticipants(state),
+//                                 },
+//                             })
+//                         );
+//                     }
+//                 }
+//             }
 
-            const remoteParticipants = selectRemoteParticipants(state);
+//             const remoteParticipants = selectRemoteParticipants(state);
 
-            if (remoteParticipants !== this.remoteParticipants) {
-                this.remoteParticipants = remoteParticipants;
-                this.dispatchEvent(
-                    new RoomConnectionEvent("participants_changed", {
-                        detail: {
-                            remoteParticipants: this.remoteParticipants,
-                        },
-                    })
-                );
-            }
+//             if (remoteParticipants !== this.remoteParticipants) {
+//                 this.remoteParticipants = remoteParticipants;
+//                 this.dispatchEvent(
+//                     new RoomConnectionEvent("participants_changed", {
+//                         detail: {
+//                             remoteParticipants: this.remoteParticipants,
+//                         },
+//                     })
+//                 );
+//             }
 
-            const localParticipant = selectLocalParticipantRaw(state);
+//             const localParticipant = selectLocalParticipantRaw(state);
 
-            if (localParticipant !== this.localParticipant) {
-                this.localParticipant = { ...localParticipant, stream: selectLocalMediaStream(state) };
-            }
+//             if (localParticipant !== this.localParticipant) {
+//                 this.localParticipant = { ...localParticipant, stream: selectLocalMediaStream(state) };
+//             }
 
-            const chatMessages = selectChatMessages(state);
+//             const chatMessages = selectChatMessages(state);
 
-            if (chatMessages !== this.chatMessages) {
-                this.dispatchEvent(new RoomConnectionEvent("chat_messages_changed", { detail: chatMessages }));
-            }
+//             if (chatMessages !== this.chatMessages) {
+//                 this.dispatchEvent(new RoomConnectionEvent("chat_messages_changed", { detail: chatMessages }));
+//             }
 
-            const waitingParticipants: WaitingParticipant[] = []; // selectWaitingParticipants(state);
+//             const waitingParticipants: WaitingParticipant[] = []; // selectWaitingParticipants(state);
 
-            if (waitingParticipants !== this.waitingParticipants) {
-                this.waitingParticipants = waitingParticipants;
-                this.dispatchEvent(
-                    new RoomConnectionEvent("waiting_participants_changed", {
-                        detail: this.waitingParticipants,
-                    })
-                );
-            }
+//             if (waitingParticipants !== this.waitingParticipants) {
+//                 this.waitingParticipants = waitingParticipants;
+//                 this.dispatchEvent(
+//                     new RoomConnectionEvent("waiting_participants_changed", {
+//                         detail: this.waitingParticipants,
+//                     })
+//                 );
+//             }
 
-            const screenshares: Screenshare[] = []; //selectScreenshares(state);
+//             const screenshares: Screenshare[] = []; //selectScreenshares(state);
 
-            if (screenshares !== this.screenshares) {
-                this.screenshares = screenshares;
-                this.dispatchEvent(
-                    new RoomConnectionEvent("screenshares_changed", {
-                        detail: this.screenshares,
-                    })
-                );
-            }
+//             if (screenshares !== this.screenshares) {
+//                 this.screenshares = screenshares;
+//                 this.dispatchEvent(
+//                     new RoomConnectionEvent("screenshares_changed", {
+//                         detail: this.screenshares,
+//                     })
+//                 );
+//             }
 
-            const cloudRecording = selectCloudRecordingRaw(state);
+//             const cloudRecording = selectCloudRecordingRaw(state);
 
-            if (cloudRecording.isRecording !== this.isRecording) {
-                this.isRecording = cloudRecording.isRecording;
+//             if (cloudRecording.isRecording !== this.isRecording) {
+//                 this.isRecording = cloudRecording.isRecording;
 
-                if (this.isRecording) {
-                    this.dispatchEvent(
-                        new RoomConnectionEvent("cloud_recording_started", {
-                            detail: {
-                                status: "recording",
-                                startedAt: cloudRecording.startedAt,
-                            },
-                        })
-                    );
-                } else {
-                    this.dispatchEvent(new RoomConnectionEvent("cloud_recording_stopped"));
-                }
-            }
+//                 if (this.isRecording) {
+//                     this.dispatchEvent(
+//                         new RoomConnectionEvent("cloud_recording_started", {
+//                             detail: {
+//                                 status: "recording",
+//                                 startedAt: cloudRecording.startedAt,
+//                             },
+//                         })
+//                     );
+//                 } else {
+//                     this.dispatchEvent(new RoomConnectionEvent("cloud_recording_stopped"));
+//                 }
+//             }
 
-            const streaming = selectStreamingRaw(state);
+//             const streaming = selectStreamingRaw(state);
 
-            if (streaming.isStreaming !== this.isStreaming) {
-                this.isStreaming = streaming.isStreaming;
+//             if (streaming.isStreaming !== this.isStreaming) {
+//                 this.isStreaming = streaming.isStreaming;
 
-                if (this.isStreaming) {
-                    this.dispatchEvent(
-                        new RoomConnectionEvent("streaming_started", {
-                            detail: {
-                                status: "streaming",
-                                startedAt: streaming.startedAt,
-                            },
-                        })
-                    );
-                } else {
-                    this.dispatchEvent(new RoomConnectionEvent("streaming_stopped"));
-                }
-            }
-        });
+//                 if (this.isStreaming) {
+//                     this.dispatchEvent(
+//                         new RoomConnectionEvent("streaming_started", {
+//                             detail: {
+//                                 status: "streaming",
+//                                 startedAt: streaming.startedAt,
+//                             },
+//                         })
+//                     );
+//                 } else {
+//                     this.dispatchEvent(new RoomConnectionEvent("streaming_stopped"));
+//                 }
+//             }
+//         });
 
-        this.selfId = null;
-        this.roomUrl = new URL(roomUrl); // Throw if invalid Whereby room url
-        const searchParams = new URLSearchParams(this.roomUrl.search);
-        this._roomKey = roomKey || searchParams.get("roomKey");
-        this.roomName = this.roomUrl.pathname;
-        this.logger = logger || {
-            debug: noop,
-            error: noop,
-            info: noop,
-            log: noop,
-            warn: noop,
-        };
-        this.displayName = displayName;
-        this.externalId = externalId;
-        this.localMediaConstraints = localMediaConstraints;
+//         this.selfId = null;
+//         this.roomUrl = new URL(roomUrl); // Throw if invalid Whereby room url
+//         const searchParams = new URLSearchParams(this.roomUrl.search);
+//         this._roomKey = roomKey || searchParams.get("roomKey");
+//         this.roomName = this.roomUrl.pathname;
+//         this.logger = logger || {
+//             debug: noop,
+//             error: noop,
+//             info: noop,
+//             log: noop,
+//             warn: noop,
+//         };
+//         this.displayName = displayName;
+//         this.externalId = externalId;
+//         this.localMediaConstraints = localMediaConstraints;
 
-        // Set up local media listeners
-        /*this.localMedia.addEventListener("camera_enabled", (e) => {
-            const { enabled } = e.detail;
-            this.localMedia.dispatch(doEnableVideo({ enabled }));
-            this.dispatchEvent(new RoomConnectionEvent("local_camera_enabled", { detail: { enabled } }));
-        });
-        this.localMedia.addEventListener("microphone_enabled", (e) => {
-            const { enabled } = e.detail;
-            this._store.dispatch(doEnableAudio({ enabled }));
-            this.dispatchEvent(new RoomConnectionEvent("local_microphone_enabled", { detail: { enabled } }));
-        });*/
-    }
+//         // Set up local media listeners
+//         /*this.localMedia.addEventListener("camera_enabled", (e) => {
+//             const { enabled } = e.detail;
+//             this.localMedia.dispatch(doEnableVideo({ enabled }));
+//             this.dispatchEvent(new RoomConnectionEvent("local_camera_enabled", { detail: { enabled } }));
+//         });
+//         this.localMedia.addEventListener("microphone_enabled", (e) => {
+//             const { enabled } = e.detail;
+//             this._store.dispatch(doEnableAudio({ enabled }));
+//             this.dispatchEvent(new RoomConnectionEvent("local_microphone_enabled", { detail: { enabled } }));
+//         });*/
+//     }
 
-    public get roomKey(): string | null {
-        return this._roomKey;
-    }
+//     public get roomKey(): string | null {
+//         return this._roomKey;
+//     }
 
-    public async join() {
-        this.localMedia.dispatch(
-            doAppJoin({
-                roomName: this.roomName,
-                roomKey: this._roomKey,
-                displayName: this.displayName || "Guest",
-                sdkVersion: sdkVersion || "unknown",
-                //localMedia: this.localMedia,
-            })
-        );
-    }
+//     public async join() {
+//         this.localMedia.dispatch(
+//             doAppJoin({
+//                 roomName: this.roomName,
+//                 roomKey: this._roomKey,
+//                 displayName: this.displayName || "Guest",
+//                 sdkVersion: sdkVersion || "unknown",
+//                 //localMedia: this.localMedia,
+//             })
+//         );
+//     }
 
-    public knock() {
-        //this._store.dispatch(doSignalKnock());
-    }
+//     public knock() {
+//         //this._store.dispatch(doSignalKnock());
+//     }
 
-    public leave() {
-        this.localMedia.dispatch(appLeft());
-        // this._unsubscribe();
-    }
+//     public leave() {
+//         this.localMedia.dispatch(appLeft());
+//         // this._unsubscribe();
+//     }
 
-    public sendChatMessage(text: string): void {
-        this.localMedia.dispatch(doSendChatMessage({ text }));
-    }
+//     public sendChatMessage(text: string): void {
+//         this.localMedia.dispatch(doSendChatMessage({ text }));
+//     }
 
-    public setDisplayName(displayName: string): void {
-        this.localMedia.dispatch(doSetDisplayName({ displayName }));
-    }
+//     public setDisplayName(displayName: string): void {
+//         this.localMedia.dispatch(doSetDisplayName({ displayName }));
+//     }
 
-    public acceptWaitingParticipant(participantId: string) {
-        this.localMedia.dispatch(doAcceptWaitingParticipant({ participantId }));
-    }
+//     public acceptWaitingParticipant(participantId: string) {
+//         this.localMedia.dispatch(doAcceptWaitingParticipant({ participantId }));
+//     }
 
-    public rejectWaitingParticipant(participantId: string) {
-        this.localMedia.dispatch(doRejectWaitingParticipant({ participantId }));
-    }
+//     public rejectWaitingParticipant(participantId: string) {
+//         this.localMedia.dispatch(doRejectWaitingParticipant({ participantId }));
+//     }
 
-    public updateStreamResolution({ streamId, width, height }: { streamId?: string; width: number; height: number }) {
-        // if (!streamId || !this.rtcManager) {
-        //     return;
-        // }
-        // no need to report resolution for local participant
-        if (this.localParticipant?.stream?.id === streamId) {
-            return;
-        }
+//     public updateStreamResolution({ streamId, width, height }: { streamId?: string; width: number; height: number }) {
+//         // if (!streamId || !this.rtcManager) {
+//         //     return;
+//         // }
+//         // no need to report resolution for local participant
+//         if (this.localParticipant?.stream?.id === streamId) {
+//             return;
+//         }
 
-        // const old = reportedStreamResolutions.get(streamId);
-        // if (!old || old.width !== width || old.height !== height) {
-        // this.rtcManager.updateStreamResolution(streamId, null, { width: width || 1, height: height || 1 });
-        // }
-        // reportedStreamResolutions.set(streamId, { width, height });
-    }
+//         // const old = reportedStreamResolutions.get(streamId);
+//         // if (!old || old.width !== width || old.height !== height) {
+//         // this.rtcManager.updateStreamResolution(streamId, null, { width: width || 1, height: height || 1 });
+//         // }
+//         // reportedStreamResolutions.set(streamId, { width, height });
+//     }
 
-    public async startScreenshare() {
-        this.localMedia.dispatch(doStartScreenshare());
-    }
+//     public async startScreenshare() {
+//         this.localMedia.dispatch(doStartScreenshare());
+//     }
 
-    public stopScreenshare() {
-        this.localMedia.dispatch(doStopScreenshare());
-    }
+//     public stopScreenshare() {
+//         this.localMedia.dispatch(doStopScreenshare());
+//     }
 
-    public startCloudRecording() {
-        this.localMedia.dispatch(doStartCloudRecording());
-        this.dispatchEvent(new RoomConnectionEvent("cloud_recording_request_started"));
-    }
+//     public startCloudRecording() {
+//         this.localMedia.dispatch(doStartCloudRecording());
+//         this.dispatchEvent(new RoomConnectionEvent("cloud_recording_request_started"));
+//     }
 
-    public stopCloudRecording() {
-        this.localMedia.dispatch(doStopCloudRecording());
-    }
-}
+//     public stopCloudRecording() {
+//         this.localMedia.dispatch(doStopCloudRecording());
+//     }
+// }

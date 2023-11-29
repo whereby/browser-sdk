@@ -1,6 +1,5 @@
 import { PayloadAction, createSlice } from "@reduxjs/toolkit";
 
-import { ConnectionStatus } from "../../../RoomConnection";
 import { createReactor } from "../../../redux/listenerMiddleware";
 import { RootState } from "../../../redux/store";
 import { createAppThunk } from "../../../redux/thunk";
@@ -14,6 +13,15 @@ import {
     selectLocalMediaStatus,
 } from "../../../LocalMedia/slices/localMedia";
 
+export type ConnectionStatus =
+    | "initializing"
+    | "connecting"
+    | "connected"
+    | "room_locked"
+    | "knocking"
+    | "disconnecting"
+    | "disconnected"
+    | "knock_rejected";
 /**
  * Reducer
  */
