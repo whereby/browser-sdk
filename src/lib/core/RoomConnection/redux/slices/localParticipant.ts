@@ -177,6 +177,7 @@ export const { doSetLocalParticipant } = localParticipantSlice.actions;
 
 export const selectLocalParticipantRaw = (state: RootState) => state.localParticipant;
 export const selectSelfId = (state: RootState) => state.localParticipant.id;
+export const selectLocalParticipantIsScreenSharing = (state: RootState) => state.localParticipant.isScreenSharing;
 
 startAppListening({
     actionCreator: doToggleCameraEnabled,

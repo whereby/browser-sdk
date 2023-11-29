@@ -22,20 +22,23 @@ import { selectRoomConnectionStatus } from "../core/RoomConnection/redux/slices/
 import {
     doAcceptWaitingParticipant,
     doRejectWaitingParticipant,
-    selectWaitingParticipantsRaw,
+    selectWaitingParticipants,
 } from "../core/RoomConnection/redux/slices/waitingParticipants";
 import {
     doSetDisplayName,
     doStartScreenshare,
     doStopScreenshare,
+    selectLocalParticipantRaw,
 } from "../core/RoomConnection/redux/slices/localParticipant";
-import { doToggleCameraEnabled, doToggleMicrophoneEnabled } from "../core/LocalMedia/slices/localMedia";
-import { appLeft, doAppJoin, selectAppRaw } from "../core/RoomConnection/redux/slices/app";
+import {
+    doToggleCameraEnabled,
+    doToggleMicrophoneEnabled,
+    selectLocalMediaStream,
+} from "../core/LocalMedia/slices/localMedia";
+import { appLeft, doAppJoin } from "../core/RoomConnection/redux/slices/app";
+import { selectStreamingRaw } from "../core/RoomConnection/redux/slices/streaming";
 
-export type RemoteParticipantState = Omit<
-    RemoteParticipant,
-    "updateStreamState" | "newJoiner" | "streams" | "addStream" | "removeStream"
->;
+export type RemoteParticipantState = Omit<RemoteParticipant, "newJoiner" | "streams">;
 export type LocalParticipantState = LocalParticipant;
 export interface WaitingParticipantState {
     id: string;
@@ -52,13 +55,13 @@ type LocalScreenshareStatus = "starting" | "active";
 
 export interface RoomConnectionState {
     chatMessages: ChatMessage[];
-    // cloudRecording?: CloudRecordingState;
-    // localScreenshareStatus?: LocalScreenshareStatus;
-    // localParticipant?: LocalParticipantState;
+    cloudRecording?: CloudRecordingState;
+    localScreenshareStatus?: LocalScreenshareStatus;
+    localParticipant?: LocalParticipantState;
     remoteParticipants: RemoteParticipantState[];
     // screenshares: Screenshare[];
     connectionStatus: ConnectionStatus;
-    // liveStream?: LiveStreamState;
+    liveStream?: LiveStreamState;
     waitingParticipants: WaitingParticipantState[];
 }
 
@@ -73,17 +76,38 @@ const initialState: RoomConnectionState = {
 const selectRoomConnectionState = createSelector(
     selectChatMessages,
     selectCloudRecordingRaw,
+    selectLocalParticipantRaw,
+    selectLocalMediaStream,
     selectRemoteParticipants,
     selectRoomConnectionStatus,
-    selectWaitingParticipantsRaw,
-    (chatMessages, cloudRecording, remoteParticipants, connectionStatus, waitingParticipants) => {
+    selectStreamingRaw,
+    selectWaitingParticipants,
+    (
+        chatMessages,
+        cloudRecording,
+        localParticipant,
+        localMediaStream,
+        remoteParticipants,
+        connectionStatus,
+        streaming,
+        waitingParticipants
+    ) => {
         const state: RoomConnectionState = {
             chatMessages,
-            // cloudRecording,
+            cloudRecording: cloudRecording.isRecording ? { status: "recording" } : undefined,
+            localScreenshareStatus: localParticipant.isScreenSharing ? "active" : undefined,
+            localParticipant: { ...localParticipant, stream: localMediaStream },
             remoteParticipants,
             connectionStatus,
-            waitingParticipants: waitingParticipants.waitingParticipants,
+            liveStream: streaming.isStreaming
+                ? {
+                      status: "streaming",
+                      startedAt: streaming.startedAt,
+                  }
+                : undefined,
+            waitingParticipants,
         };
+
         return state;
     }
 );
