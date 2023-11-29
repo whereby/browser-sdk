@@ -12,6 +12,9 @@ export const startAppListening = listenerMiddleware.startListening as AppStartLi
 
 export const addAppListener = addListener as TypedAddListener<RootState, AppDispatch>;
 
+type SelectorResults<Selectors extends Selector<RootState, unknown>[]> = {
+    [K in keyof Selectors]: Selectors[K] extends Selector<RootState, infer R> ? R : never;
+};
 /**
  * Creates a reactor that will be called whenever the provided selectors change.
  * Every reactor needs to update a piece of state that it depends on, to avoid infinite loops.
@@ -29,10 +32,6 @@ export const addAppListener = addListener as TypedAddListener<RootState, AppDisp
  * @param callback. The callback to be called on every action. The first argument is the listenerApi, the second argument is the result of the selectors.
  * @returns The unsubscribe function.
  */
-type SelectorResults<Selectors extends Selector<RootState, unknown>[]> = {
-    [K in keyof Selectors]: Selectors[K] extends Selector<RootState, infer R> ? R : never;
-};
-
 export const createReactor = <Selectors extends Selector<RootState, unknown>[]>(
     selectors: readonly [...Selectors],
     callback: (

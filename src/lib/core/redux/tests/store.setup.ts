@@ -1,4 +1,4 @@
-import { RootState, createStore as createRealStore } from "../../../redux/store";
+import { RootState, createStore as createRealStore } from "../store";
 
 export const mockSignalEmit = jest.fn();
 

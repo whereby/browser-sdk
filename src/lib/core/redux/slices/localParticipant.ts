@@ -1,17 +1,13 @@
 import { PayloadAction, createSlice } from "@reduxjs/toolkit";
-import { RootState } from "../../../redux/store";
-import { createAppAsyncThunk } from "../../../redux/thunk";
+import { RootState } from "../store";
+import { createAppAsyncThunk } from "../thunk";
 import { LocalParticipant } from "~/lib/react";
 import { selectSignalConnectionRaw } from "./signalConnection";
 import { selectRtcConnectionRaw } from "./rtcConnection";
 
 import { doAppJoin } from "./app";
-import {
-    doToggleCameraEnabled,
-    doToggleMicrophoneEnabled,
-    selectScreenshareStream,
-} from "../../../LocalMedia/slices/localMedia";
-import { startAppListening } from "../../../redux/listenerMiddleware";
+import { doToggleCameraEnabled, doToggleMicrophoneEnabled, selectScreenshareStream } from "./localMedia";
+import { startAppListening } from "../listenerMiddleware";
 // import { doAddScreenshare, doRemoveScreenshare } from "./remoteParticipants";
 
 export interface LocalParticipantState extends LocalParticipant {
