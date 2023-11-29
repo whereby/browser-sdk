@@ -109,7 +109,7 @@ export default function useLocalMedia(
     optionsOrStream: UseLocalMediaOptions | MediaStream = { audio: true, video: true }
 ): LocalMediaRef {
     const [store] = useState<Store>(() => {
-        const services = createServices("https://team.whereby.com/havardholvik");
+        const services = createServices();
         return createStore({ injectServices: services });
     });
     const [localMediaState, setLocalMediaState] = useState(initialState);
