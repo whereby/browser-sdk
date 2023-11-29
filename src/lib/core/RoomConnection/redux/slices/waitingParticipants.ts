@@ -74,3 +74,4 @@ export const doRejectWaitingParticipant = createAppThunk(
  */
 
 export const selectWaitingParticipantsRaw = (state: RootState) => state.waitingParticipants;
+export const selectWaitingParticipants = (state: RootState) => state.waitingParticipants.waitingParticipants;
