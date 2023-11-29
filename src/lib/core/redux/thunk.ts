@@ -1,4 +1,4 @@
-import { createAsyncThunk, AsyncThunk, AsyncThunkPayloadCreator, ThunkAction, AnyAction } from "@reduxjs/toolkit";
+import { createAsyncThunk, AsyncThunk, AsyncThunkPayloadCreator } from "@reduxjs/toolkit";
 import { RootState, AppDispatch } from "./store";
 import { createServices } from "../../services";
 
@@ -15,7 +15,11 @@ export function createAppAsyncThunk<ReturnType, ArgType = undefined>(
     return createAsyncThunk<ReturnType, ArgType, ThunkConfig>(typePrefix, payloadCreator);
 }
 
-export type AppThunk<ReturnType = void> = ThunkAction<ReturnType, RootState, unknown, AnyAction>;
+export type AppThunk<R = void> = (
+    dispatch: AppDispatch,
+    getState: () => RootState,
+    extra: { services: ReturnType<typeof createServices> }
+) => R;
 
 export function createAppThunk<A = void>(thunk: (args: A) => AppThunk) {
     return thunk;
