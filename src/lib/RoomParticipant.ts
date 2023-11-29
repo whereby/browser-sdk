@@ -67,18 +67,10 @@ export interface WaitingParticipant {
     displayName: string | null;
 }
 
-export class Screenshare {
-    public readonly participantId: string;
-    public readonly id: string;
-    public readonly hasAudioTrack: boolean;
-    public readonly stream?: MediaStream;
-    public readonly isLocal: boolean = false;
-
-    constructor({ participantId, id, hasAudioTrack, stream, isLocal }: Screenshare) {
-        this.participantId = participantId;
-        this.id = id;
-        this.hasAudioTrack = hasAudioTrack;
-        this.stream = stream;
-        this.isLocal = isLocal;
-    }
+export interface Screenshare {
+    participantId: string;
+    id: string;
+    hasAudioTrack: boolean;
+    stream?: MediaStream;
+    isLocal: boolean;
 }

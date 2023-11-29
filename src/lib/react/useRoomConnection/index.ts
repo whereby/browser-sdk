@@ -15,7 +15,7 @@ const initialState: RoomConnectionState = {
     chatMessages: [],
     remoteParticipants: [],
     connectionStatus: "initializing",
-    // screenshares: [],
+    screenshares: [],
     waitingParticipants: [],
 };
 
