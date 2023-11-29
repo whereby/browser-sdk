@@ -3,7 +3,7 @@ import { RootState } from "../../../redux/store";
 import { createAppAsyncThunk } from "../../../redux/thunk";
 import Organization from "../../../../api/models/Organization";
 import { createReactor } from "../../../redux/listenerMiddleware";
-import { selectAppWantsToJoin } from "./app";
+import { selectAppRoomUrl, selectAppWantsToJoin } from "./app";
 import { selectDeviceCredentialsRaw } from "./deviceCredentials";
 
 /**
@@ -55,19 +55,24 @@ export const organizationSlice = createSlice({
  * Action creators
  */
 
-export const doOrganizationFetch = createAppAsyncThunk("organization/doOrganizationFetch", async (_, { extra }) => {
-    try {
-        const organization = await extra.services.organizationServiceCache.fetchOrganization();
+export const doOrganizationFetch = createAppAsyncThunk(
+    "organization/doOrganizationFetch",
+    async (_, { extra, getState }) => {
+        try {
+            const roomUrl = selectAppRoomUrl(getState());
 
-        if (!organization) {
-            throw new Error("Invalid room url");
+            const organization = await extra.services.fetchOrganizationFromRoomUrl(roomUrl || "");
+
+            if (!organization) {
+                throw new Error("Invalid room url");
+            }
+
+            return organization;
+        } catch (error) {
+            console.error(error);
         }
-
-        return organization;
-    } catch (error) {
-        console.error(error);
     }
-});
+);
 
 /**
  * Selectors
