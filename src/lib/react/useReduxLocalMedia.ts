@@ -115,7 +115,7 @@ export default function useLocalMedia(
     const [localMediaState, setLocalMediaState] = useState(initialState);
     useEffect(() => {
         const unsubscribe = observeStore(store, selectLocalMediaState, setLocalMediaState);
-        store.dispatch(doStartLocalMedia({ audio: true, video: true }));
+        store.dispatch(doStartLocalMedia(optionsOrStream));
         return unsubscribe;
     }, []);
 
