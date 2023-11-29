@@ -26,7 +26,7 @@ export interface RoomConnectionState {
     localScreenshareStatus?: LocalScreenshareStatus;
     localParticipant?: LocalParticipantState;
     remoteParticipants: RemoteParticipantState[];
-    // screenshares: Screenshare[];
+    screenshares: Screenshare[];
     connectionStatus: ConnectionStatus;
     liveStream?: LiveStreamState;
     waitingParticipants: WaitingParticipantState[];
