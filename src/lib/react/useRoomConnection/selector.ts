@@ -3,7 +3,7 @@ import { RoomConnectionState } from "./types";
 
 import { selectChatMessages } from "../../core/redux/slices/chat";
 import { selectCloudRecordingRaw } from "../../core/redux/slices/cloudRecording";
-import { selectRemoteParticipants } from "../../core/redux/slices/remoteParticipants";
+import { selectRemoteParticipants, selectScreenshares } from "../../core/redux/slices/remoteParticipants";
 import { selectRoomConnectionStatus } from "../../core/redux/slices/roomConnection";
 import { selectWaitingParticipants } from "../../core/redux/slices/waitingParticipants";
 import { selectLocalParticipantRaw } from "../../core/redux/slices/localParticipant";
@@ -16,6 +16,7 @@ export const selectRoomConnectionState = createSelector(
     selectLocalParticipantRaw,
     selectLocalMediaStream,
     selectRemoteParticipants,
+    selectScreenshares,
     selectRoomConnectionStatus,
     selectStreamingRaw,
     selectWaitingParticipants,
@@ -25,6 +26,7 @@ export const selectRoomConnectionState = createSelector(
         localParticipant,
         localMediaStream,
         remoteParticipants,
+        screenshares,
         connectionStatus,
         streaming,
         waitingParticipants
@@ -35,6 +37,7 @@ export const selectRoomConnectionState = createSelector(
             localScreenshareStatus: localParticipant.isScreenSharing ? "active" : undefined,
             localParticipant: { ...localParticipant, stream: localMediaStream },
             remoteParticipants,
+            screenshares,
             connectionStatus,
             liveStream: streaming.isStreaming
                 ? {
