@@ -9,6 +9,6 @@ export type {
     RoomConnectionState as RoomConnection,
     ScreenshareState as Screenshare,
     WaitingParticipantState as WaitingParticipant,
-} from "./useRoomConnection";
+} from "./useRoomConnection/types";
 
 export { sdkVersion } from "../version";
