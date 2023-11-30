@@ -6,6 +6,7 @@ import fakeWebcamFrame from "../lib/utils/fakeWebcamFrame";
 import fakeAudioStream from "../lib/utils/fakeAudioStream";
 import "./styles.css";
 import ReduxPrecallExperience from "./components/ReduxPrecallExperience";
+import Grid from "./components/Grid";
 
 export default {
     title: "Examples/Custom UI",
@@ -144,6 +145,16 @@ export const RoomConnectionOnly = ({ roomUrl, displayName }: { roomUrl: string; 
     }
 
     return <VideoExperience displayName={displayName} roomName={roomUrl} />;
+};
+
+export const ResolutionReporting = ({ roomUrl }: { roomUrl: string; displayName?: string }) => {
+    if (!roomUrl || !roomUrl.match(roomRegEx)) {
+        return <p>Set room url on the Controls panel</p>;
+    }
+
+    const roomConnection = useRoomConnection(roomUrl, { localMediaOptions: { audio: false, video: false } });
+
+    return <Grid roomConnection={roomConnection} />;
 };
 
 export const RoomConnectionStrictMode = ({ roomUrl, displayName }: { roomUrl: string; displayName?: string }) => {

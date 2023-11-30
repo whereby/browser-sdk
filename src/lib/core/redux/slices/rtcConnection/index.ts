@@ -44,10 +44,19 @@ export const createWebRtcEmitter = (dispatch: AppDispatch) => {
  * Reducer
  */
 
+interface StreamResolutionUpdate {
+    streamId: string;
+    width: number;
+    height: number;
+}
+
 export interface RtcConnectionState {
     dispatcherCreated: boolean;
     error: unknown;
     isCreatingDispatcher: boolean;
+    reportedStreamResolutions: {
+        [streamId: string]: Omit<StreamResolutionUpdate, "streamId">;
+    };
     rtcManager: RtcManager | null;
     rtcManagerDispatcher: RtcManagerDispatcher | null;
     rtcManagerInitialized: boolean;
@@ -58,6 +67,7 @@ const initialState: RtcConnectionState = {
     dispatcherCreated: false,
     error: null,
     isCreatingDispatcher: false,
+    reportedStreamResolutions: {},
     rtcManager: null,
     rtcManagerDispatcher: null,
     rtcManagerInitialized: false,
@@ -68,6 +78,17 @@ export const rtcConnectionSlice = createSlice({
     name: "rtcConnection",
     initialState,
     reducers: {
+        resolutionReported: (state, action: PayloadAction<StreamResolutionUpdate>) => {
+            const { streamId, width, height } = action.payload;
+
+            return {
+                ...state,
+                reportedStreamResolutions: {
+                    ...state.reportedStreamResolutions,
+                    [streamId]: { width, height },
+                },
+            };
+        },
         rtcDisconnected: () => {
             return {
                 ...initialState,
@@ -109,8 +130,14 @@ export const rtcConnectionSlice = createSlice({
  * Action creators
  */
 
-export const { rtcDispatcherCreated, rtcDisconnected, rtcManagerCreated, rtcManagerDestroyed, rtcManagerInitialized } =
-    rtcConnectionSlice.actions;
+export const {
+    resolutionReported,
+    rtcDispatcherCreated,
+    rtcDisconnected,
+    rtcManagerCreated,
+    rtcManagerDestroyed,
+    rtcManagerInitialized,
+} = rtcConnectionSlice.actions;
 
 export const doConnectRtc = createAppThunk(() => (dispatch, getState) => {
     const state = getState();
@@ -204,6 +231,25 @@ const doHandleAcceptStreams = createAppThunk((payload: StreamStatusUpdate[]) => 
 
     dispatch(streamStatusUpdated(updates));
 });
+
+export const doRtcReportStreamResolution = createAppThunk(
+    ({ streamId, width, height }: StreamResolutionUpdate) =>
+        (dispatch, getState) => {
+            const { reportedStreamResolutions, rtcManager } = selectRtcConnectionRaw(getState());
+            const localStream = selectLocalMediaStream(getState());
+
+            if (!rtcManager || localStream?.id === streamId) {
+                return;
+            }
+
+            const old = reportedStreamResolutions[streamId];
+            if (!old || old.width !== width || old.height !== height) {
+                rtcManager.updateStreamResolution(streamId, null, { width: width || 1, height: height || 1 });
+            }
+
+            dispatch(resolutionReported({ streamId, width, height }));
+        }
+);
 
 export const doRtcManagerCreated = createAppThunk((payload: RtcManagerCreatedPayload) => (dispatch) => {
     const { rtcManager } = payload;
