@@ -6,7 +6,8 @@ import { createAppThunk } from "../thunk";
 import { selectAppDisplayName, selectAppRoomKey, selectAppRoomName, selectAppSdkVersion } from "./app";
 
 import { selectOrganizationId } from "./organization";
-import { selectSignalConnectionRaw, signalEvents } from "./signalConnection";
+import { signalEvents } from "./signalConnection/actions";
+import { selectSignalConnectionRaw } from "./signalConnection";
 import { selectIsCameraEnabled, selectIsMicrophoneEnabled, selectLocalMediaStatus } from "./localMedia";
 
 export type ConnectionStatus =

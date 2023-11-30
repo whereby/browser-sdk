@@ -1,6 +1,6 @@
 import { createSelector, createSlice, PayloadAction } from "@reduxjs/toolkit";
 import { getStream } from "@whereby/jslib-media/src/webrtc/MediaDevices";
-import { createAppAsyncThunk } from "../../redux/thunk";
+import { createAppAsyncThunk, createAppThunk } from "../../redux/thunk";
 import { RootState } from "../../redux/store";
 import { createReactor, startAppListening } from "../../redux/listenerMiddleware";
 import { selectAppWantsToJoin } from "./app";
@@ -293,6 +293,38 @@ export const doStartLocalMedia = createAppAsyncThunk(
     }
 );
 
+export const doStartScreenshare = createAppAsyncThunk(
+    "localMedia/doStartScreenshare",
+    async (_, { getState, rejectWithValue }) => {
+        try {
+            const state = getState();
+            const screenshareStream = selectScreenshareStream(state);
+
+            if (screenshareStream) {
+                return { stream: screenshareStream };
+            }
+
+            const stream = await navigator.mediaDevices.getDisplayMedia();
+
+            return { stream };
+        } catch (error) {
+            return rejectWithValue(error);
+        }
+    }
+);
+
+export const doStopScreenshare = createAppThunk(() => (dispatch, getState) => {
+    const state = getState();
+    const screenshareStream = selectScreenshareStream(state);
+
+    if (!screenshareStream) {
+        return;
+    }
+
+    screenshareStream.getTracks().forEach((track) => track.stop());
+    dispatch(stopScreenshare({ stream: screenshareStream }));
+});
+
 export const localMediaSlice = createSlice({
     name: "localMedia",
     initialState,
@@ -317,6 +349,12 @@ export const localMediaSlice = createSlice({
         },
         doSetLocalMediaOptions(state, action: PayloadAction<{ options: LocalMediaOptions }>) {
             state.options = action.payload.options;
+        },
+        stopScreenshare(state, action: PayloadAction<{ stream: MediaStream }>) {
+            return {
+                ...state,
+                screenshareStream: undefined,
+            };
         },
     },
     extraReducers: (builder) => {
@@ -407,6 +445,18 @@ export const localMediaSlice = createSlice({
                     status: "error",
                     startError: action.error,
                 };
+            })
+            .addCase(doStartScreenshare.fulfilled, (state, { payload: { stream } }) => {
+                return {
+                    ...state,
+                    screenshareStream: stream,
+                };
+            })
+            .addCase(doStartScreenshare.rejected, (state) => {
+                return {
+                    ...state,
+                    screenshareStream: undefined,
+                };
             });
     },
 });
@@ -428,4 +478,5 @@ export const {
     doToggleMicrophoneEnabled,
     doSetLocalMediaOptions,
     doSetLocalMediaStream,
+    stopScreenshare,
 } = localMediaSlice.actions;

@@ -3,10 +3,9 @@ import { RootState } from "../store";
 import { createAppAsyncThunk } from "../thunk";
 import { LocalParticipant } from "~/lib/react";
 import { selectSignalConnectionRaw } from "./signalConnection";
-import { selectRtcConnectionRaw } from "./rtcConnection";
 
 import { doAppJoin } from "./app";
-import { doToggleCameraEnabled, doToggleMicrophoneEnabled, selectScreenshareStream } from "./localMedia";
+import { doToggleCameraEnabled, doToggleMicrophoneEnabled } from "./localMedia";
 import { startAppListening } from "../listenerMiddleware";
 
 export interface LocalParticipantState extends LocalParticipant {
@@ -62,60 +61,6 @@ export const doSetDisplayName = createAppAsyncThunk(
     }
 );
 
-export const doStartScreenshare = createAppAsyncThunk(
-    "localParticipant/doStartScreenshare",
-    async (payload, { dispatch, getState }) => {
-        const state = getState();
-        const rtcManager = selectRtcConnectionRaw(state).rtcManager;
-        const selfId = selectSelfId(state);
-        const screenshareStream = selectScreenshareStream(state);
-
-        //const screenshareStream = localMedia?.screenshareStream || (await localMedia?.startScreenshare());
-
-        if (screenshareStream) {
-            const onEnded = () => {
-                dispatch(doStopScreenshare());
-            };
-
-            if ("oninactive" in screenshareStream) {
-                // Chrome
-                screenshareStream.addEventListener("inactive", onEnded);
-            } else {
-                // FF
-                screenshareStream.getVideoTracks()[0]?.addEventListener("ended", onEnded);
-            }
-
-            rtcManager?.addNewStream(screenshareStream.id, screenshareStream, false, true);
-
-            // dispatch(
-            //     doAddScreenshare({
-            //         participantId: selfId || "",
-            //         id: screenshareStream.id,
-            //         hasAudioTrack: false,
-            //         stream: screenshareStream,
-            //         isLocal: true,
-            //     })
-            // );
-        }
-    }
-);
-
-export const doStopScreenshare = createAppAsyncThunk(
-    "localParticipant/doStopScreenshare",
-    async (payload, { dispatch, getState }) => {
-        const state = getState();
-        const rtcManager = selectRtcConnectionRaw(state).rtcManager;
-
-        //const screenshareStream = localMedia?.screenshareStream;
-
-        /*if (screenshareStream && localMedia.screenshareStream) {
-            rtcManager?.removeStream(localMedia.screenshareStream.id, localMedia.screenshareStream, null);
-            localMedia.stopScreenshare();
-            // dispatch(doRemoveScreenshare(screenshareStream.id));
-        }*/
-    }
-);
-
 export const localParticipantSlice = createSlice({
     name: "localParticipant",
     initialState,
@@ -151,18 +96,6 @@ export const localParticipantSlice = createSlice({
             return {
                 ...state,
                 displayName: action.payload,
-            };
-        });
-        builder.addCase(doStartScreenshare.fulfilled, (state) => {
-            return {
-                ...state,
-                isScreenSharing: true,
-            };
-        });
-        builder.addCase(doStopScreenshare.fulfilled, (state) => {
-            return {
-                ...state,
-                isScreenSharing: false,
             };
         });
     },
