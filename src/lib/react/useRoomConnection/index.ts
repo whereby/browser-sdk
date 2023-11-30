@@ -6,8 +6,13 @@ import { createServices } from "../../services";
 import { doSendChatMessage } from "../../core/redux/slices/chat";
 import { doStartCloudRecording, doStopCloudRecording } from "../../core/redux/slices/cloudRecording";
 import { doAcceptWaitingParticipant, doRejectWaitingParticipant } from "../../core/redux/slices/waitingParticipants";
-import { doSetDisplayName, doStartScreenshare, doStopScreenshare } from "../../core/redux/slices/localParticipant";
-import { doToggleCameraEnabled, doToggleMicrophoneEnabled } from "../../core/redux/slices/localMedia";
+import { doSetDisplayName } from "../../core/redux/slices/localParticipant";
+import {
+    doToggleCameraEnabled,
+    doToggleMicrophoneEnabled,
+    doStartScreenshare,
+    doStopScreenshare,
+} from "../../core/redux/slices/localMedia";
 import { appLeft, doAppJoin } from "../../core/redux/slices/app";
 import { selectRoomConnectionState } from "./selector";
 
