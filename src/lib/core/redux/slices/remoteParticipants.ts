@@ -3,7 +3,7 @@ import { RootState } from "../store";
 import { SignalClient } from "@whereby/jslib-media/src/utils/ServerSocket";
 import { RemoteParticipant, Screenshare, StreamState } from "~/lib/RoomParticipant";
 import { StreamStatusUpdate, rtcEvents } from "./rtcConnection";
-import { signalEvents } from "./signalConnection";
+import { signalEvents } from "./signalConnection/actions";
 import { RtcStreamAddedPayload } from "@whereby/jslib-media/src/webrtc/RtcManagerDispatcher";
 import { selectScreenshareStream } from "./localMedia";
 
