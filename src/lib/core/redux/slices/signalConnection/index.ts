@@ -1,49 +1,13 @@
-import { createSlice, createAction, ThunkDispatch, AnyAction, PayloadAction } from "@reduxjs/toolkit";
-import { RootState } from "../store";
-import { createAppThunk } from "../thunk";
-import { createReactor, startAppListening } from "../listenerMiddleware";
-import { selectDeviceCredentialsRaw } from "./deviceCredentials";
+import { createSlice, ThunkDispatch, AnyAction, PayloadAction } from "@reduxjs/toolkit";
+import { RootState } from "../../store";
+import { createAppThunk } from "../../thunk";
+import { createReactor, startAppListening } from "../../listenerMiddleware";
+import { selectDeviceCredentialsRaw } from "../deviceCredentials";
 
-import ServerSocket, {
-    AudioEnabledEvent,
-    ChatMessage,
-    ClientLeftEvent,
-    ClientMetadataReceivedEvent,
-    CloudRecordingStartedEvent,
-    KnockerLeftEvent,
-    KnockAcceptedEvent,
-    KnockRejectedEvent,
-    NewClientEvent,
-    RoomJoinedEvent,
-    RoomKnockedEvent,
-    ScreenshareStartedEvent,
-    ScreenshareStoppedEvent,
-    VideoEnabledEvent,
-} from "@whereby/jslib-media/src/utils/ServerSocket";
+import ServerSocket from "@whereby/jslib-media/src/utils/ServerSocket";
 import { Credentials } from "~/lib/api";
-import { appLeft, selectAppWantsToJoin } from "./app";
-
-function createSignalEventAction<T>(name: string) {
-    return createAction<T>(`signalConnection/event/${name}`);
-}
-
-export const signalEvents = {
-    audioEnabled: createSignalEventAction<AudioEnabledEvent>("audioEnabled"),
-    chatMessage: createSignalEventAction<ChatMessage>("chatMessage"),
-    clientLeft: createSignalEventAction<ClientLeftEvent>("clientLeft"),
-    clientMetadataReceived: createSignalEventAction<ClientMetadataReceivedEvent>("clientMetadataReceived"),
-    cloudRecordingStarted: createSignalEventAction<CloudRecordingStartedEvent>("cloudRecordingStarted"),
-    cloudRecordingStopped: createSignalEventAction<void>("cloudRecordingStopped"),
-    knockerLeft: createSignalEventAction<KnockerLeftEvent>("knockerLeft"),
-    knockHandled: createSignalEventAction<KnockAcceptedEvent | KnockRejectedEvent>("knockHandled"),
-    newClient: createSignalEventAction<NewClientEvent>("newClient"),
-    roomJoined: createSignalEventAction<RoomJoinedEvent>("roomJoined"),
-    roomKnocked: createSignalEventAction<RoomKnockedEvent>("roomKnocked"),
-    screenshareStarted: createSignalEventAction<ScreenshareStartedEvent>("screenshareStarted"),
-    screenshareStopped: createSignalEventAction<ScreenshareStoppedEvent>("screenshareStopped"),
-    streamingStopped: createSignalEventAction<void>("streamingStopped"),
-    videoEnabled: createSignalEventAction<VideoEnabledEvent>("videoEnabled"),
-};
+import { appLeft, selectAppWantsToJoin } from "../app";
+import { signalEvents } from "./actions";
 
 function forwardSocketEvents(socket: ServerSocket, dispatch: ThunkDispatch<RootState, unknown, AnyAction>) {
     socket.on("room_joined", (payload) => dispatch(signalEvents.roomJoined(payload)));
