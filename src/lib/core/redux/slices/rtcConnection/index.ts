@@ -1,17 +1,17 @@
-import { createAction, createSlice, PayloadAction } from "@reduxjs/toolkit";
-import { AppDispatch, RootState } from "../store";
-import { createAppThunk } from "../thunk";
+import { createSlice, PayloadAction } from "@reduxjs/toolkit";
+import { AppDispatch, RootState } from "../../store";
+import { createAppThunk } from "../../thunk";
 import RtcManager from "@whereby/jslib-media/src/webrtc/RtcManager";
-import { selectSignalConnectionRaw } from "./signalConnection";
+import { selectSignalConnectionRaw } from "../signalConnection";
 import RtcManagerDispatcher, {
     RtcEvents,
     RtcManagerCreatedPayload,
     RtcStreamAddedPayload,
 } from "@whereby/jslib-media/src/webrtc/RtcManagerDispatcher";
-import { createReactor, startAppListening } from "../listenerMiddleware";
-import { selectRemoteParticipants, streamStatusUpdated } from "./remoteParticipants";
+import { createReactor, startAppListening } from "../../listenerMiddleware";
+import { selectRemoteParticipants, streamStatusUpdated } from "../remoteParticipants";
 import { StreamState } from "~/lib/RoomParticipant";
-import { selectAppWantsToJoin } from "./app";
+import { selectAppWantsToJoin } from "../app";
 import {
     selectIsCameraEnabled,
     selectIsMicrophoneEnabled,
@@ -20,17 +20,9 @@ import {
     reactSetDevice,
     doStartScreenshare,
     stopScreenshare,
-} from "./localMedia";
-
-function createRtcEventAction<T>(name: string) {
-    return createAction<T>(`rtcConnection/event/${name}`);
-}
-
-export const rtcEvents = {
-    rtcManagerCreated: createRtcEventAction<RtcManagerCreatedPayload>("rtcManagerCreated"),
-    rtcManagerDestroyed: createRtcEventAction<void>("rtcManagerDestroyed"),
-    streamAdded: createRtcEventAction<RtcStreamAddedPayload>("streamAdded"),
-};
+} from "../localMedia";
+import { rtcEvents } from "./actions";
+import { StreamStatusUpdate } from "./types";
 
 export const createWebRtcEmitter = (dispatch: AppDispatch) => {
     return {
@@ -71,12 +63,6 @@ const initialState: RtcConnectionState = {
     rtcManagerInitialized: false,
     status: "",
 };
-
-export interface StreamStatusUpdate {
-    clientId: string;
-    streamId: string;
-    state: StreamState;
-}
 
 export const rtcConnectionSlice = createSlice({
     name: "rtcConnection",
