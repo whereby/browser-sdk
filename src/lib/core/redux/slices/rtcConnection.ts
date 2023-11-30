@@ -18,6 +18,8 @@ import {
     selectLocalMediaStream,
     selectLocalMediaStatus,
     reactSetDevice,
+    doStartScreenshare,
+    stopScreenshare,
 } from "./localMedia";
 
 function createRtcEventAction<T>(name: string) {
@@ -259,6 +261,26 @@ startAppListening({
         replacedTracks?.forEach((t) => {
             replace(t.kind, t);
         });
+    },
+});
+
+startAppListening({
+    actionCreator: doStartScreenshare.fulfilled,
+    effect: ({ payload }, { getState }) => {
+        const { stream } = payload;
+        const { rtcManager } = selectRtcConnectionRaw(getState());
+
+        rtcManager?.addNewStream(stream.id, stream, false, true);
+    },
+});
+
+startAppListening({
+    actionCreator: stopScreenshare,
+    effect: ({ payload }, { getState }) => {
+        const { stream } = payload;
+        const { rtcManager } = selectRtcConnectionRaw(getState());
+
+        rtcManager?.removeStream(stream.id, stream, null);
     },
 });
 
