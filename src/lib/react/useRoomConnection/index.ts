@@ -15,7 +15,8 @@ import {
 } from "../../core/redux/slices/localMedia";
 import { appLeft, doAppJoin } from "../../core/redux/slices/app";
 import { selectRoomConnectionState } from "./selector";
-import { doKnockRoom } from "~/lib/core/redux/slices/roomConnection";
+import { doKnockRoom } from "../../core/redux/slices/roomConnection";
+import { doRtcReportStreamResolution } from "../../core/redux/slices/rtcConnection";
 
 const initialState: RoomConnectionState = {
     chatMessages: [],
@@ -140,7 +141,29 @@ export function useRoomConnection(
             stopScreenshare,
         },
         components: {
-            VideoView,
+            VideoView: (props: VideoViewComponentProps): JSX.Element =>
+                React.createElement(
+                    VideoView as React.ComponentType<VideoViewComponentProps>,
+                    Object.assign({}, props, {
+                        onResize: ({
+                            stream,
+                            width,
+                            height,
+                        }: {
+                            stream: MediaStream;
+                            width: number;
+                            height: number;
+                        }) => {
+                            store.dispatch(
+                                doRtcReportStreamResolution({
+                                    streamId: stream.id,
+                                    width,
+                                    height,
+                                })
+                            );
+                        },
+                    })
+                ),
         },
         _ref: store,
     };
