@@ -15,6 +15,7 @@ import {
 } from "../../core/redux/slices/localMedia";
 import { appLeft, doAppJoin } from "../../core/redux/slices/app";
 import { selectRoomConnectionState } from "./selector";
+import { doKnockRoom } from "~/lib/core/redux/slices/roomConnection";
 
 const initialState: RoomConnectionState = {
     chatMessages: [],
@@ -30,7 +31,7 @@ interface UseRoomConnectionOptions extends Omit<RoomConnectionOptions, "localMed
 
 interface RoomConnectionActions {
     sendChatMessage(text: string): void;
-    // knock(): void;
+    knock(): void;
     setDisplayName(displayName: string): void;
     toggleCamera(enabled?: boolean): void;
     toggleMicrophone(enabled?: boolean): void;
@@ -97,7 +98,7 @@ export function useRoomConnection(
     }, []);
 
     const sendChatMessage = React.useCallback((text: string) => store.dispatch(doSendChatMessage({ text })), [store]);
-    // const knock = React.useCallback(() => store.dispatch(doKnock()), [store]);
+    const knock = React.useCallback(() => store.dispatch(doKnockRoom()), [store]);
     const setDisplayName = React.useCallback(
         (displayName: string) => store.dispatch(doSetDisplayName({ displayName })),
         [store]
@@ -127,7 +128,7 @@ export function useRoomConnection(
         state: roomConnectionState,
         actions: {
             sendChatMessage,
-            // knock,
+            knock,
             setDisplayName,
             toggleCamera,
             toggleMicrophone,

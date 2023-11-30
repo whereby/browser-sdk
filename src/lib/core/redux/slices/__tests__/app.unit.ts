@@ -23,8 +23,8 @@ describe("appSlice", () => {
             });
         });
 
-        it("doAppSetRoomKey", () => {
-            const state = appSlice.reducer(undefined, appSlice.actions.doAppSetRoomKey("roomKey"));
+        it("setRoomKey", () => {
+            const state = appSlice.reducer(undefined, appSlice.actions.setRoomKey("roomKey"));
 
             expect(state.roomKey).toEqual("roomKey");
         });

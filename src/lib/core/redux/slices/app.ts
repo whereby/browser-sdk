@@ -49,7 +49,7 @@ export const appSlice = createSlice({
         appLeft: (state) => {
             return { ...state, wantsToJoin: false };
         },
-        doAppSetRoomKey: (state, action: PayloadAction<string>) => {
+        setRoomKey: (state, action: PayloadAction<string>) => {
             return {
                 ...state,
                 roomKey: action.payload,
@@ -61,7 +61,7 @@ export const appSlice = createSlice({
 /**
  * Action creators
  */
-export const { doAppJoin, appLeft, doAppSetRoomKey } = appSlice.actions;
+export const { doAppJoin, appLeft, setRoomKey } = appSlice.actions;
 
 /**
  * Selectors
