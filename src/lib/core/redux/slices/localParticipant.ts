@@ -7,6 +7,7 @@ import { selectSignalConnectionRaw } from "./signalConnection";
 import { doAppJoin } from "./app";
 import { doToggleCameraEnabled, doToggleMicrophoneEnabled } from "./localMedia";
 import { startAppListening } from "../listenerMiddleware";
+import { signalEvents } from "./signalConnection/actions";
 
 export interface LocalParticipantState extends LocalParticipant {
     isScreenSharing: boolean;
@@ -96,6 +97,12 @@ export const localParticipantSlice = createSlice({
             return {
                 ...state,
                 displayName: action.payload,
+            };
+        });
+        builder.addCase(signalEvents.roomJoined, (state, action) => {
+            return {
+                ...state,
+                id: action.payload.selfId,
             };
         });
     },
