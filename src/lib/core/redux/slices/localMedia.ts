@@ -295,7 +295,7 @@ export const doStartLocalMedia = createAppAsyncThunk(
 
 export const doStartScreenshare = createAppAsyncThunk(
     "localMedia/doStartScreenshare",
-    async (_, { getState, rejectWithValue }) => {
+    async (_, { dispatch, getState, rejectWithValue }) => {
         try {
             const state = getState();
             const screenshareStream = selectScreenshareStream(state);
@@ -305,6 +305,18 @@ export const doStartScreenshare = createAppAsyncThunk(
             }
 
             const stream = await navigator.mediaDevices.getDisplayMedia();
+
+            const onEnded = () => {
+                dispatch(doStopScreenshare());
+            };
+
+            if ("oninactive" in stream) {
+                // Chrome
+                stream.addEventListener("inactive", onEnded);
+            } else {
+                // Firefox
+                stream.getVideoTracks()[0]?.addEventListener("ended", onEnded);
+            }
 
             return { stream };
         } catch (error) {
