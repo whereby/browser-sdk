@@ -86,9 +86,12 @@ export function useRoomConnection(
 
         store.dispatch(
             doAppJoin({
-                roomUrl,
-                roomKey,
                 displayName: roomConnectionOptions.displayName || "Guest",
+                localMediaOptions: roomConnectionOptions.localMedia
+                    ? undefined
+                    : roomConnectionOptions.localMediaOptions,
+                roomKey,
+                roomUrl,
                 sdkVersion: "1.0.0",
             })
         );
