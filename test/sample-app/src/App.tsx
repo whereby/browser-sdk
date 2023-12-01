@@ -46,7 +46,6 @@ const Room = ({ roomUrl, localMedia, displayName, isHost }: RoomProps) => {
     const roomConnection = useRoomConnection(roomUrl, {
         localMedia,
         displayName,
-        logger: console,
     });
 
     const {
