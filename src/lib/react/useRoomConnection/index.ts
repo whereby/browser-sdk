@@ -17,6 +17,7 @@ import { appLeft, doAppJoin } from "../../core/redux/slices/app";
 import { selectRoomConnectionState } from "./selector";
 import { doKnockRoom } from "../../core/redux/slices/roomConnection";
 import { doRtcReportStreamResolution } from "../../core/redux/slices/rtcConnection";
+import { UseLocalMediaResult } from "../useLocalMedia";
 
 const initialState: RoomConnectionState = {
     chatMessages: [],
@@ -27,7 +28,7 @@ const initialState: RoomConnectionState = {
 };
 
 interface UseRoomConnectionOptions extends Omit<RoomConnectionOptions, "localMedia"> {
-    localMedia?: Store;
+    localMedia?: UseLocalMediaResult;
 }
 
 interface RoomConnectionActions {
@@ -69,9 +70,8 @@ export function useRoomConnection(
     roomConnectionOptions = defaultRoomConnectionOptions
 ): RoomConnectionRef {
     const [store] = React.useState<Store>(() => {
-        // Need to find a way to inject the services here
         if (roomConnectionOptions.localMedia) {
-            return roomConnectionOptions.localMedia;
+            return roomConnectionOptions.localMedia.store;
         }
         const services = createServices();
         return createStore({ injectServices: services });
