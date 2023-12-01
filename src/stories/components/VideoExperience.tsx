@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 import DisplayNameForm from "./DisplayNameForm";
-import { LocalMediaRef } from "../../lib/react/useLocalMedia";
+import { UseLocalMediaResult } from "../../lib/react/useLocalMedia";
 import { useRoomConnection } from "../../lib/react/useRoomConnection";
 
 export default function VideoExperience({
@@ -10,7 +10,7 @@ export default function VideoExperience({
 }: {
     displayName?: string;
     roomName: string;
-    localMedia?: LocalMediaRef;
+    localMedia?: UseLocalMediaResult;
 }) {
     const [chatMessage, setChatMessage] = useState("");
     const { state, actions, components } = useRoomConnection(roomName, {
