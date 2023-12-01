@@ -105,7 +105,7 @@ const initialState: LocalMediaState = {
     startError: null,
 };
 
-export default function useLocalMedia(
+export function useLocalMedia(
     optionsOrStream: UseLocalMediaOptions | MediaStream = { audio: true, video: true }
 ): UseLocalMediaResult {
     const [store] = useState<Store>(() => {
