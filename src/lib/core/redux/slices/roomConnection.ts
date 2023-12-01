@@ -46,8 +46,17 @@ export const roomConnectionSlice = createSlice({
         },
     },
     extraReducers: (builder) => {
-        builder.addCase(signalEvents.roomJoined, (state) => {
+        builder.addCase(signalEvents.roomJoined, (state, action) => {
             //TODO: Handle error
+            const { error, isLocked } = action.payload;
+
+            if (error === "room_locked" && isLocked) {
+                return {
+                    ...state,
+                    status: "room_locked",
+                };
+            }
+
             return {
                 ...state,
                 status: "connected",
