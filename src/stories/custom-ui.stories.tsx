@@ -1,5 +1,5 @@
 import React, { useEffect, useRef, useState } from "react";
-import { useReduxLocalMedia, useRoomConnection, VideoView } from "../lib/react";
+import { useLocalMedia, useRoomConnection, VideoView } from "../lib/react";
 import PrecallExperience from "./components/PrecallExperience";
 import VideoExperience from "./components/VideoExperience";
 import fakeWebcamFrame from "../lib/utils/fakeWebcamFrame";
@@ -27,7 +27,7 @@ export const StartStop = () => {
 };
 
 export const RoomConnectionWithLocalMedia = ({ roomUrl, displayName }: { roomUrl: string; displayName?: string }) => {
-    const localMedia = useReduxLocalMedia({ audio: true, video: true });
+    const localMedia = useLocalMedia({ audio: true, video: true });
     const [shouldJoin, setShouldJoin] = useState(false);
 
     if (!roomUrl || !roomUrl.match(roomRegEx)) {
@@ -45,7 +45,7 @@ export const RoomConnectionWithLocalMedia = ({ roomUrl, displayName }: { roomUrl
 };
 
 export const LocalMediaOnly = () => {
-    const localMedia = useReduxLocalMedia();
+    const localMedia = useLocalMedia();
 
     return (
         <div>
@@ -55,7 +55,7 @@ export const LocalMediaOnly = () => {
 };
 
 export const ReduxLocalMediaOnly = () => {
-    const localMedia = useReduxLocalMedia();
+    const localMedia = useLocalMedia();
 
     return (
         <div>
@@ -67,7 +67,7 @@ export const ReduxLocalMediaOnly = () => {
 function LocalMediaWithCanvasStream_({ canvasStream, roomUrl }: { canvasStream: MediaStream; roomUrl: string }) {
     const [shouldConnect, setShouldConnect] = useState(false);
 
-    const localMedia = useReduxLocalMedia(canvasStream);
+    const localMedia = useLocalMedia(canvasStream);
 
     return (
         <div>

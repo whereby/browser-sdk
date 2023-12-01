@@ -1,6 +1,6 @@
 export { default as VideoView } from "./VideoView";
 export { useRoomConnection } from "./useRoomConnection";
-export { default as useReduxLocalMedia } from "./useLocalMedia";
+export { default as useLocalMedia } from "./useLocalMedia";
 
 export type { UseLocalMediaResult } from "./useLocalMedia";
 
