@@ -1,5 +1,6 @@
 import { PayloadAction, createSlice } from "@reduxjs/toolkit";
 import { RootState } from "../store";
+import type { LocalMediaOptions } from "./localMedia";
 
 /**
  * Reducer
@@ -29,9 +30,10 @@ export const appSlice = createSlice({
         doAppJoin: (
             state,
             action: PayloadAction<{
-                roomUrl: string;
-                roomKey: string | null;
                 displayName: string;
+                localMediaOptions?: LocalMediaOptions;
+                roomKey: string | null;
+                roomUrl: string;
                 sdkVersion: string;
             }>
         ) => {

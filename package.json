@@ -81,6 +81,7 @@
         "@typescript-eslint/eslint-plugin": "^5.46.1",
         "@typescript-eslint/parser": "^5.46.1",
         "babel-loader": "^8.2.5",
+        "deep-object-diff": "^1.1.9",
         "dotenv": "^16.3.1",
         "dotenv-run-script": "^0.4.1",
         "eslint": "^8.29.0",

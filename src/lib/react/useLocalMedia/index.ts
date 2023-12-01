@@ -4,6 +4,7 @@ import {
     doSetCurrentCameraDeviceId,
     doSetCurrentMicrophoneDeviceId,
     doStartLocalMedia,
+    doStopLocalMedia,
     doToggleCameraEnabled,
     doToggleMicrophoneEnabled,
     LocalMediaOptions,
@@ -116,7 +117,10 @@ export function useLocalMedia(
     useEffect(() => {
         const unsubscribe = observeStore(store, selectLocalMediaState, setLocalMediaState);
         store.dispatch(doStartLocalMedia(optionsOrStream));
-        return unsubscribe;
+        return () => {
+            unsubscribe();
+            store.dispatch(doStopLocalMedia());
+        };
     }, []);
 
     const setCameraDevice = useCallback(
