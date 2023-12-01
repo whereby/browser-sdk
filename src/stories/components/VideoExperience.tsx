@@ -19,7 +19,7 @@ export default function VideoExperience({
             audio: true,
             video: true,
         },
-        localMedia: localMedia?.store,
+        localMedia,
         // logger: console,
     });
 
