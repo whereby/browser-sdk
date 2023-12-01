@@ -45,7 +45,7 @@ interface LocalMediaActions {
     toggleMicrophoneEnabled: (enabled?: boolean) => void;
 }
 
-export type LocalMediaRef = { state: LocalMediaState; actions: LocalMediaActions; store: Store };
+export type UseLocalMediaResult = { state: LocalMediaState; actions: LocalMediaActions; store: Store };
 
 export type UseLocalMediaOptions = LocalMediaOptions;
 
@@ -107,7 +107,7 @@ const initialState: LocalMediaState = {
 
 export default function useLocalMedia(
     optionsOrStream: UseLocalMediaOptions | MediaStream = { audio: true, video: true }
-): LocalMediaRef {
+): UseLocalMediaResult {
     const [store] = useState<Store>(() => {
         const services = createServices();
         return createStore({ injectServices: services });
