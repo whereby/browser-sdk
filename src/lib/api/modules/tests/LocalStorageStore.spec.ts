@@ -1,5 +1,5 @@
 import LocalStorageStore from "../LocalStorageStore";
-import { itShouldThrowIfInvalid } from "../../test/helpers";
+import { itShouldThrowIfInvalid } from "../../__tests__/helpers";
 import DummyStore from "./__mocks__/storage";
 
 jest.mock("./__mocks__/storage");
