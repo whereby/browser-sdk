@@ -1,6 +1,5 @@
 import { PayloadAction, createSlice } from "@reduxjs/toolkit";
 import { RootState } from "../store";
-import LocalMedia from "~/lib/LocalMedia";
 
 /**
  * Reducer
@@ -34,7 +33,6 @@ export const appSlice = createSlice({
                 roomKey: string | null;
                 displayName: string;
                 sdkVersion: string;
-                localMedia?: LocalMedia;
             }>
         ) => {
             const url = new URL(action.payload.roomUrl);
