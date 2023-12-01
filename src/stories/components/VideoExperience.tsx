@@ -20,7 +20,6 @@ export default function VideoExperience({
             video: true,
         },
         localMedia,
-        // logger: console,
     });
 
     const { localParticipant, remoteParticipants, connectionStatus, waitingParticipants, screenshares } = state;
