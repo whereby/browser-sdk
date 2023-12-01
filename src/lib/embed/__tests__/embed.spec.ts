@@ -11,13 +11,13 @@ jest.mock("heresy", () => ({
 describe("@whereby/browser-sdk", () => {
     describe("web component", () => {
         it("should define <whereby-embed />", async () => {
-            await import("../embed");
-            expect(define).toBeCalledWith("WherebyEmbed", expect.any(Object));
+            await import("../");
+            expect(define).toHaveBeenCalledWith("WherebyEmbed", expect.any(Object));
         });
 
         it("should expose attributes", async () => {
-            await import("../embed");
-            expect(define).toBeCalledWith(
+            await import("../");
+            expect(define).toHaveBeenCalledWith(
                 expect.any(String),
                 expect.objectContaining({
                     observedAttributes: [
@@ -61,9 +61,9 @@ describe("@whereby/browser-sdk", () => {
         });
 
         it("should expose commands", async () => {
-            await import("../embed");
+            await import("../");
 
-            expect(define).toBeCalledWith(
+            expect(define).toHaveBeenCalledWith(
                 expect.any(String),
                 expect.objectContaining({
                     startRecording: expect.any(Function),
