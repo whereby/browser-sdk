@@ -24,7 +24,7 @@ export default function VideoExperience({
 
     const { localParticipant, remoteParticipants, connectionStatus, waitingParticipants, screenshares } = state;
     const {
-        // knock,
+        knock,
         sendChatMessage,
         setDisplayName,
         toggleCamera,
@@ -40,7 +40,7 @@ export default function VideoExperience({
             {connectionStatus === "room_locked" && (
                 <div style={{ color: "red" }}>
                     <span>Room locked, please knock....</span>
-                    {/* <button onClick={() => knock()}>Knock</button> */}
+                    <button onClick={() => knock()}>Knock</button>
                 </div>
             )}
             {connectionStatus === "knocking" && <span>Knocking...</span>}
