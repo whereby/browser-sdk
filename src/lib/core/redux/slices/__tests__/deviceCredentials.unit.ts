@@ -15,33 +15,33 @@ describe("deviceCredentialsSlice", () => {
         });
 
         it("doGetDeviceCredentials.pending", () => {
-            const state = deviceCredentialsSlice.reducer(undefined, doGetDeviceCredentials.pending);
+            const result = deviceCredentialsSlice.reducer(undefined, doGetDeviceCredentials.pending);
 
-            expect(state).toEqual({
+            expect(result).toEqual({
                 data: null,
                 isFetching: true,
             });
         });
 
         it("doGetDeviceCredentials.fulfilled", () => {
-            const state = deviceCredentialsSlice.reducer(
+            const result = deviceCredentialsSlice.reducer(
                 undefined,
                 doGetDeviceCredentials.fulfilled(credentials, "", undefined)
             );
 
-            expect(state).toEqual({
+            expect(result).toEqual({
                 data: credentials,
                 isFetching: false,
             });
         });
 
         it("doGetDeviceCredentials.rejected", () => {
-            const state = deviceCredentialsSlice.reducer(
+            const result = deviceCredentialsSlice.reducer(
                 undefined,
                 doGetDeviceCredentials.rejected(new Error("error"), "", undefined)
             );
 
-            expect(state).toEqual({
+            expect(result).toEqual({
                 data: null,
                 isFetching: true,
             });
