@@ -1,4 +1,4 @@
-import { PayloadAction, createSlice } from "@reduxjs/toolkit";
+import { PayloadAction, createSelector, createSlice } from "@reduxjs/toolkit";
 
 import { createReactor, startAppListening } from "../listenerMiddleware";
 import { RootState } from "../store";
@@ -146,19 +146,26 @@ export const selectRoomConnectionStatus = (state: RootState) => state.roomConnec
  * Reactors
  */
 
-createReactor(
+export const selectShouldConnectRoom = createSelector(
     [selectOrganizationId, selectRoomConnectionStatus, selectSignalConnectionRaw, selectLocalMediaStatus],
-    ({ dispatch }, hasOrganizationIdFetched, roomConnectionStatus, signalIdentified, localMediaStatus) => {
+    (hasOrganizationIdFetched, roomConnectionStatus, signalIdentified, localMediaStatus) => {
         if (
             localMediaStatus === "started" &&
             signalIdentified &&
-            hasOrganizationIdFetched &&
+            !!hasOrganizationIdFetched &&
             roomConnectionStatus === "initializing"
         ) {
-            dispatch(doConnectRoom());
+            return true;
         }
+        return false;
     }
 );
+
+createReactor([selectShouldConnectRoom], ({ dispatch }, shouldConnectRoom) => {
+    if (shouldConnectRoom) {
+        dispatch(doConnectRoom());
+    }
+});
 
 startAppListening({
     actionCreator: signalEvents.knockHandled,
