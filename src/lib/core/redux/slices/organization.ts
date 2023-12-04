@@ -1,4 +1,4 @@
-import { createSlice } from "@reduxjs/toolkit";
+import { createSelector, createSlice } from "@reduxjs/toolkit";
 import { RootState } from "../store";
 import { createAppAsyncThunk } from "../thunk";
 import Organization from "../../../api/models/Organization";
@@ -85,9 +85,11 @@ export const selectOrganizationId = (state: RootState) => state.organization.dat
  * Reducers
  */
 
-createReactor(
-    [selectAppWantsToJoin, selectOrganizationRaw, selectDeviceCredentialsRaw],
-    ({ dispatch }, wantsToJoin, organization, deviceCredentials) => {
+export const selectShouldFetchOrganization = createSelector(
+    selectAppWantsToJoin,
+    selectOrganizationRaw,
+    selectDeviceCredentialsRaw,
+    (wantsToJoin, organization, deviceCredentials) => {
         if (
             wantsToJoin &&
             !organization.data &&
@@ -95,7 +97,14 @@ createReactor(
             !organization.error &&
             !deviceCredentials.isFetching
         ) {
-            dispatch(doOrganizationFetch());
+            return true;
         }
+        return false;
     }
 );
+
+createReactor([selectShouldFetchOrganization], ({ dispatch }, shouldFetchOrganization) => {
+    if (shouldFetchOrganization) {
+        dispatch(doOrganizationFetch());
+    }
+});
