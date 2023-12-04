@@ -5,11 +5,12 @@ describe("cloudRecordingSlice", () => {
     describe("reducers", () => {
         // We only handle error in this event. We start cloud recording when a new recorder client joins.
         it("signalEvents.cloudRecordingStarted", () => {
-            const state = cloudRecordingSlice.reducer(
+            const result = cloudRecordingSlice.reducer(
                 undefined,
                 signalEvents.cloudRecordingStarted({ error: "some error" })
             );
-            expect(state).toEqual({
+
+            expect(result).toEqual({
                 error: "some error",
                 isRecording: false,
                 status: "error",
@@ -17,15 +18,16 @@ describe("cloudRecordingSlice", () => {
         });
 
         it("signalEvents.cloudRecordingStopped", () => {
-            const state = cloudRecordingSlice.reducer(undefined, signalEvents.cloudRecordingStopped());
-            expect(state).toEqual({
+            const result = cloudRecordingSlice.reducer(undefined, signalEvents.cloudRecordingStopped());
+
+            expect(result).toEqual({
                 error: null,
                 isRecording: false,
             });
         });
 
         it("signalEvents.newClient", () => {
-            const state = cloudRecordingSlice.reducer(
+            const result = cloudRecordingSlice.reducer(
                 undefined,
                 signalEvents.newClient({
                     client: {
@@ -41,7 +43,8 @@ describe("cloudRecordingSlice", () => {
                     },
                 })
             );
-            expect(state).toEqual({
+
+            expect(result).toEqual({
                 error: null,
                 isRecording: true,
                 status: "recording",
