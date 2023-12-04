@@ -1,7 +1,7 @@
 import { fromLocation } from "@whereby/jslib-media/src/utils/urls";
 import { ApiClient, CredentialsService, OrganizationService, OrganizationServiceCache } from "./api";
 
-const API_BASE_URL = process.env["REACT_APP_API_BASE_URL"] || "https://api.whereby.dev";
+const API_BASE_URL = process.env.REACT_APP_API_BASE_URL || "https://api.whereby.dev";
 
 export function createServices() {
     const credentialsService = CredentialsService.create({ baseUrl: API_BASE_URL });
