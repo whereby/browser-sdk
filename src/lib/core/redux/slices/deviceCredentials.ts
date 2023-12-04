@@ -1,4 +1,4 @@
-import { createSlice } from "@reduxjs/toolkit";
+import { createSelector, createSlice } from "@reduxjs/toolkit";
 import { RootState } from "../store";
 import { createAppAsyncThunk } from "../thunk";
 import { createReactor } from "../listenerMiddleware";
@@ -70,23 +70,23 @@ export const doGetDeviceCredentials = createAppAsyncThunk(
 
 export const selectDeviceCredentialsRaw = (state: RootState) => state.deviceCredentials;
 export const selectHasFetchedDeviceCredentials = (state: RootState) => !!state.deviceCredentials.data?.credentials;
+export const selectShouldFetchDeviceCredentials = createSelector(
+    selectAppWantsToJoin,
+    selectDeviceCredentialsRaw,
+    (wantsToJoin, deviceCredentials) => {
+        if (wantsToJoin && !deviceCredentials.isFetching && !deviceCredentials.data) {
+            return true;
+        }
+        return false;
+    }
+);
+
 /**
  * Reactors
  */
 
-export const shouldFetchDeviceCredentials = (
-    wantsToJoin: boolean,
-    isFetching: boolean,
-    deviceCredentialsData?: Credentials | null
-) => {
-    if (wantsToJoin && !deviceCredentialsData && !isFetching) {
-        return true;
-    }
-    return false;
-};
-
-createReactor([selectAppWantsToJoin, selectDeviceCredentialsRaw], ({ dispatch }, wantsToJoin, deviceCredentials) => {
-    if (shouldFetchDeviceCredentials(wantsToJoin, deviceCredentials.isFetching, deviceCredentials.data)) {
+createReactor([selectShouldFetchDeviceCredentials], ({ dispatch }, shouldFetchDeviceCredentials) => {
+    if (shouldFetchDeviceCredentials) {
         dispatch(doGetDeviceCredentials());
     }
 });

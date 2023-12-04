@@ -1,5 +1,9 @@
 import { Credentials } from "~/lib/api";
-import { deviceCredentialsSlice, doGetDeviceCredentials, shouldFetchDeviceCredentials } from "../deviceCredentials";
+import {
+    deviceCredentialsSlice,
+    doGetDeviceCredentials,
+    selectShouldFetchDeviceCredentials,
+} from "../deviceCredentials";
 
 describe("deviceCredentialsSlice", () => {
     describe("reducers", () => {
@@ -67,7 +71,12 @@ describe("deviceCredentialsSlice", () => {
         `(
             "expected $expected when wantsToJoin=$wantsToJoin, isFetching=$isFetching, deviceCredentialsData=$deviceCredentialsData",
             ({ wantsToJoin, isFetching, deviceCredentialsData, expected }) => {
-                expect(shouldFetchDeviceCredentials(wantsToJoin, isFetching, deviceCredentialsData)).toBe(expected);
+                const deviceCredentials = {
+                    isFetching,
+                    data: deviceCredentialsData,
+                };
+
+                expect(selectShouldFetchDeviceCredentials.resultFunc(wantsToJoin, deviceCredentials)).toBe(expected);
             }
         );
     });
