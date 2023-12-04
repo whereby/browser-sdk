@@ -21,6 +21,20 @@ export const waitingParticipantsSlice = createSlice({
     initialState,
     reducers: {},
     extraReducers: (builder) => {
+        builder.addCase(signalEvents.roomJoined, (state, { payload }) => {
+            if (payload.room?.knockers.length) {
+                return {
+                    ...state,
+                    waitingParticipants: payload.room.knockers.map((knocker) => ({
+                        id: knocker.clientId,
+                        displayName: knocker.displayName,
+                    })),
+                };
+            } else {
+                return state;
+            }
+        });
+
         builder.addCase(signalEvents.roomKnocked, (state, action) => {
             const { clientId, displayName } = action.payload;
             return {

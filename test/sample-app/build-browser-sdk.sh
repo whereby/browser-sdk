@@ -3,7 +3,7 @@ cd ../../
 yarn build
 yalc publish
 cd ./test/sample-app
-rm -rf node_modules/@whereby.com
+rm -rf node_modules
 yalc add @whereby.com/browser-sdk
 yarn install
 
