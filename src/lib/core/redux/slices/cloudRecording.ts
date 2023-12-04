@@ -10,6 +10,7 @@ import { selectSignalConnectionRaw } from "./signalConnection";
 export interface CloudRecordingState {
     isRecording: boolean;
     error: unknown;
+    status?: "recording" | "requested" | "error";
     startedAt?: number;
 }
 
@@ -53,6 +54,7 @@ export const cloudRecordingSlice = createSlice({
             return {
                 ...state,
                 isRecording: false,
+                status: "error",
                 error: payload.error,
             };
         });
@@ -62,6 +64,7 @@ export const cloudRecordingSlice = createSlice({
             if (client.role?.roleName === "recorder") {
                 return {
                     ...state,
+                    isRecording: true,
                     status: "recording",
                     startedAt: client.startedCloudRecordingAt
                         ? new Date(client.startedCloudRecordingAt).getTime()
