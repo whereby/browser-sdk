@@ -1,4 +1,4 @@
-import { randomDeviceCredentials } from "~/lib/__mocks__/appMocks";
+import { randomDeviceCredentials } from "../../../../../lib/__mocks__/appMocks";
 import { Credentials } from "../../../../../lib/api";
 import {
     deviceCredentialsSlice,
