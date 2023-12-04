@@ -92,6 +92,7 @@ function removeClient(state: RemoteParticipantState, participantId: string) {
 
 function addStreamId(state: RemoteParticipantState, participantId: string, streamId: string) {
     const { participant } = findParticipant(state, participantId);
+
     if (!participant || participant.streams.find((s) => s.id === streamId)) {
         console.warn(`No participant ${participantId} or stream ${streamId} already exists`);
         return state;
@@ -142,13 +143,13 @@ function addStream(state: RemoteParticipantState, payload: RtcStreamAddedPayload
         return state;
     }
 
-    const remoteParticipantStream =
-        remoteParticipant.streams.find((s) => s.id === streamId) || remoteParticipant.streams[0];
+    const remoteParticipantStream = remoteParticipant.streams.find((s) => s.id === streamId);
 
     if (
-        (remoteParticipant.stream && remoteParticipant.stream.id === streamId) ||
+        (remoteParticipant.stream &&
+            (remoteParticipant.stream.id === streamId || remoteParticipant.stream.inboundId === streamId)) ||
         (!remoteParticipant.stream && streamType === "webcam") ||
-        (!remoteParticipant.stream && !streamType && remoteParticipant.streams.indexOf(remoteParticipantStream) < 1)
+        (!remoteParticipant.stream && !streamType && !remoteParticipantStream)
     ) {
         return updateParticipant(state, clientId, { stream });
     }
