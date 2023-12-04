@@ -70,6 +70,11 @@ export const doGetDeviceCredentials = createAppAsyncThunk(
 
 export const selectDeviceCredentialsRaw = (state: RootState) => state.deviceCredentials;
 export const selectHasFetchedDeviceCredentials = (state: RootState) => !!state.deviceCredentials.data?.credentials;
+
+/**
+ * Reactors
+ */
+
 export const selectShouldFetchDeviceCredentials = createSelector(
     selectAppWantsToJoin,
     selectDeviceCredentialsRaw,
@@ -80,10 +85,6 @@ export const selectShouldFetchDeviceCredentials = createSelector(
         return false;
     }
 );
-
-/**
- * Reactors
- */
 
 createReactor([selectShouldFetchDeviceCredentials], ({ dispatch }, shouldFetchDeviceCredentials) => {
     if (shouldFetchDeviceCredentials) {
