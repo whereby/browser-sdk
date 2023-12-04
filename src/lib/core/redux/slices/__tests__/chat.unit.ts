@@ -4,7 +4,7 @@ import { signalEvents } from "../signalConnection/actions";
 describe("chatSlice", () => {
     describe("reducers", () => {
         it("signalEvents.chatMessage", () => {
-            const state = chatSlice.reducer(
+            const result = chatSlice.reducer(
                 undefined,
                 signalEvents.chatMessage({
                     id: "messageId",
@@ -17,7 +17,8 @@ describe("chatSlice", () => {
                     text: "text",
                 })
             );
-            expect(state.chatMessages).toEqual([
+
+            expect(result.chatMessages).toEqual([
                 {
                     senderId: "senderId",
                     timestamp: "123",
