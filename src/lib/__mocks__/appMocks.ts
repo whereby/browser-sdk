@@ -1,6 +1,12 @@
 import { Credentials } from "../api";
 import Organization from "../api/models/Organization";
+import { SignalClient } from "@whereby/jslib-media/src/utils/ServerSocket";
+import { RemoteParticipant } from "../RoomParticipant";
 import { v4 as uuid } from "uuid";
+import MockMediaStream from "./MediaStream";
+
+// eslint-disable-next-line @typescript-eslint/no-empty-function
+export const noop = () => {};
 
 export function oneOf<T>(...array: T[]): T {
     return array[Math.floor(Math.random() * array.length)];
@@ -64,4 +70,52 @@ export const randomDeviceCredentials = ({
         userId,
         toJson,
     };
+};
+
+export const randomSignalClient = ({
+    displayName = randomString(),
+    id = randomString(),
+    streams = [],
+    isAudioEnabled = true,
+    isVideoEnabled = true,
+    role = { roleName: "participant" },
+    startedCloudRecordingAt = null,
+}: Partial<SignalClient> = {}): SignalClient => {
+    return {
+        displayName,
+        id,
+        streams,
+        isAudioEnabled,
+        isVideoEnabled,
+        role,
+        startedCloudRecordingAt,
+    };
+};
+
+export const randomRemoteParticipant = ({
+    id = randomString(),
+    displayName = randomString(),
+    isAudioEnabled = true,
+    isVideoEnabled = true,
+    isLocalParticipant = false,
+    stream = null,
+    streams = [],
+    newJoiner = false,
+    presentationStream = null,
+}: Partial<RemoteParticipant> = {}): RemoteParticipant => {
+    return {
+        id,
+        displayName,
+        isAudioEnabled,
+        isVideoEnabled,
+        isLocalParticipant,
+        stream,
+        streams,
+        newJoiner,
+        presentationStream,
+    };
+};
+
+export const randomMediaStream = (): MediaStream => {
+    return new MockMediaStream();
 };

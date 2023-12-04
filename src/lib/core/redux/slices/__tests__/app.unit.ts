@@ -3,7 +3,7 @@ import { appSlice } from "../app";
 describe("appSlice", () => {
     describe("reducers", () => {
         it("doAppJoin", () => {
-            const state = appSlice.reducer(
+            const result = appSlice.reducer(
                 undefined,
                 appSlice.actions.doAppJoin({
                     roomUrl: "https://some.url/roomName",
@@ -13,7 +13,7 @@ describe("appSlice", () => {
                 })
             );
 
-            expect(state).toEqual({
+            expect(result).toEqual({
                 wantsToJoin: true,
                 roomName: "/roomName",
                 roomUrl: "https://some.url/roomName",
@@ -24,9 +24,9 @@ describe("appSlice", () => {
         });
 
         it("setRoomKey", () => {
-            const state = appSlice.reducer(undefined, appSlice.actions.setRoomKey("roomKey"));
+            const result = appSlice.reducer(undefined, appSlice.actions.setRoomKey("roomKey"));
 
-            expect(state.roomKey).toEqual("roomKey");
+            expect(result.roomKey).toEqual("roomKey");
         });
     });
 });
