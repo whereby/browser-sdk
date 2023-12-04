@@ -13,13 +13,13 @@ Whereby browser SDK is a library for seamless integration of Whereby
 ## Installation
 
 ```shell
-npm install @whereby.com/browser-sdk
+npm install @whereby.com/browser-sdk@2.0.0-beta3
 ```
 
 or
 
 ```shell
-yarn add @whereby.com/browser-sdk
+yarn add @whereby.com/browser-sdk@2.0.0-beta3
 ```
 
 ## Usage
