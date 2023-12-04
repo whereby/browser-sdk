@@ -24,9 +24,15 @@ export const chatSlice = createSlice({
     reducers: {},
     extraReducers(builder) {
         builder.addCase(signalEvents.chatMessage, (state, action) => {
+            const message: ChatMessage = {
+                senderId: action.payload.senderId,
+                timestamp: action.payload.timestamp,
+                text: action.payload.text,
+            };
+
             return {
                 ...state,
-                chatMessages: [...state.chatMessages, action.payload],
+                chatMessages: [...state.chatMessages, message],
             };
         });
     },

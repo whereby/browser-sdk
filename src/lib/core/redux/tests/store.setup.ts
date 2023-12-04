@@ -33,9 +33,7 @@ export const mockServices = {
     organizationServiceCache: {
         fetchOrganization: jest.fn(),
     },
-    roomService: {
-        fetchRoom: jest.fn(),
-    },
+    fetchOrganizationFromRoomUrl: jest.fn(),
 };
 
 export function createStore({ initialState, withSignalConnection }: StoreOptions = {}) {

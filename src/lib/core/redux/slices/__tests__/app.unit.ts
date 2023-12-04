@@ -3,30 +3,30 @@ import { appSlice } from "../app";
 describe("appSlice", () => {
     describe("reducers", () => {
         it("doAppJoin", () => {
-            const state = appSlice.reducer(
+            const result = appSlice.reducer(
                 undefined,
                 appSlice.actions.doAppJoin({
-                    roomUrl: "roomUrl",
+                    roomUrl: "https://some.url/roomName",
                     roomKey: "roomKey",
                     displayName: "displayName",
                     sdkVersion: "sdkVersion",
                 })
             );
 
-            expect(state).toEqual({
+            expect(result).toEqual({
                 wantsToJoin: true,
-                roomName: "roomName",
+                roomName: "/roomName",
+                roomUrl: "https://some.url/roomName",
                 roomKey: "roomKey",
                 displayName: "displayName",
                 sdkVersion: "sdkVersion",
-                localMedia: null,
             });
         });
 
         it("setRoomKey", () => {
-            const state = appSlice.reducer(undefined, appSlice.actions.setRoomKey("roomKey"));
+            const result = appSlice.reducer(undefined, appSlice.actions.setRoomKey("roomKey"));
 
-            expect(state.roomKey).toEqual("roomKey");
+            expect(result.roomKey).toEqual("roomKey");
         });
     });
 });
