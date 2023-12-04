@@ -6,7 +6,7 @@ describe("appSlice", () => {
             const state = appSlice.reducer(
                 undefined,
                 appSlice.actions.doAppJoin({
-                    roomUrl: "roomUrl",
+                    roomUrl: "https://some.url/roomName",
                     roomKey: "roomKey",
                     displayName: "displayName",
                     sdkVersion: "sdkVersion",
@@ -15,11 +15,11 @@ describe("appSlice", () => {
 
             expect(state).toEqual({
                 wantsToJoin: true,
-                roomName: "roomName",
+                roomName: "/roomName",
+                roomUrl: "https://some.url/roomName",
                 roomKey: "roomKey",
                 displayName: "displayName",
                 sdkVersion: "sdkVersion",
-                localMedia: null,
             });
         });
 
