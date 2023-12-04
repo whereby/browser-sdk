@@ -48,7 +48,7 @@ export interface RemoteParticipant {
     isAudioEnabled: boolean;
     isVideoEnabled: boolean;
     isLocalParticipant: boolean;
-    stream: MediaStream | null;
+    stream: (MediaStream & { inboundId?: string }) | null;
     streams: Stream[];
     newJoiner: boolean;
     presentationStream: (MediaStream & { inboundId?: string }) | null;
