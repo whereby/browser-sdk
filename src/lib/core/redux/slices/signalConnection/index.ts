@@ -27,7 +27,7 @@ function forwardSocketEvents(socket: ServerSocket, dispatch: ThunkDispatch<RootS
     socket.on("streaming_stopped", () => dispatch(signalEvents.streamingStopped()));
 }
 
-const SIGNAL_BASE_URL = process.env["REACT_APP_SIGNAL_BASE_URL"] || "wss://signal.appearin.net";
+const SIGNAL_BASE_URL = process.env.REACT_APP_SIGNAL_BASE_URL || "wss://signal.appearin.net";
 
 function createSocket() {
     const parsedUrl = new URL(SIGNAL_BASE_URL);
