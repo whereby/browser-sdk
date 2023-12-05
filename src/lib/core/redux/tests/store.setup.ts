@@ -1,6 +1,23 @@
 import { RootState, createStore as createRealStore } from "../store";
 
 export const mockSignalEmit = jest.fn();
+export const mockRtcManager: any = {};
+
+const fn = ({ emitter }: { emitter: any }) => {
+    // emitter.emit("rtc_manager_created", { rtcManager: mockRtcManager });
+
+    return {
+        stopRtcManager: jest.fn(),
+    };
+};
+
+// eslint-disable-next-line @typescript-eslint/no-empty-function
+mockRtcManager.addNewStream = () => {};
+// used for initial mute state
+// eslint-disable-next-line @typescript-eslint/no-empty-function
+mockRtcManager.sendAudioMutedStats = () => {};
+// eslint-disable-next-line @typescript-eslint/no-empty-function
+mockRtcManager.sendVideoMutedStats = () => {};
 
 beforeEach(() => {
     jest.useFakeTimers();
@@ -19,6 +36,7 @@ beforeEach(() => {
 type StoreOptions = {
     initialState?: Partial<RootState>;
     withSignalConnection?: boolean;
+    withRtcManager?: boolean;
 };
 
 export const mockServices = {
@@ -36,7 +54,7 @@ export const mockServices = {
     fetchOrganizationFromRoomUrl: jest.fn(),
 };
 
-export function createStore({ initialState, withSignalConnection }: StoreOptions = {}) {
+export function createStore({ initialState, withSignalConnection, withRtcManager }: StoreOptions = {}) {
     initialState = initialState || {};
 
     if (withSignalConnection) {
@@ -52,6 +70,30 @@ export function createStore({ initialState, withSignalConnection }: StoreOptions
                 once: jest.fn(),
                 emit: mockSignalEmit,
             },
+        };
+    }
+
+    if (withRtcManager) {
+        initialState.rtcConnection = {
+            status: "ready",
+            isCreatingDispatcher: false,
+            dispatcherCreated: true,
+            error: null,
+            reportedStreamResolutions: {},
+            rtcManagerDispatcher: fn({ emitter: jest.fn() }),
+            rtcManagerInitialized: true,
+            rtcManager: mockRtcManager,
+        };
+    } else {
+        initialState.rtcConnection = {
+            status: "",
+            isCreatingDispatcher: false,
+            dispatcherCreated: false,
+            error: null,
+            reportedStreamResolutions: {},
+            rtcManagerDispatcher: fn({ emitter: jest.fn() }),
+            rtcManagerInitialized: false,
+            rtcManager: null,
         };
     }
 
