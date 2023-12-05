@@ -163,6 +163,7 @@ export const doSignalReconnect = createAppThunk(() => (dispatch, getState) => {
  * Selectors
  */
 export const selectSignalConnectionRaw = (state: RootState) => state.signalConnection;
+export const selectSignalConnectionDeviceIdentified = (state: RootState) => state.signalConnection.deviceIdentified;
 export const selectSignalStatus = (state: RootState) => state.signalConnection.status;
 export const selectSignalConnectionSocket = (state: RootState) => state.signalConnection.socket;
 
