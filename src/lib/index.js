@@ -49,6 +49,7 @@ define("WherebyEmbed", {
         "virtualBackgroundUrl",
         "avatarUrl",
         "externalId",
+        "title",
         ...boolAttrs,
     ].map((a) => a.toLowerCase()),
     onattributechanged({ attributeName, oldValue }) {
@@ -115,6 +116,7 @@ define("WherebyEmbed", {
             room,
             groups,
             virtualbackgroundurl: virtualBackgroundUrl,
+            title,
         } = this;
         let roomUrl, subdomain;
 
@@ -151,6 +153,7 @@ define("WherebyEmbed", {
         });
         this.html`
       <iframe
+        title=${title || "Video calling component"}
         ref=${this.iframe}
         src=${this.roomUrl}
         allow="autoplay; camera; microphone; fullscreen; speaker; display-capture" />
