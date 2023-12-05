@@ -1,4 +1,4 @@
-import { PreloadedState, combineReducers, configureStore } from "@reduxjs/toolkit";
+import { combineReducers, configureStore } from "@reduxjs/toolkit";
 import { listenerMiddleware } from "./listenerMiddleware";
 import { createServices } from "../../services";
 
@@ -7,7 +7,6 @@ import { chatSlice } from "./slices/chat";
 import { cloudRecordingSlice } from "./slices/cloudRecording";
 import { deviceCredentialsSlice } from "./slices/deviceCredentials";
 import { localMediaSlice } from "./slices/localMedia";
-//import { localMediaSlice } from "./slices/localMedia";
 import { localParticipantSlice } from "./slices/localParticipant";
 import { organizationSlice } from "./slices/organization";
 import { remoteParticipantsSlice } from "./slices/remoteParticipants";
@@ -37,7 +36,7 @@ export const createStore = ({
     preloadedState,
     injectServices,
 }: {
-    preloadedState?: PreloadedState<RootState>;
+    preloadedState?: Partial<RootState>;
     injectServices: ReturnType<typeof createServices>;
 }) => {
     return configureStore({

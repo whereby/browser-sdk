@@ -1,7 +1,7 @@
 import { PayloadAction, createSlice } from "@reduxjs/toolkit";
 import { RootState } from "../store";
 import { createAppAsyncThunk } from "../thunk";
-import { LocalParticipant } from "~/lib/react";
+import { LocalParticipant } from "../../../../lib/react";
 import { selectSignalConnectionRaw } from "./signalConnection";
 
 import { doAppJoin } from "./app";
