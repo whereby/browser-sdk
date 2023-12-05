@@ -270,21 +270,21 @@ describe("remoteParticipantsSlice", () => {
             presentationStream: randomMediaStream(),
         });
 
-        // describe("selectScreenshares", () => {
-        //     const localScreenshareStream = randomMediaStream();
+        describe("selectScreenshares", () => {
+            const localScreenshareStream = randomMediaStream();
 
-        //     it.each`
-        //         localScreenshareStream    | remoteParticipants    | expected
-        //         ${null}                   | ${[]}                 | ${[]}
-        //         ${null}                   | ${[client1, client2]} | ${[{ id: client2.presentationStream.id, state: "to_accept" }]}
-        //         ${localScreenshareStream} | ${[]}                 | ${[localScreenshareStream]}
-        //         ${localScreenshareStream} | ${[client3]}          | ${[{ id: client3.presentationStream.id, state: "to_accept" }]}
-        //     `(
-        //         "should return $expected when localScreenshareStream=$localScreenshareStream, remoteParticipants=$remoteParticipants",
-        //         ({ localScreenshareStream, remoteParticipants, expected }) => {
-        //             expect(selectScreenshares.resultFunc(localScreenshareStream, remoteParticipants)).toEqual(expected);
-        //         }
-        //     );
-        // });
+            it.each`
+                localScreenshareStream    | remoteParticipants    | expected
+                ${null}                   | ${[]}                 | ${[]}
+                ${null}                   | ${[client1, client2]} | ${[{ id: "", hasAudioTrack: false, isLocal: false, participantId: client2.id, stream: client2.presentationStream }]}
+                ${localScreenshareStream} | ${[]}                 | ${[{ id: "", hasAudioTrack: false, isLocal: true, participantId: "local", stream: localScreenshareStream }]}
+                ${localScreenshareStream} | ${[client3]}          | ${[{ id: "", hasAudioTrack: false, isLocal: true, participantId: "local", stream: localScreenshareStream }, { id: "", hasAudioTrack: false, isLocal: false, participantId: client3.id, stream: client3.presentationStream }]}
+            `(
+                "should return $expected when localScreenshareStream=$localScreenshareStream, remoteParticipants=$remoteParticipants",
+                ({ localScreenshareStream, remoteParticipants, expected }) => {
+                    expect(selectScreenshares.resultFunc(localScreenshareStream, remoteParticipants)).toEqual(expected);
+                }
+            );
+        });
     });
 });
