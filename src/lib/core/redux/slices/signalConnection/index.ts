@@ -1,4 +1,4 @@
-import { createSlice, ThunkDispatch, AnyAction, PayloadAction } from "@reduxjs/toolkit";
+import { createSlice, ThunkDispatch, AnyAction, PayloadAction, createSelector } from "@reduxjs/toolkit";
 import { RootState } from "../../store";
 import { createAppThunk } from "../../thunk";
 import { createReactor, startAppListening } from "../../listenerMiddleware";
@@ -163,6 +163,7 @@ export const doSignalReconnect = createAppThunk(() => (dispatch, getState) => {
  * Selectors
  */
 export const selectSignalConnectionRaw = (state: RootState) => state.signalConnection;
+export const selectSignalIsIdentifyingDevice = (state: RootState) => state.signalConnection.isIdentifyingDevice;
 export const selectSignalConnectionDeviceIdentified = (state: RootState) => state.signalConnection.deviceIdentified;
 export const selectSignalStatus = (state: RootState) => state.signalConnection.status;
 export const selectSignalConnectionSocket = (state: RootState) => state.signalConnection.socket;
@@ -177,21 +178,40 @@ startAppListening({
     },
 });
 
-createReactor([selectAppWantsToJoin, selectSignalStatus], ({ dispatch }, wantsToJoin, signalStatus) => {
-    if (wantsToJoin && signalStatus === "") {
+export const selectShouldConnectSignal = createSelector(
+    selectAppWantsToJoin,
+    selectSignalStatus,
+    (wantsToJoin, signalStatus) => {
+        if (wantsToJoin && signalStatus === "") {
+            return true;
+        }
+        return false;
+    }
+);
+
+createReactor([selectShouldConnectSignal], ({ dispatch }, shouldConnectSignal) => {
+    if (shouldConnectSignal) {
         dispatch(doSignalSocketConnect());
     }
 });
 
+export const selectShouldIdentifyDevice = createSelector(
+    selectDeviceCredentialsRaw,
+    selectSignalStatus,
+    selectSignalConnectionDeviceIdentified,
+    selectSignalIsIdentifyingDevice,
+    (deviceCredentialsRaw, signalStatus, deviceIdentified, isIdentifyingDevice) => {
+        if (deviceCredentialsRaw.data && signalStatus === "connected" && !deviceIdentified && !isIdentifyingDevice) {
+            return true;
+        }
+        return false;
+    }
+);
+
 createReactor(
-    [selectDeviceCredentialsRaw, selectSignalConnectionRaw],
-    ({ dispatch }, deviceCredentialsRaw, signalConnectionRaw) => {
-        if (
-            deviceCredentialsRaw.data &&
-            signalConnectionRaw.status === "connected" &&
-            !signalConnectionRaw.deviceIdentified &&
-            !signalConnectionRaw.isIdentifyingDevice
-        ) {
+    [selectShouldIdentifyDevice, selectDeviceCredentialsRaw],
+    ({ dispatch }, shouldIdentifyDevice, deviceCredentialsRaw) => {
+        if (shouldIdentifyDevice && deviceCredentialsRaw.data) {
             dispatch(doSignalIdentifyDevice({ deviceCredentials: deviceCredentialsRaw.data }));
         }
     }
