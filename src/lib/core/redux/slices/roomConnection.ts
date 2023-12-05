@@ -7,7 +7,7 @@ import { selectAppDisplayName, selectAppRoomKey, selectAppRoomName, selectAppSdk
 
 import { selectOrganizationId } from "./organization";
 import { signalEvents } from "./signalConnection/actions";
-import { selectSignalConnectionRaw } from "./signalConnection";
+import { selectSignalConnectionDeviceIdentified, selectSignalConnectionRaw } from "./signalConnection";
 import { selectIsCameraEnabled, selectIsMicrophoneEnabled, selectLocalMediaStatus } from "./localMedia";
 import { selectSelfId } from "./localParticipant";
 
@@ -147,11 +147,11 @@ export const selectRoomConnectionStatus = (state: RootState) => state.roomConnec
  */
 
 export const selectShouldConnectRoom = createSelector(
-    [selectOrganizationId, selectRoomConnectionStatus, selectSignalConnectionRaw, selectLocalMediaStatus],
-    (hasOrganizationIdFetched, roomConnectionStatus, signalIdentified, localMediaStatus) => {
+    [selectOrganizationId, selectRoomConnectionStatus, selectSignalConnectionDeviceIdentified, selectLocalMediaStatus],
+    (hasOrganizationIdFetched, roomConnectionStatus, signalConnectionDeviceIdentified, localMediaStatus) => {
         if (
             localMediaStatus === "started" &&
-            signalIdentified &&
+            signalConnectionDeviceIdentified &&
             !!hasOrganizationIdFetched &&
             roomConnectionStatus === "initializing"
         ) {
