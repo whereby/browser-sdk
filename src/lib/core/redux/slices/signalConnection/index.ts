@@ -5,7 +5,7 @@ import { createReactor, startAppListening } from "../../listenerMiddleware";
 import { selectDeviceCredentialsRaw } from "../deviceCredentials";
 
 import ServerSocket from "@whereby/jslib-media/src/utils/ServerSocket";
-import { Credentials } from "~/lib/api";
+import { Credentials } from "../../../../../lib/api";
 import { appLeft, selectAppWantsToJoin } from "../app";
 import { signalEvents } from "./actions";
 

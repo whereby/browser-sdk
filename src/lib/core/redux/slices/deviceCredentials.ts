@@ -3,7 +3,7 @@ import { RootState } from "../store";
 import { createAppAsyncThunk } from "../thunk";
 import { createReactor } from "../listenerMiddleware";
 import { selectAppWantsToJoin } from "./app";
-import { Credentials } from "~/lib/api";
+import { Credentials } from "../../../../lib/api";
 
 /**
  * Reducer
