@@ -1,6 +1,5 @@
 export default class MockMediaStream implements MediaStream {
     private _tracks: MediaStreamTrack[];
-    private _eventTarget: EventTarget;
 
     active = false;
     id = "";
@@ -11,8 +10,6 @@ export default class MockMediaStream implements MediaStream {
         } else {
             this._tracks = [];
         }
-
-        this._eventTarget = new EventTarget();
     }
 
     onaddtrack: ((this: MediaStream, ev: MediaStreamTrackEvent) => void) | null = null;
@@ -49,11 +46,7 @@ export default class MockMediaStream implements MediaStream {
         options?: boolean | AddEventListenerOptions | undefined
     ): void;
     addEventListener(type: unknown, listener: unknown, options?: unknown): void {
-        this._eventTarget.addEventListener(
-            type as string,
-            listener as EventListenerOrEventListenerObject,
-            options as AddEventListenerOptions
-        );
+        throw new Error(`Method not implemented. ${type}, ${listener}, ${options}`);
     }
     removeEventListener<K extends keyof MediaStreamEventMap>(
         type: K,
@@ -69,6 +62,6 @@ export default class MockMediaStream implements MediaStream {
         throw new Error(`Method not implemented. ${type}, ${listener}, ${options}`);
     }
     dispatchEvent(event: Event): boolean {
-        return this._eventTarget.dispatchEvent(event);
+        throw new Error(`Method not implemented. ${event}`);
     }
 }
