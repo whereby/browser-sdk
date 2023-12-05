@@ -187,7 +187,7 @@ export const doDisconnectRtc = createAppThunk(() => (dispatch, getState) => {
     dispatch(rtcDisconnected());
 });
 
-const doHandleAcceptStreams = createAppThunk((payload: StreamStatusUpdate[]) => (dispatch, getState) => {
+export const doHandleAcceptStreams = createAppThunk((payload: StreamStatusUpdate[]) => (dispatch, getState) => {
     const state = getState();
     const rtcManager = selectRtcConnectionRaw(state).rtcManager;
     const remoteParticipants = selectRemoteParticipants(state);
