@@ -1,8 +1,8 @@
-import { createSlice, PayloadAction } from "@reduxjs/toolkit";
+import { createSelector, createSlice, PayloadAction } from "@reduxjs/toolkit";
 import { AppDispatch, RootState } from "../../store";
 import { createAppThunk } from "../../thunk";
 import RtcManager from "@whereby/jslib-media/src/webrtc/RtcManager";
-import { selectSignalConnectionRaw } from "../signalConnection";
+import { selectSignalConnectionRaw, selectSignalConnectionSocket } from "../signalConnection";
 import RtcManagerDispatcher, {
     RtcEvents,
     RtcManagerCreatedPayload,
@@ -274,6 +274,11 @@ export const doRtcManagerInitialize = createAppThunk(() => (dispatch, getState) 
  */
 
 export const selectRtcConnectionRaw = (state: RootState) => state.rtcConnection;
+export const selectRtcManagerInitialized = (state: RootState) => state.rtcConnection.rtcManagerInitialized;
+export const selectRtcManager = (state: RootState) => state.rtcConnection.rtcManager;
+export const selectRtcDispatcherCreated = (state: RootState) => state.rtcConnection.dispatcherCreated;
+export const selectRtcIsCreatingDispatcher = (state: RootState) => state.rtcConnection.isCreatingDispatcher;
+export const selectRtcStatus = (state: RootState) => state.rtcConnection.status;
 
 /**
  * Reactors
@@ -316,59 +321,100 @@ startAppListening({
     },
 });
 
-createReactor([selectRtcConnectionRaw, selectSignalConnectionRaw], ({ dispatch }, rtcConnection, signalConnection) => {
-    if (!rtcConnection.dispatcherCreated && !rtcConnection.isCreatingDispatcher && signalConnection.socket) {
+export const selectShouldConnectRtc = createSelector(
+    selectRtcDispatcherCreated,
+    selectRtcIsCreatingDispatcher,
+    selectSignalConnectionSocket,
+    (dispatcherCreated, isCreatingDispatcher, signalSocket) => {
+        if (!dispatcherCreated && !isCreatingDispatcher && signalSocket) {
+            return true;
+        }
+        return false;
+    }
+);
+
+createReactor([selectShouldConnectRtc], ({ dispatch }, shouldConnectRtc) => {
+    if (shouldConnectRtc) {
         dispatch(doConnectRtc());
     }
 });
 
-createReactor(
-    [selectRtcConnectionRaw, selectLocalMediaStatus],
-    ({ dispatch }, { rtcManager, rtcManagerInitialized }, localMediaStatus) => {
+export const selectShouldInitializeRtc = createSelector(
+    selectRtcManager,
+    selectRtcManagerInitialized,
+    selectLocalMediaStatus,
+    (rtcManager, rtcManagerInitialized, localMediaStatus) => {
         if (localMediaStatus === "started" && rtcManager && !rtcManagerInitialized) {
-            dispatch(doRtcManagerInitialize());
+            return true;
         }
+        return false;
     }
 );
 
+createReactor([selectShouldInitializeRtc], ({ dispatch }, shouldInitializeRtc) => {
+    if (shouldInitializeRtc) {
+        dispatch(doRtcManagerInitialize());
+    }
+});
+
 // Disonnect and clean up
-createReactor([selectRtcConnectionRaw, selectAppWantsToJoin], ({ dispatch }, { status }, wantsToJoin) => {
-    if (!wantsToJoin && !["", "disconnected"].includes(status)) {
+
+export const selectShouldDisconnectRtc = createSelector(
+    selectRtcStatus,
+    selectAppWantsToJoin,
+    (status, wantsToJoin) => {
+        if (!wantsToJoin && !["", "disconnected"].includes(status)) {
+            return true;
+        }
+        return false;
+    }
+);
+
+createReactor([selectShouldDisconnectRtc], ({ dispatch }, shouldDisconnectRtc) => {
+    if (shouldDisconnectRtc) {
         dispatch(doDisconnectRtc());
     }
 });
 
 // react accept streams
-createReactor([selectRtcConnectionRaw, selectRemoteParticipants], ({ dispatch }, rtcConnection, remoteParticipants) => {
-    if (rtcConnection.status !== "ready") {
-        return;
-    }
+export const selectStreamsToAccept = createSelector(
+    selectRtcStatus,
+    selectRemoteParticipants,
+    (rtcStatus, remoteParticipants) => {
+        if (rtcStatus !== "ready") {
+            return [];
+        }
 
-    const shouldAcceptStreams = true;
-    const upd = [];
-    // This should actually use remoteClientViews for its handling
-    for (const client of remoteParticipants) {
-        const { streams, id: clientId, newJoiner } = client;
+        const shouldAcceptStreams = true;
+        const upd = [];
+        // This should actually use remoteClientViews for its handling
+        for (const client of remoteParticipants) {
+            const { streams, id: clientId, newJoiner } = client;
 
-        for (let i = 0; i < streams.length; i++) {
-            const streamId = streams[i].id;
-            const state = streams[i].state;
-            if (shouldAcceptStreams) {
-                // Already connected
-                if (state === "done_accept") continue;
-                upd.push({
-                    clientId,
-                    streamId,
-                    state: `${newJoiner && streamId === "0" ? "new" : "to"}_accept` as StreamState,
-                });
-            } else {
-                // Already disconnected
-                if (state === "done_unaccept") continue;
-                upd.push({ clientId, streamId, state: "to_unaccept" as StreamState });
+            for (let i = 0; i < streams.length; i++) {
+                const streamId = streams[i].id;
+                const state = streams[i].state;
+                if (shouldAcceptStreams) {
+                    // Already connected
+                    if (state === "done_accept") continue;
+                    upd.push({
+                        clientId,
+                        streamId,
+                        state: `${newJoiner && streamId === "0" ? "new" : "to"}_accept` as StreamState,
+                    });
+                } else {
+                    // Already disconnected
+                    if (state === "done_unaccept") continue;
+                    upd.push({ clientId, streamId, state: "to_unaccept" as StreamState });
+                }
             }
         }
+        return upd;
     }
-    if (0 < upd.length) {
-        dispatch(doHandleAcceptStreams(upd));
+);
+
+createReactor([selectStreamsToAccept], ({ dispatch }, streamsToAccept) => {
+    if (0 < streamsToAccept.length) {
+        dispatch(doHandleAcceptStreams(streamsToAccept));
     }
 });
