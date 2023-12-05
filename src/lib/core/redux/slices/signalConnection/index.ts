@@ -31,20 +31,13 @@ const SIGNAL_BASE_URL = process.env.REACT_APP_SIGNAL_BASE_URL || "wss://signal.a
 
 function createSocket() {
     const parsedUrl = new URL(SIGNAL_BASE_URL);
-    const path = `${parsedUrl.pathname.replace(/^\/$/, "")}/protocol/socket.io/v4`;
-    const SOCKET_HOST = parsedUrl.origin;
+    const socketHost = parsedUrl.origin;
 
-    const socketConf = {
+    const socketOverrides = {
         autoConnect: false,
-        host: SOCKET_HOST,
-        path,
-        reconnectionDelay: 5000,
-        reconnectionDelayMax: 30000,
-        timeout: 10000,
-        withCredentials: true,
     };
 
-    return new ServerSocket(SOCKET_HOST, socketConf);
+    return new ServerSocket(socketHost, socketOverrides);
 }
 
 /**
