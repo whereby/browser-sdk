@@ -1,27 +1,42 @@
+import { RtcEvents } from "@whereby/jslib-media/src/webrtc/RtcManagerDispatcher";
 import { RootState, createStore as createRealStore } from "../store";
 
 export const mockSignalEmit = jest.fn();
-export const mockRtcManager: any = {};
+export const mockServerSocket = {
+    on: jest.fn(),
+    connect: jest.fn(),
+    disconnect: jest.fn(),
+    getManager: jest.fn(),
+    once: jest.fn(),
+    emit: mockSignalEmit,
+};
+export const mockRtcManager = {
+    addNewStream: jest.fn(),
+    acceptNewStream: jest.fn(),
+    replaceTrack: jest.fn(),
+    removeStream: jest.fn(),
+    disconnect: jest.fn(),
+    disconnectAll: jest.fn(),
+    updateStreamResolution: jest.fn(),
+};
+export const mockRtcEmitter = {
+    emit: jest.fn(),
+};
 
-const fn = ({ emitter }: { emitter: any }) => {
-    // emitter.emit("rtc_manager_created", { rtcManager: mockRtcManager });
+const createRtcDispatcher = ({
+    emitter,
+}: {
+    emitter: { emit: <K extends keyof RtcEvents>(eventName: K, args: RtcEvents[K]) => void };
+}) => {
+    emitter.emit("rtc_manager_created", { rtcManager: mockRtcManager });
 
     return {
         stopRtcManager: jest.fn(),
     };
 };
 
-// eslint-disable-next-line @typescript-eslint/no-empty-function
-mockRtcManager.addNewStream = () => {};
-// used for initial mute state
-// eslint-disable-next-line @typescript-eslint/no-empty-function
-mockRtcManager.sendAudioMutedStats = () => {};
-// eslint-disable-next-line @typescript-eslint/no-empty-function
-mockRtcManager.sendVideoMutedStats = () => {};
-
 beforeEach(() => {
     jest.useFakeTimers();
-    mockSignalEmit.mockClear();
     jest.clearAllMocks();
     jest.restoreAllMocks();
 
@@ -62,14 +77,7 @@ export function createStore({ initialState, withSignalConnection, withRtcManager
             isIdentifyingDevice: false,
             deviceIdentified: true,
             status: "connected",
-            socket: {
-                on: jest.fn(),
-                connect: jest.fn(),
-                disconnect: jest.fn(),
-                getManager: jest.fn(),
-                once: jest.fn(),
-                emit: mockSignalEmit,
-            },
+            socket: mockServerSocket,
         };
     }
 
@@ -80,20 +88,9 @@ export function createStore({ initialState, withSignalConnection, withRtcManager
             dispatcherCreated: true,
             error: null,
             reportedStreamResolutions: {},
-            rtcManagerDispatcher: fn({ emitter: jest.fn() }),
+            rtcManagerDispatcher: createRtcDispatcher({ emitter: mockRtcEmitter }),
             rtcManagerInitialized: true,
             rtcManager: mockRtcManager,
-        };
-    } else {
-        initialState.rtcConnection = {
-            status: "",
-            isCreatingDispatcher: false,
-            dispatcherCreated: false,
-            error: null,
-            reportedStreamResolutions: {},
-            rtcManagerDispatcher: fn({ emitter: jest.fn() }),
-            rtcManagerInitialized: false,
-            rtcManager: null,
         };
     }
 
