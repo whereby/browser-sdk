@@ -14,7 +14,7 @@ export interface CloudRecordingState {
     startedAt?: number;
 }
 
-const initialState: CloudRecordingState = {
+export const initialState: CloudRecordingState = {
     isRecording: false,
     error: null,
     startedAt: undefined,

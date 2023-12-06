@@ -6,7 +6,9 @@ export const mockServerSocket = {
     on: jest.fn(),
     connect: jest.fn(),
     disconnect: jest.fn(),
-    getManager: jest.fn(),
+    getManager: () => ({
+        on: jest.fn(),
+    }),
     once: jest.fn(),
     emit: mockSignalEmit,
 };
