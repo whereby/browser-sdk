@@ -1,53 +1,7 @@
 import { randomDeviceCredentials } from "../../../../../lib/__mocks__/appMocks";
-import { Credentials } from "../../../../../lib/api";
-import {
-    deviceCredentialsSlice,
-    doGetDeviceCredentials,
-    selectShouldFetchDeviceCredentials,
-} from "../deviceCredentials";
+import { selectShouldFetchDeviceCredentials } from "../deviceCredentials";
 
 describe("deviceCredentialsSlice", () => {
-    describe("reducers", () => {
-        let credentials: Credentials;
-
-        beforeEach(() => {
-            credentials = randomDeviceCredentials();
-        });
-
-        it("doGetDeviceCredentials.pending", () => {
-            const result = deviceCredentialsSlice.reducer(undefined, doGetDeviceCredentials.pending);
-
-            expect(result).toEqual({
-                data: null,
-                isFetching: true,
-            });
-        });
-
-        it("doGetDeviceCredentials.fulfilled", () => {
-            const result = deviceCredentialsSlice.reducer(
-                undefined,
-                doGetDeviceCredentials.fulfilled(credentials, "", undefined)
-            );
-
-            expect(result).toEqual({
-                data: credentials,
-                isFetching: false,
-            });
-        });
-
-        it("doGetDeviceCredentials.rejected", () => {
-            const result = deviceCredentialsSlice.reducer(
-                undefined,
-                doGetDeviceCredentials.rejected(new Error("error"), "", undefined)
-            );
-
-            expect(result).toEqual({
-                data: null,
-                isFetching: true,
-            });
-        });
-    });
-
     describe("reactors", () => {
         describe("selectShouldFetchDeviceCredentials", () => {
             const credentials = randomDeviceCredentials();
