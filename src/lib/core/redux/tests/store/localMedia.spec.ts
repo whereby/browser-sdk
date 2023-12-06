@@ -30,113 +30,118 @@ jest.mock("@whereby/jslib-media/src/webrtc/MediaDevices", () => ({
 
 const mockedGetStream = jest.mocked(getStream);
 
-describe("doStartLocalMedia", () => {
-    describe("when passed existing stream", () => {
-        let existingStream: MediaStream;
-
-        beforeEach(() => {
-            existingStream = new MockMediaStream();
-        });
-
-        it("should NOT get stream", async () => {
-            const store = createStore();
-
-            await store.dispatch(doStartLocalMedia(existingStream));
-
-            expect(mockedGetStream).toHaveBeenCalledTimes(0);
-        });
-
-        it("shuold resolve with existing stream", async () => {
-            const store = createStore();
-
-            const before = store.getState();
-
-            await store.dispatch(doStartLocalMedia(existingStream));
-
-            const after = store.getState();
-
-            expect(diff(before, after)).toEqual({ localMedia: { status: "started", stream: existingStream } });
-        });
-    });
-
-    describe("when passed localMediaOptions", () => {
-        it("should call getStream", async () => {
-            const store = createStore();
-
-            await store.dispatch(doStartLocalMedia({ audio: true, video: true }));
-
-            expect(mockedGetStream).toHaveBeenCalledTimes(1);
-        });
-
-        describe("when getStream succeeeds", () => {
-            let newStream: MediaStream;
+describe("actions", () => {
+    describe("doStartLocalMedia", () => {
+        describe("when passed existing stream", () => {
+            let existingStream: MediaStream;
 
             beforeEach(() => {
-                newStream = new MockMediaStream();
-                mockedGetStream.mockResolvedValueOnce({ stream: newStream });
+                existingStream = new MockMediaStream();
             });
 
-            it("should update state", async () => {
+            it("should NOT get stream", async () => {
                 const store = createStore();
 
-                const before = store.getState();
+                await store.dispatch(doStartLocalMedia(existingStream));
+
+                expect(mockedGetStream).toHaveBeenCalledTimes(0);
+            });
+
+            it("shuold resolve with existing stream", async () => {
+                const store = createStore();
+
+                const before = store.getState().localMedia;
+
+                await store.dispatch(doStartLocalMedia(existingStream));
+
+                const after = store.getState().localMedia;
+
+                expect(diff(before, after)).toEqual({ status: "started", stream: existingStream });
+            });
+        });
+
+        describe("when passed localMediaOptions", () => {
+            it("should call getStream", async () => {
+                const store = createStore();
 
                 await store.dispatch(doStartLocalMedia({ audio: true, video: true }));
 
-                const after = store.getState();
+                expect(mockedGetStream).toHaveBeenCalledTimes(1);
+            });
 
-                expect(diff(before, after)).toEqual({
-                    localMedia: { status: "started", stream: newStream, devices: expect.any(Object) },
+            describe("when getStream succeeeds", () => {
+                let newStream: MediaStream;
+
+                beforeEach(() => {
+                    newStream = new MockMediaStream();
+                    mockedGetStream.mockResolvedValueOnce({ stream: newStream });
+                });
+
+                it("should update state", async () => {
+                    const store = createStore();
+
+                    const before = store.getState().localMedia;
+
+                    await store.dispatch(doStartLocalMedia({ audio: true, video: true }));
+
+                    const after = store.getState().localMedia;
+
+                    expect(diff(before, after)).toEqual({
+                        status: "started",
+                        stream: newStream,
+                        devices: expect.any(Object),
+                    });
                 });
             });
         });
     });
-});
 
-describe("doStopLocalMedia", () => {
-    describe("when existing stream", () => {
-        let audioTrack: MediaStreamTrack;
-        let videoTrack: MediaStreamTrack;
-        let initialState: Partial<RootState>;
+    describe("doStopLocalMedia", () => {
+        describe("when existing stream", () => {
+            let audioTrack: MediaStreamTrack;
+            let videoTrack: MediaStreamTrack;
+            let initialState: Partial<RootState>;
 
-        beforeEach(() => {
-            audioTrack = new MockMediaStreamTrack("audio");
-            videoTrack = new MockMediaStreamTrack("video");
+            beforeEach(() => {
+                audioTrack = new MockMediaStreamTrack("audio");
+                videoTrack = new MockMediaStreamTrack("video");
 
-            initialState = {
-                localMedia: {
-                    cameraEnabled: true,
-                    devices: [],
-                    isSettingCameraDevice: false,
-                    isSettingMicrophoneDevice: false,
-                    isTogglingCamera: false,
-                    microphoneEnabled: true,
-                    status: "started",
-                    stream: new MockMediaStream([audioTrack, videoTrack]),
-                },
-            };
-        });
+                initialState = {
+                    localMedia: {
+                        cameraEnabled: true,
+                        devices: [],
+                        isSettingCameraDevice: false,
+                        isSettingMicrophoneDevice: false,
+                        isTogglingCamera: false,
+                        microphoneEnabled: true,
+                        status: "started",
+                        stream: new MockMediaStream([audioTrack, videoTrack]),
+                    },
+                };
+            });
 
-        it("should stop all tracks in existing stream", async () => {
-            const store = createStore({ initialState });
+            it("should stop all tracks in existing stream", () => {
+                const store = createStore({ initialState });
 
-            await store.dispatch(doStopLocalMedia());
+                store.dispatch(doStopLocalMedia());
 
-            expect(audioTrack.stop).toHaveBeenCalled();
-            expect(videoTrack.stop).toHaveBeenCalled();
-        });
+                expect(audioTrack.stop).toHaveBeenCalled();
+                expect(videoTrack.stop).toHaveBeenCalled();
+            });
 
-        it('should update state to "stopped"', async () => {
-            const store = createStore({ initialState });
+            it('should update state to "stopped"', () => {
+                const store = createStore({ initialState });
 
-            const before = store.getState();
+                const before = store.getState().localMedia;
 
-            await store.dispatch(doStopLocalMedia());
+                store.dispatch(doStopLocalMedia());
 
-            const after = store.getState();
+                const after = store.getState().localMedia;
 
-            expect(diff(before, after)).toEqual({
-                localMedia: { status: "stopped", stream: undefined },
+                expect(diff(before, after)).toEqual({
+                    status: "stopped",
+                    stream: undefined,
+                });
             });
         });
     });
