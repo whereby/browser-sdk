@@ -103,7 +103,7 @@ export const { deviceIdentifying, deviceIdentified, socketConnected, socketConne
 /**
  * Action creators
  */
-const doSignalSocketConnect = createAppThunk(() => {
+export const doSignalSocketConnect = createAppThunk(() => {
     return (dispatch, getState) => {
         if (selectSignalConnectionSocket(getState())) {
             return;
