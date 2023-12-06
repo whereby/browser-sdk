@@ -32,7 +32,7 @@ export interface LocalMediaState {
     stream?: MediaStream;
 }
 
-const initialState: LocalMediaState = {
+export const initialState: LocalMediaState = {
     cameraEnabled: false,
     devices: [],
     isSettingCameraDevice: false,
