@@ -1,8 +1,8 @@
 import { createStore, mockSignalEmit } from "../store.setup";
 import { doAcceptWaitingParticipant, doRejectWaitingParticipant } from "../../slices/waitingParticipants";
 
-describe("doAcceptWaitingParticipant", () => {
-    it("should emit handle_knock", async () => {
+describe("actions", () => {
+    it("doAcceptWaitingParticipant", async () => {
         const participantId = "participantId";
         const store = createStore({ withSignalConnection: true });
 
@@ -14,10 +14,8 @@ describe("doAcceptWaitingParticipant", () => {
             response: {},
         });
     });
-});
 
-describe("doRejectWaitingParticipant", () => {
-    it("should emit handle_knock", async () => {
+    it("doRejectWaitingParticipant", async () => {
         const participantId = "participantId";
         const store = createStore({ withSignalConnection: true });
 
