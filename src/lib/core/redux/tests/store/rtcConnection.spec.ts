@@ -1,10 +1,21 @@
 import { createStore, mockRtcManager } from "../store.setup";
-import { doHandleAcceptStreams, doConnectRtc, doDisconnectRtc } from "../../slices/rtcConnection";
+import {
+    doHandleAcceptStreams,
+    doConnectRtc,
+    doDisconnectRtc,
+    doRtcReportStreamResolution,
+    doRtcManagerCreated,
+    doRtcManagerInitialize,
+} from "../../slices/rtcConnection";
 import { randomRemoteParticipant, randomString } from "../../../../__mocks__/appMocks";
+import MockMediaStream from "../../../../../lib/__mocks__/MediaStream";
+import RtcManagerDispatcher from "@whereby/jslib-media/src/webrtc/RtcManagerDispatcher";
+import { initialState as localMediaInitialState } from "../../slices/localMedia";
+
+jest.mock("@whereby/jslib-media/src/webrtc/RtcManagerDispatcher");
 
 describe("actions", () => {
-    it("doHandleAcceptStreams", async () => {
-        mockRtcManager.acceptNewStream = jest.fn();
+    it("doHandleAcceptStreams", () => {
         const id1 = randomString("stream1");
         const id2 = randomString("stream2");
         const id3 = randomString("stream3");
@@ -40,23 +51,63 @@ describe("actions", () => {
         expect(mockRtcManager.acceptNewStream).toHaveBeenCalledTimes(2);
     });
 
-    it("doConnectRtc", async () => {
+    it("doConnectRtc", () => {
         const store = createStore();
 
         store.dispatch(doConnectRtc());
 
-        expect(store.getState().rtcConnection.status).toBe("");
-        expect(store.getState().rtcConnection.dispatcherCreated).toBe(false);
+        expect(RtcManagerDispatcher).toHaveBeenCalledTimes(1);
+        expect(store.getState().rtcConnection.dispatcherCreated).toBe(true);
         expect(store.getState().rtcConnection.error).toBe(null);
     });
 
-    it("doDisconnectRtc", async () => {
-        const store = createStore();
+    it("doDisconnectRtc", () => {
+        const store = createStore({ withRtcManager: true });
 
         store.dispatch(doDisconnectRtc());
 
-        expect(store.getState().rtcConnection.status).toBe("");
+        expect(mockRtcManager.disconnectAll).toHaveBeenCalledTimes(1);
         expect(store.getState().rtcConnection.dispatcherCreated).toBe(false);
+        expect(store.getState().rtcConnection.rtcManager).toBe(null);
         expect(store.getState().rtcConnection.error).toBe(null);
+    });
+
+    it("doRtcReportStreamResolution", () => {
+        const store = createStore({ withRtcManager: true });
+        const streamId = randomString("streamId");
+        const resolution = { width: 100, height: 100 };
+
+        store.dispatch(doRtcReportStreamResolution({ streamId, ...resolution }));
+
+        expect(mockRtcManager.updateStreamResolution).toHaveBeenCalledTimes(1);
+        expect(mockRtcManager.updateStreamResolution).toHaveBeenCalledWith(streamId, null, resolution);
+        expect(store.getState().rtcConnection.reportedStreamResolutions[streamId]).toStrictEqual(resolution);
+    });
+
+    it("doRtcManagerCreated", () => {
+        const store = createStore({ withRtcManager: true });
+
+        store.dispatch(doRtcManagerCreated({ rtcManager: mockRtcManager }));
+
+        expect(store.getState().rtcConnection.rtcManager).toBe(mockRtcManager);
+        expect(store.getState().rtcConnection.status).toBe("ready");
+    });
+
+    it("doRtcManagerInitialize", () => {
+        const store = createStore({
+            withRtcManager: true,
+            initialState: {
+                localMedia: {
+                    ...localMediaInitialState,
+                    stream: new MockMediaStream(),
+                },
+            },
+        });
+
+        store.dispatch(doRtcManagerInitialize());
+
+        expect(mockRtcManager.addNewStream).toHaveBeenCalledTimes(1);
+        expect(mockRtcManager.addNewStream).toHaveBeenCalledWith("0", store.getState().localMedia.stream, true, true);
+        expect(store.getState().rtcConnection.rtcManagerInitialized).toBe(true);
     });
 });
