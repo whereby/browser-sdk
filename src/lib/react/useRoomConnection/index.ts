@@ -94,6 +94,7 @@ export function useRoomConnection(
                 roomKey,
                 roomUrl,
                 sdkVersion: "1.0.0",
+                externalId: roomConnectionOptions.externalId || null,
             })
         );
         return () => {
