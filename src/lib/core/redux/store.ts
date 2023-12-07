@@ -16,6 +16,8 @@ import { rtcConnectionSlice } from "./slices/rtcConnection";
 import { streamingSlice } from "./slices/streaming";
 import { waitingParticipantsSlice } from "./slices/waitingParticipants";
 
+const IS_DEV = process.env.REACT_APP_IS_DEV === "true" ?? false;
+
 export const rootReducer = combineReducers({
     app: appSlice.reducer,
     chat: chatSlice.reducer,
@@ -40,6 +42,7 @@ export const createStore = ({
     injectServices: ReturnType<typeof createServices>;
 }) => {
     return configureStore({
+        devTools: IS_DEV,
         reducer: rootReducer,
         middleware: (getDefaultMiddleware) =>
             getDefaultMiddleware({
