@@ -103,7 +103,7 @@ export function useRoomConnection(
     }, []);
 
     React.useEffect(() => {
-        if (store) {
+        if (store && !boundVideoView) {
             setBoundVideoView(() => (props: VideoViewComponentProps): JSX.Element => {
                 return React.createElement(
                     VideoView as React.ComponentType<VideoViewComponentProps>,
@@ -129,7 +129,7 @@ export function useRoomConnection(
                 );
             });
         }
-    }, [store]);
+    }, [store, boundVideoView]);
 
     const sendChatMessage = React.useCallback((text: string) => store.dispatch(doSendChatMessage({ text })), [store]);
     const knock = React.useCallback(() => store.dispatch(doKnockRoom()), [store]);
