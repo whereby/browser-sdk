@@ -24,9 +24,10 @@ import {
     VideosContainerLayout,
     StageLayoutGroups,
     CalculatedStageLayout,
-} from "../helpers/layout";
-import { default as LAYOUT_CONSTANTS } from "../constants/layout";
-import { Box } from "../helpers/layout";
+    Box,
+} from "~/lib/core/helpers/layout";
+import { default as LAYOUT_CONSTANTS } from "~/lib/core/constants/layout";
+
 const { BOTTOM_TOOLBAR_HEIGHT, VIDEO_CONTROLS_MIN_WIDTH, SUBGRID_EMPTY_STAGE_MAX_WIDTH, TABLET_BREAKPOINT } =
     LAYOUT_CONSTANTS;
 

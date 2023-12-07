@@ -1,7 +1,7 @@
 import * as groupsGrid from "../VideoStageLayout/GroupsPreview/groupsGridLayout";
 import * as groupsTable from "../VideoStageLayout/GroupsPreview/groupsTableLayout";
 
-import { default as LAYOUT_CONSTANTS } from "../constants/layout";
+import { default as LAYOUT_CONSTANTS } from "~/lib/core/constants/layout";
 const { DESKTOP_BREAKPOINT, TABLET_BREAKPOINT, PHONE_BREAKPOINT } = LAYOUT_CONSTANTS;
 
 // Types
@@ -89,6 +89,9 @@ export interface Video {
     aspectRatio: number;
 }
 export interface VideoCell extends Video {
+    isVideoGridCell?: boolean;
+    isPresentationGridCell?: boolean;
+    isSubgridCell?: boolean;
     type: "video" | "integration" | "copy_link" | "signup_cta" | "groups";
     bounds: Bounds;
     origin: Origin;

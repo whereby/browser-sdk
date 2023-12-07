@@ -15,14 +15,20 @@ import { signalConnectionSlice } from "./slices/signalConnection";
 import { rtcConnectionSlice } from "./slices/rtcConnection";
 import { streamingSlice } from "./slices/streaming";
 import { waitingParticipantsSlice } from "./slices/waitingParticipants";
+import { layoutSlice } from "./slices/layout";
+import { deviceSlice } from "./slices/device";
+import { browserSupportSlice } from "./slices/browserSupport";
 
 const IS_DEV = process.env.REACT_APP_IS_DEV === "true" ?? false;
 
 export const rootReducer = combineReducers({
     app: appSlice.reducer,
+    browserSupport: browserSupportSlice.reducer,
     chat: chatSlice.reducer,
     cloudRecording: cloudRecordingSlice.reducer,
+    device: deviceSlice.reducer,
     deviceCredentials: deviceCredentialsSlice.reducer,
+    layout: layoutSlice.reducer,
     localMedia: localMediaSlice.reducer,
     localParticipant: localParticipantSlice.reducer,
     organization: organizationSlice.reducer,
