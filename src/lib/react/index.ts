@@ -1,8 +1,8 @@
 export { default as VideoView } from "./VideoView";
-export { default as useLocalMedia } from "./useLocalMedia";
 export { useRoomConnection } from "./useRoomConnection";
+export { useLocalMedia } from "./useLocalMedia";
 
-export type { LocalMediaRef as UseLocalMediaResult } from "./useLocalMedia";
+export type { UseLocalMediaResult } from "./useLocalMedia";
 
 export type {
     ChatMessageState as ChatMessage,
@@ -11,6 +11,6 @@ export type {
     RoomConnectionState as RoomConnection,
     ScreenshareState as Screenshare,
     WaitingParticipantState as WaitingParticipant,
-} from "./useRoomConnection";
+} from "./useRoomConnection/types";
 
 export { sdkVersion } from "../version";

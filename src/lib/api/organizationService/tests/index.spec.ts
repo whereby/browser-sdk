@@ -3,7 +3,7 @@ import _omit from "lodash/omit";
 import OrganizationService from "../index";
 import Organization from "../../models/Organization";
 import Response from "../../Response";
-import { itShouldThrowIfInvalid, itShouldRejectIfApiClientRejects } from "../../test/helpers";
+import { itShouldThrowIfInvalid, itShouldRejectIfApiClientRejects } from "../../__tests__/helpers";
 import { ConsentGrantRequest } from "../../types";
 
 jest.mock("../../ApiClient");

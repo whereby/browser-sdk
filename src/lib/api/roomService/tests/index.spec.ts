@@ -4,7 +4,7 @@ import Response from "../../Response";
 import RoomService from "../index";
 import Room from "../../models/Room";
 import Meeting from "../../models/Meeting";
-import { itShouldThrowIfInvalid, itShouldRejectIfApiClientRejects, toJson } from "../../test/helpers";
+import { itShouldThrowIfInvalid, itShouldRejectIfApiClientRejects, toJson } from "../../__tests__/helpers";
 
 jest.mock("../../OrganizationApiClient");
 

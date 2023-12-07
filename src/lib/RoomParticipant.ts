@@ -42,41 +42,16 @@ interface Stream {
     state: StreamState;
 }
 
-export class RemoteParticipant extends RoomParticipant {
-    public readonly newJoiner: boolean;
-    public readonly streams: Stream[];
-
-    constructor({
-        displayName,
-        id,
-        newJoiner,
-        streams,
-        isAudioEnabled,
-        isVideoEnabled,
-    }: RoomParticipantData & RemoteParticipantData) {
-        super({ displayName, id, isAudioEnabled, isVideoEnabled });
-        this.newJoiner = newJoiner;
-
-        this.streams = streams.map((streamId) => ({ id: streamId, state: newJoiner ? "new_accept" : "to_accept" }));
-    }
-
-    addStream(streamId: string, state: StreamState) {
-        this.streams.push({ id: streamId, state });
-    }
-
-    removeStream(streamId: string) {
-        const index = this.streams.findIndex((s) => s.id === streamId);
-        if (index !== -1) {
-            this.streams.splice(index, 1);
-        }
-    }
-
-    updateStreamState(streamId: string, state: StreamState) {
-        const stream = this.streams.find((s) => s.id === streamId);
-        if (stream) {
-            stream.state = state;
-        }
-    }
+export interface RemoteParticipant {
+    id: string;
+    displayName: string;
+    isAudioEnabled: boolean;
+    isVideoEnabled: boolean;
+    isLocalParticipant: boolean;
+    stream: (MediaStream & { inboundId?: string }) | null;
+    streams: Stream[];
+    newJoiner: boolean;
+    presentationStream: (MediaStream & { inboundId?: string }) | null;
 }
 
 export class LocalParticipant extends RoomParticipant {
@@ -92,18 +67,10 @@ export interface WaitingParticipant {
     displayName: string | null;
 }
 
-export class Screenshare {
-    public readonly participantId: string;
-    public readonly id: string;
-    public readonly hasAudioTrack: boolean;
-    public readonly stream?: MediaStream;
-    public readonly isLocal: boolean = false;
-
-    constructor({ participantId, id, hasAudioTrack, stream, isLocal }: Screenshare) {
-        this.participantId = participantId;
-        this.id = id;
-        this.hasAudioTrack = hasAudioTrack;
-        this.stream = stream;
-        this.isLocal = isLocal;
-    }
+export interface Screenshare {
+    participantId: string;
+    id: string;
+    hasAudioTrack: boolean;
+    stream?: MediaStream;
+    isLocal: boolean;
 }

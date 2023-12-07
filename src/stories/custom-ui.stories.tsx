@@ -1,11 +1,12 @@
 import React, { useEffect, useRef, useState } from "react";
 import { useLocalMedia, useRoomConnection, VideoView } from "../lib/react";
-import { LocalMediaRef } from "../lib/react/useLocalMedia";
 import PrecallExperience from "./components/PrecallExperience";
 import VideoExperience from "./components/VideoExperience";
 import fakeWebcamFrame from "../lib/utils/fakeWebcamFrame";
 import fakeAudioStream from "../lib/utils/fakeAudioStream";
 import "./styles.css";
+import ReduxPrecallExperience from "./components/ReduxPrecallExperience";
+import Grid from "./components/Grid";
 
 export default {
     title: "Examples/Custom UI",
@@ -53,11 +54,15 @@ export const LocalMediaOnly = () => {
     );
 };
 
-function CanvasInRoom({ localMedia, roomUrl }: { localMedia: LocalMediaRef; roomUrl: string }) {
-    const { state } = useRoomConnection(roomUrl, { localMedia });
+export const ReduxLocalMediaOnly = () => {
+    const localMedia = useLocalMedia();
 
-    return <div>Room connection status: {state.connectionStatus}</div>;
-}
+    return (
+        <div>
+            <ReduxPrecallExperience {...localMedia} />
+        </div>
+    );
+};
 
 function LocalMediaWithCanvasStream_({ canvasStream, roomUrl }: { canvasStream: MediaStream; roomUrl: string }) {
     const [shouldConnect, setShouldConnect] = useState(false);
@@ -76,7 +81,6 @@ function LocalMediaWithCanvasStream_({ canvasStream, roomUrl }: { canvasStream: 
             <button onClick={() => setShouldConnect(!shouldConnect)}>
                 {shouldConnect ? "Disconnect" : "Connect to room"}
             </button>
-            {shouldConnect && <CanvasInRoom localMedia={localMedia} roomUrl={roomUrl} />}
         </div>
     );
 }
@@ -141,6 +145,16 @@ export const RoomConnectionOnly = ({ roomUrl, displayName }: { roomUrl: string; 
     }
 
     return <VideoExperience displayName={displayName} roomName={roomUrl} />;
+};
+
+export const ResolutionReporting = ({ roomUrl }: { roomUrl: string; displayName?: string }) => {
+    if (!roomUrl || !roomUrl.match(roomRegEx)) {
+        return <p>Set room url on the Controls panel</p>;
+    }
+
+    const roomConnection = useRoomConnection(roomUrl, { localMediaOptions: { audio: false, video: false } });
+
+    return <Grid roomConnection={roomConnection} />;
 };
 
 export const RoomConnectionStrictMode = ({ roomUrl, displayName }: { roomUrl: string; displayName?: string }) => {
