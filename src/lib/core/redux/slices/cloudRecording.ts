@@ -24,16 +24,10 @@ export const cloudRecordingSlice = createSlice({
     name: "cloudRecording",
     initialState,
     reducers: {
-        recordingStarted: (state) => {
+        recordingRequestStarted: (state) => {
             return {
                 ...state,
-                isRecording: true,
-            };
-        },
-        recordingStopped: (state) => {
-            return {
-                ...state,
-                isRecording: false,
+                status: "requested",
             };
         },
     },
@@ -42,6 +36,7 @@ export const cloudRecordingSlice = createSlice({
             return {
                 ...state,
                 isRecording: false,
+                status: undefined,
             };
         });
         builder.addCase(signalEvents.cloudRecordingStarted, (state, action) => {
@@ -79,17 +74,22 @@ export const cloudRecordingSlice = createSlice({
 /**
  * Action creators
  */
-export const { recordingStarted, recordingStopped } = cloudRecordingSlice.actions;
+export const { recordingRequestStarted } = cloudRecordingSlice.actions;
 
 export const doStartCloudRecording = createAppThunk(() => (dispatch, getState) => {
     const state = getState();
     const socket = selectSignalConnectionRaw(state).socket;
+    const status = selectCloudRecordingStatus(state);
+
+    if (status && ["recording", "requested"].includes(status)) {
+        return;
+    }
 
     socket?.emit("start_recording", {
         recording: "cloud",
     });
 
-    dispatch(recordingStarted());
+    dispatch(recordingRequestStarted());
 });
 
 export const doStopCloudRecording = createAppThunk(() => (dispatch, getState) => {
@@ -97,11 +97,13 @@ export const doStopCloudRecording = createAppThunk(() => (dispatch, getState) =>
     const socket = selectSignalConnectionRaw(state).socket;
 
     socket?.emit("stop_recording");
-
-    dispatch(recordingStopped());
 });
 
 /**
  * Selectors
  */
 export const selectCloudRecordingRaw = (state: RootState) => state.cloudRecording;
+export const selectCloudRecordingStatus = (state: RootState) => state.cloudRecording.status;
+export const selectCloudRecordingStartedAt = (state: RootState) => state.cloudRecording.startedAt;
+export const selectCloudRecordingError = (state: RootState) => state.cloudRecording.error;
+export const selectIsCloudRecording = (state: RootState) => state.cloudRecording.isRecording;
