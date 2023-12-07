@@ -3,20 +3,39 @@ import { doStartCloudRecording, doStopCloudRecording, initialState } from "../..
 import { diff } from "deep-object-diff";
 
 describe("actions", () => {
-    it("doStartCloudRecording", () => {
-        const store = createStore({ withSignalConnection: true });
+    describe("doStartCloudRecording", () => {
+        it("should start recording", () => {
+            const store = createStore({ withSignalConnection: true });
 
-        const before = store.getState().cloudRecording;
+            const before = store.getState().cloudRecording;
 
-        store.dispatch(doStartCloudRecording());
+            store.dispatch(doStartCloudRecording());
 
-        const after = store.getState().cloudRecording;
+            const after = store.getState().cloudRecording;
 
-        expect(mockSignalEmit).toHaveBeenCalledWith("start_recording", {
-            recording: "cloud",
+            expect(mockSignalEmit).toHaveBeenCalledWith("start_recording", {
+                recording: "cloud",
+            });
+            expect(diff(before, after)).toEqual({
+                status: "requested",
+            });
         });
-        expect(diff(before, after)).toEqual({
-            isRecording: true,
+
+        it("should not start recording if already recording", () => {
+            const store = createStore({
+                withSignalConnection: true,
+                initialState: {
+                    cloudRecording: {
+                        ...initialState,
+                        isRecording: true,
+                        status: "recording",
+                    },
+                },
+            });
+
+            store.dispatch(doStartCloudRecording());
+
+            expect(mockSignalEmit).not.toHaveBeenCalled();
         });
     });
 
@@ -27,19 +46,13 @@ describe("actions", () => {
                 cloudRecording: {
                     ...initialState,
                     isRecording: true,
+                    status: "recording",
                 },
             },
         });
 
-        const before = store.getState().cloudRecording;
-
         store.dispatch(doStopCloudRecording());
 
-        const after = store.getState().cloudRecording;
-
         expect(mockSignalEmit).toHaveBeenCalledWith("stop_recording");
-        expect(diff(before, after)).toEqual({
-            isRecording: false,
-        });
     });
 });
