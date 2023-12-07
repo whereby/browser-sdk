@@ -76,6 +76,7 @@ export function useRoomConnection(
         const services = createServices();
         return createStore({ injectServices: services });
     });
+    const [boundVideoView, setBoundVideoView] = React.useState<(props: VideoViewComponentProps) => JSX.Element>();
     const [roomConnectionState, setRoomConnectionState] = React.useState(initialState);
 
     React.useEffect(() => {
@@ -100,6 +101,35 @@ export function useRoomConnection(
             store.dispatch(appLeft());
         };
     }, []);
+
+    React.useEffect(() => {
+        if (store) {
+            setBoundVideoView(() => (props: VideoViewComponentProps): JSX.Element => {
+                return React.createElement(
+                    VideoView as React.ComponentType<VideoViewComponentProps>,
+                    Object.assign({}, props, {
+                        onResize: ({
+                            stream,
+                            width,
+                            height,
+                        }: {
+                            stream: MediaStream;
+                            width: number;
+                            height: number;
+                        }) => {
+                            store.dispatch(
+                                doRtcReportStreamResolution({
+                                    streamId: stream.id,
+                                    width,
+                                    height,
+                                })
+                            );
+                        },
+                    })
+                );
+            });
+        }
+    }, [store]);
 
     const sendChatMessage = React.useCallback((text: string) => store.dispatch(doSendChatMessage({ text })), [store]);
     const knock = React.useCallback(() => store.dispatch(doKnockRoom()), [store]);
@@ -144,29 +174,7 @@ export function useRoomConnection(
             stopScreenshare,
         },
         components: {
-            VideoView: (props: VideoViewComponentProps): JSX.Element =>
-                React.createElement(
-                    VideoView as React.ComponentType<VideoViewComponentProps>,
-                    Object.assign({}, props, {
-                        onResize: ({
-                            stream,
-                            width,
-                            height,
-                        }: {
-                            stream: MediaStream;
-                            width: number;
-                            height: number;
-                        }) => {
-                            store.dispatch(
-                                doRtcReportStreamResolution({
-                                    streamId: stream.id,
-                                    width,
-                                    height,
-                                })
-                            );
-                        },
-                    })
-                ),
+            VideoView: boundVideoView || VideoView,
         },
         _ref: store,
     };
