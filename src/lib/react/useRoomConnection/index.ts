@@ -17,6 +17,7 @@ import { appLeft, doAppJoin } from "../../core/redux/slices/app";
 import { selectRoomConnectionState } from "./selector";
 import { doKnockRoom } from "../../core/redux/slices/roomConnection";
 import { doRtcReportStreamResolution } from "../../core/redux/slices/rtcConnection";
+import { sdkVersion } from "../../version";
 
 const initialState: RoomConnectionState = {
     chatMessages: [],
@@ -74,7 +75,8 @@ export function useRoomConnection(
                     : roomConnectionOptions.localMediaOptions,
                 roomKey,
                 roomUrl,
-                sdkVersion: "1.0.0",
+                sdkVersion: sdkVersion,
+                externalId: roomConnectionOptions.externalId || null,
             })
         );
         return () => {
