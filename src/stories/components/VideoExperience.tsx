@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 import DisplayNameForm from "./DisplayNameForm";
-import { UseLocalMediaResult } from "../../lib/react/useLocalMedia";
+import { UseLocalMediaResult } from "../../lib/react/useLocalMedia/types";
 import { useRoomConnection } from "../../lib/react/useRoomConnection";
 
 export default function VideoExperience({

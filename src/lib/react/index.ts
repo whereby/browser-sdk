@@ -2,7 +2,7 @@ export { default as VideoView } from "./VideoView";
 export { useRoomConnection } from "./useRoomConnection";
 export { useLocalMedia } from "./useLocalMedia";
 
-export type { UseLocalMediaResult } from "./useLocalMedia";
+export type { UseLocalMediaResult } from "./useLocalMedia/types";
 
 export type {
     ChatMessageState as ChatMessage,
