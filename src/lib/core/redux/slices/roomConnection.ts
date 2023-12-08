@@ -3,7 +3,14 @@ import { PayloadAction, createSelector, createSlice } from "@reduxjs/toolkit";
 import { createReactor, startAppListening } from "../listenerMiddleware";
 import { RootState } from "../store";
 import { createAppThunk } from "../thunk";
-import { selectAppDisplayName, selectAppRoomKey, selectAppRoomName, selectAppSdkVersion, setRoomKey } from "./app";
+import {
+    selectAppDisplayName,
+    selectAppRoomKey,
+    selectAppRoomName,
+    selectAppSdkVersion,
+    selectAppExternalId,
+    setRoomKey,
+} from "./app";
 
 import { selectOrganizationId } from "./organization";
 import { signalEvents } from "./signalConnection/actions";
@@ -78,6 +85,7 @@ export const doKnockRoom = createAppThunk(() => (dispatch, getState) => {
     const roomKey = selectAppRoomKey(state);
     const displayName = selectAppDisplayName(state);
     const sdkVersion = selectAppSdkVersion(state);
+    const externalId = selectAppExternalId(state);
     const organizationId = selectOrganizationId(state);
 
     socket?.emit("knock_room", {
@@ -87,16 +95,16 @@ export const doKnockRoom = createAppThunk(() => (dispatch, getState) => {
             isVideoEnabled: true,
         },
         deviceCapabilities: { canScreenshare: true },
-        displayName: displayName,
+        displayName,
         isCoLocated: false,
         isDevicePermissionDenied: false,
         kickFromOtherRooms: false,
-        organizationId: organizationId,
-        roomKey: roomKey,
-        roomName: roomName,
+        organizationId,
+        roomKey,
+        roomName,
         selfId: "",
         userAgent: `browser-sdk:${sdkVersion || "unknown"}`,
-        externalId: null,
+        externalId,
     });
 
     dispatch(connectionStatusChanged("knocking"));
@@ -109,6 +117,7 @@ export const doConnectRoom = createAppThunk(() => (dispatch, getState) => {
     const roomKey = selectAppRoomKey(state);
     const displayName = selectAppDisplayName(state);
     const sdkVersion = selectAppSdkVersion(state);
+    const externalId = selectAppExternalId(state);
     const organizationId = selectOrganizationId(state);
     const isCameraEnabled = selectIsCameraEnabled(getState());
     const isMicrophoneEnabled = selectIsMicrophoneEnabled(getState());
@@ -120,16 +129,16 @@ export const doConnectRoom = createAppThunk(() => (dispatch, getState) => {
             isVideoEnabled: isCameraEnabled,
         },
         deviceCapabilities: { canScreenshare: true },
-        displayName: displayName,
+        displayName,
         isCoLocated: false,
         isDevicePermissionDenied: false,
         kickFromOtherRooms: false,
-        organizationId: organizationId,
-        roomKey: roomKey,
-        roomName: roomName,
+        organizationId,
+        roomKey,
+        roomName,
         selfId: "",
         userAgent: `browser-sdk:${sdkVersion || "unknown"}`,
-        externalId: null,
+        externalId,
     });
 
     dispatch(connectionStatusChanged("connecting"));

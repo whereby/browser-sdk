@@ -12,6 +12,7 @@ export interface AppState {
     roomKey: string | null;
     displayName: string | null;
     sdkVersion: string | null;
+    externalId: string | null;
 }
 
 const initialState: AppState = {
@@ -21,6 +22,7 @@ const initialState: AppState = {
     roomUrl: null,
     displayName: null,
     sdkVersion: null,
+    externalId: null,
 };
 
 export const appSlice = createSlice({
@@ -35,6 +37,7 @@ export const appSlice = createSlice({
                 roomKey: string | null;
                 roomUrl: string;
                 sdkVersion: string;
+                externalId: string | null;
             }>
         ) => {
             const url = new URL(action.payload.roomUrl);
@@ -73,3 +76,4 @@ export const selectAppRoomUrl = (state: RootState) => state.app.roomUrl;
 export const selectAppRoomKey = (state: RootState) => state.app.roomKey;
 export const selectAppDisplayName = (state: RootState) => state.app.displayName;
 export const selectAppSdkVersion = (state: RootState) => state.app.sdkVersion;
+export const selectAppExternalId = (state: RootState) => state.app.externalId;
