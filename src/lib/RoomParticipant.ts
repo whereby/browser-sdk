@@ -23,7 +23,7 @@ export default class RoomParticipant {
     }
 }
 
-interface RemoteParticipantData {
+export interface RemoteParticipantData {
     newJoiner: boolean;
     streams: string[];
 }
