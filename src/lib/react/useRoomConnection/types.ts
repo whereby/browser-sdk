@@ -1,9 +1,8 @@
-import { LocalParticipant, RemoteParticipant, Screenshare, WaitingParticipant } from "../../RoomParticipant";
+import { LocalParticipant, RemoteParticipant, Screenshare } from "../../RoomParticipant";
 
 import { ChatMessage as SignalChatMessage } from "@whereby/jslib-media/src/utils/ServerSocket";
-// import { sdkVersion } from "../../version";
 import { LocalMediaOptions } from "../../core/redux/slices/localMedia";
-import { Store } from "../../core/redux/store";
+import { UseLocalMediaResult } from "../useLocalMedia";
 
 export type RemoteParticipantState = Omit<RemoteParticipant, "newJoiner" | "streams">;
 export type LocalParticipantState = LocalParticipant;
@@ -19,27 +18,6 @@ export interface ChatMessageState {
 export type ScreenshareState = Screenshare;
 
 type LocalScreenshareStatus = "starting" | "active";
-
-export interface RoomConnectionState {
-    chatMessages: ChatMessage[];
-    cloudRecording?: CloudRecordingState;
-    localScreenshareStatus?: LocalScreenshareStatus;
-    localParticipant?: LocalParticipantState;
-    remoteParticipants: RemoteParticipantState[];
-    screenshares: Screenshare[];
-    connectionStatus: ConnectionStatus;
-    liveStream?: LiveStreamState;
-    waitingParticipants: WaitingParticipantState[];
-}
-
-export interface RoomConnectionOptions {
-    displayName?: string; // Might not be needed at all
-    localMediaOptions?: LocalMediaOptions;
-    roomKey?: string;
-    // logger?: Logger;
-    localMedia?: Store;
-    externalId?: string;
-}
 
 export type ChatMessage = Pick<SignalChatMessage, "senderId" | "timestamp" | "text">;
 export type ConnectionStatus =
@@ -63,46 +41,22 @@ export type LiveStreamState = {
     startedAt?: number;
 };
 
-export type RoomJoinedEvent = {
-    localParticipant: LocalParticipant;
-    remoteParticipants: RemoteParticipant[];
-    waitingParticipants: WaitingParticipant[];
-};
-
-export type ConnectionStatusChangedEvent = {
+export interface RoomConnectionState {
+    chatMessages: ChatMessage[];
+    cloudRecording?: CloudRecordingState;
+    localScreenshareStatus?: LocalScreenshareStatus;
+    localParticipant?: LocalParticipantState;
+    remoteParticipants: RemoteParticipantState[];
+    screenshares: Screenshare[];
     connectionStatus: ConnectionStatus;
-};
+    liveStream?: LiveStreamState;
+    waitingParticipants: WaitingParticipantState[];
+}
 
-export type ParticipantsChangedEvent = {
-    remoteParticipants: RemoteParticipant[];
-};
-
-export type ScreenshareStartedEvent = {
-    participantId: string;
-    id: string;
-    hasAudioTrack: boolean;
-    stream: MediaStream;
-    isLocal: boolean;
-};
-
-export type ScreenshareStoppedEvent = {
-    participantId: string;
-    id: string;
-};
-
-export type WaitingParticipantJoinedEvent = {
-    participantId: string;
-    displayName: string | null;
-};
-
-export type WaitingParticipantLeftEvent = {
-    participantId: string;
-};
-
-export type LocalCameraEnabledEvent = {
-    enabled: boolean;
-};
-
-export type LocalMicrophoneEnabledEvent = {
-    enabled: boolean;
-};
+export interface RoomConnectionOptions {
+    displayName?: string; // Might not be needed at all
+    localMediaOptions?: LocalMediaOptions;
+    roomKey?: string;
+    localMedia?: UseLocalMediaResult;
+    externalId?: string;
+}
