@@ -1,5 +1,5 @@
 import * as React from "react";
-import { RoomConnectionOptions, RoomConnectionState } from "./types";
+import { RoomConnectionState, RoomConnectionActions, UseRoomConnectionOptions } from "./types";
 import { Store, createStore, observeStore } from "../../core/redux/store";
 import VideoView from "../VideoView";
 import { createServices } from "../../services";
@@ -17,7 +17,6 @@ import { appLeft, doAppJoin } from "../../core/redux/slices/app";
 import { selectRoomConnectionState } from "./selector";
 import { doKnockRoom } from "../../core/redux/slices/roomConnection";
 import { doRtcReportStreamResolution } from "../../core/redux/slices/rtcConnection";
-import { UseLocalMediaResult } from "../useLocalMedia";
 
 const initialState: RoomConnectionState = {
     chatMessages: [],
@@ -26,24 +25,6 @@ const initialState: RoomConnectionState = {
     screenshares: [],
     waitingParticipants: [],
 };
-
-interface UseRoomConnectionOptions extends Omit<RoomConnectionOptions, "localMedia"> {
-    localMedia?: UseLocalMediaResult;
-}
-
-interface RoomConnectionActions {
-    sendChatMessage(text: string): void;
-    knock(): void;
-    setDisplayName(displayName: string): void;
-    toggleCamera(enabled?: boolean): void;
-    toggleMicrophone(enabled?: boolean): void;
-    acceptWaitingParticipant(participantId: string): void;
-    rejectWaitingParticipant(participantId: string): void;
-    startCloudRecording(): void;
-    startScreenshare(): void;
-    stopCloudRecording(): void;
-    stopScreenshare(): void;
-}
 
 type VideoViewComponentProps = Omit<React.ComponentProps<typeof VideoView>, "onResize">;
 

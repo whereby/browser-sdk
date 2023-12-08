@@ -1,4 +1,3 @@
-import { createSelector } from "@reduxjs/toolkit";
 import { useCallback, useEffect, useState } from "react";
 import {
     doSetCurrentCameraDeviceId,
@@ -7,93 +6,12 @@ import {
     doStopLocalMedia,
     doToggleCameraEnabled,
     doToggleMicrophoneEnabled,
-    LocalMediaOptions,
-    selectCameraDeviceError,
-    selectCameraDevices,
-    selectCurrentCameraDeviceId,
-    selectCurrentMicrophoneDeviceId,
-    selectIsLocalMediaStarting,
-    selectIsSettingCameraDevice,
-    selectIsSettingMicrophoneDevice,
-    selectLocalMediaStartError,
-    selectLocalMediaStream,
-    selectMicrophoneDeviceError,
-    selectMicrophoneDevices,
-    selectSpeakerDevices,
 } from "../../core/redux/slices/localMedia";
+import { LocalMediaState, UseLocalMediaOptions, UseLocalMediaResult } from "./types";
+import { selectLocalMediaState } from "./selector";
 import { createStore, observeStore, Store } from "../../core/redux/store";
 import { createServices } from "../../services";
 
-interface LocalMediaState {
-    currentCameraDeviceId?: string;
-    currentMicrophoneDeviceId?: string;
-    cameraDeviceError: unknown;
-    cameraDevices: MediaDeviceInfo[];
-    isSettingCameraDevice: boolean;
-    isSettingMicrophoneDevice: boolean;
-    isStarting: boolean;
-    localStream?: MediaStream;
-    microphoneDeviceError: unknown;
-    microphoneDevices: MediaDeviceInfo[];
-    speakerDevices: MediaDeviceInfo[];
-    startError: unknown;
-}
-
-interface LocalMediaActions {
-    setCameraDevice: (deviceId: string) => void;
-    setMicrophoneDevice: (deviceId: string) => void;
-    toggleCameraEnabled: (enabled?: boolean) => void;
-    toggleMicrophoneEnabled: (enabled?: boolean) => void;
-}
-
-export type UseLocalMediaResult = { state: LocalMediaState; actions: LocalMediaActions; store: Store };
-
-export type UseLocalMediaOptions = LocalMediaOptions;
-
-const selectLocalMediaState = createSelector(
-    selectCameraDeviceError,
-    selectCameraDevices,
-    selectCurrentCameraDeviceId,
-    selectCurrentMicrophoneDeviceId,
-    selectIsSettingCameraDevice,
-    selectIsSettingMicrophoneDevice,
-    selectIsLocalMediaStarting,
-    selectLocalMediaStream,
-    selectMicrophoneDeviceError,
-    selectMicrophoneDevices,
-    selectSpeakerDevices,
-    selectLocalMediaStartError,
-    (
-        cameraDeviceError,
-        cameraDevices,
-        currentCameraDeviceId,
-        currentMicrophoneDeviceId,
-        isSettingCameraDevice,
-        isSettingMicrophoneDevice,
-        isStarting,
-        localStream,
-        microphoneDeviceError,
-        microphoneDevices,
-        speakerDevices,
-        startError
-    ) => {
-        const state: LocalMediaState = {
-            cameraDeviceError,
-            cameraDevices,
-            currentCameraDeviceId,
-            currentMicrophoneDeviceId,
-            isSettingCameraDevice,
-            isSettingMicrophoneDevice,
-            isStarting,
-            localStream,
-            microphoneDeviceError,
-            microphoneDevices,
-            speakerDevices,
-            startError,
-        };
-        return state;
-    }
-);
 const initialState: LocalMediaState = {
     cameraDeviceError: null,
     cameraDevices: [],

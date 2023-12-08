@@ -1,6 +1,6 @@
 import React from "react";
 import { VideoView } from "../../lib/react";
-import { UseLocalMediaResult } from "../../lib/react/useLocalMedia";
+import { UseLocalMediaResult } from "../../lib/react/useLocalMedia/types";
 
 interface PrecallExperienceProps extends UseLocalMediaResult {
     hideVideoPreview?: boolean;
