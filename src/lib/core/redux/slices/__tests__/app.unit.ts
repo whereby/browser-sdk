@@ -10,6 +10,7 @@ describe("appSlice", () => {
                     roomKey: "roomKey",
                     displayName: "displayName",
                     sdkVersion: "sdkVersion",
+                    externalId: "externalId",
                 })
             );
 
@@ -20,6 +21,7 @@ describe("appSlice", () => {
                 roomKey: "roomKey",
                 displayName: "displayName",
                 sdkVersion: "sdkVersion",
+                externalId: "externalId",
             });
         });
 
