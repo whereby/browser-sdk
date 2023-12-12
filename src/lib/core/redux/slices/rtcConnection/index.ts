@@ -2,7 +2,7 @@ import { createSelector, createSlice, PayloadAction } from "@reduxjs/toolkit";
 import { AppDispatch, RootState } from "../../store";
 import { createAppThunk } from "../../thunk";
 import RtcManager from "@whereby/jslib-media/src/webrtc/RtcManager";
-import { selectSignalConnectionRaw, selectSignalConnectionSocket } from "../signalConnection";
+import { selectSignalConnectionRaw, selectSignalConnectionSocket, socketReconnecting } from "../signalConnection";
 import RtcManagerDispatcher, {
     RtcEvents,
     RtcManagerCreatedPayload,
@@ -123,6 +123,14 @@ export const rtcConnectionSlice = createSlice({
                 rtcManagerInitialized: true,
             };
         },
+    },
+    extraReducers: (builder) => {
+        builder.addCase(socketReconnecting, (state) => {
+            return {
+                ...state,
+                status: "reconnect",
+            };
+        });
     },
 });
 

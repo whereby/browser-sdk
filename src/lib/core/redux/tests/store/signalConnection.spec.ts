@@ -56,7 +56,6 @@ describe("actions", () => {
         expect(mockSignalEmit).toHaveBeenCalledWith("leave_room");
         expect(mockServerSocket.disconnect).toHaveBeenCalled();
         expect(diff(before, after)).toEqual({
-            socket: null,
             status: "disconnected",
         });
     });
@@ -82,6 +81,7 @@ describe("actions", () => {
         expect(mockSignalEmit).toHaveBeenCalledWith("identify_device", { deviceCredentials });
         expect(diff(before, after)).toEqual({
             isIdentifyingDevice: true,
+            status: "reconnect",
         });
     });
 });
