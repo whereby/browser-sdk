@@ -28,6 +28,7 @@ export const signalEvents = {
     clientMetadataReceived: createSignalEventAction<ClientMetadataReceivedEvent>("clientMetadataReceived"),
     cloudRecordingStarted: createSignalEventAction<CloudRecordingStartedEvent>("cloudRecordingStarted"),
     cloudRecordingStopped: createSignalEventAction<void>("cloudRecordingStopped"),
+    disconnect: createSignalEventAction<void>("disconnect"),
     knockerLeft: createSignalEventAction<KnockerLeftEvent>("knockerLeft"),
     knockHandled: createSignalEventAction<KnockAcceptedEvent | KnockRejectedEvent>("knockHandled"),
     newClient: createSignalEventAction<NewClientEvent>("newClient"),

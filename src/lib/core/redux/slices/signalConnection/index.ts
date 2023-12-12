@@ -17,6 +17,7 @@ function forwardSocketEvents(socket: ServerSocket, dispatch: ThunkDispatch<RootS
     socket.on("video_enabled", (payload) => dispatch(signalEvents.videoEnabled(payload)));
     socket.on("client_metadata_received", (payload) => dispatch(signalEvents.clientMetadataReceived(payload)));
     socket.on("chat_message", (payload) => dispatch(signalEvents.chatMessage(payload)));
+    socket.on("disconnect", () => dispatch(signalEvents.disconnect()));
     socket.on("room_knocked", (payload) => dispatch(signalEvents.roomKnocked(payload)));
     socket.on("knocker_left", (payload) => dispatch(signalEvents.knockerLeft(payload)));
     socket.on("knock_handled", (payload) => dispatch(signalEvents.knockHandled(payload)));
@@ -77,8 +78,13 @@ export const signalConnectionSlice = createSlice({
         socketDisconnected: (state) => {
             return {
                 ...state,
-                socket: null,
                 status: "disconnected",
+            };
+        },
+        socketReconnecting: (state) => {
+            return {
+                ...state,
+                status: "reconnect",
             };
         },
         deviceIdentifying: (state) => {
@@ -115,7 +121,6 @@ export const doSignalSocketConnect = createAppThunk(() => {
 
         socket.on("connect", () => dispatch(socketConnected(socket)));
         socket.on("device_identified", () => dispatch(deviceIdentified()));
-        socket.on("disconnect", () => dispatch(doSignalDisconnect()));
         socket.getManager().on("reconnect", () => dispatch(doSignalReconnect()));
         forwardSocketEvents(socket, dispatch);
 
@@ -147,10 +152,13 @@ export const doSignalDisconnect = createAppThunk(() => (dispatch, getState) => {
 
 export const doSignalReconnect = createAppThunk(() => (dispatch, getState) => {
     const deviceCredentialsRaw = selectDeviceCredentialsRaw(getState());
+    dispatch(socketReconnecting());
     if (deviceCredentialsRaw.data) {
         dispatch(doSignalIdentifyDevice({ deviceCredentials: deviceCredentialsRaw.data }));
     }
 });
+
+export const { socketReconnecting } = signalConnectionSlice.actions;
 
 /**
  * Selectors
@@ -175,7 +183,7 @@ export const selectShouldConnectSignal = createSelector(
     selectAppWantsToJoin,
     selectSignalStatus,
     (wantsToJoin, signalStatus) => {
-        if (wantsToJoin && signalStatus === "") {
+        if (wantsToJoin && ["", "reconnect"].includes(signalStatus)) {
             return true;
         }
         return false;
