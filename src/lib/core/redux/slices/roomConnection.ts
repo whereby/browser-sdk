@@ -14,7 +14,11 @@ import {
 
 import { selectOrganizationId } from "./organization";
 import { signalEvents } from "./signalConnection/actions";
-import { selectSignalConnectionDeviceIdentified, selectSignalConnectionRaw } from "./signalConnection";
+import {
+    selectSignalConnectionDeviceIdentified,
+    selectSignalConnectionRaw,
+    socketReconnecting,
+} from "./signalConnection";
 import { selectIsCameraEnabled, selectIsMicrophoneEnabled, selectLocalMediaStatus } from "./localMedia";
 import { selectSelfId } from "./localParticipant";
 
@@ -22,6 +26,7 @@ export type ConnectionStatus =
     | "initializing"
     | "connecting"
     | "connected"
+    | "reconnect"
     | "room_locked"
     | "knocking"
     | "disconnecting"
@@ -67,6 +72,12 @@ export const roomConnectionSlice = createSlice({
             return {
                 ...state,
                 status: "connected",
+            };
+        });
+        builder.addCase(socketReconnecting, (state) => {
+            return {
+                ...state,
+                status: "reconnect",
             };
         });
     },
@@ -121,6 +132,7 @@ export const doConnectRoom = createAppThunk(() => (dispatch, getState) => {
     const organizationId = selectOrganizationId(state);
     const isCameraEnabled = selectIsCameraEnabled(getState());
     const isMicrophoneEnabled = selectIsMicrophoneEnabled(getState());
+    const selfId = selectSelfId(getState());
 
     socket?.emit("join_room", {
         avatarUrl: null,
@@ -136,7 +148,7 @@ export const doConnectRoom = createAppThunk(() => (dispatch, getState) => {
         organizationId,
         roomKey,
         roomName,
-        selfId: "",
+        selfId,
         userAgent: `browser-sdk:${sdkVersion || "unknown"}`,
         externalId,
     });
@@ -162,7 +174,7 @@ export const selectShouldConnectRoom = createSelector(
             localMediaStatus === "started" &&
             signalConnectionDeviceIdentified &&
             !!hasOrganizationIdFetched &&
-            roomConnectionStatus === "initializing"
+            ["initializing", "reconnect"].includes(roomConnectionStatus)
         ) {
             return true;
         }
