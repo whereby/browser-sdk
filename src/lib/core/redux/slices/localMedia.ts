@@ -53,7 +53,7 @@ export const localMediaSlice = createSlice({
             state.currentCameraDeviceId = action.payload.deviceId;
         },
         doToggleMicrophoneEnabled(state, action: PayloadAction<{ enabled?: boolean }>) {
-            state.microphoneEnabled = action.payload.enabled ?? !state.cameraEnabled;
+            state.microphoneEnabled = action.payload.enabled ?? !state.microphoneEnabled;
         },
         doSetCurrentMicrophoneDeviceId(state, action: PayloadAction<{ deviceId?: string }>) {
             state.currentMicrophoneDeviceId = action.payload.deviceId;
