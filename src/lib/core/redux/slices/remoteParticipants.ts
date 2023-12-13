@@ -76,8 +76,8 @@ function updateStreamState(
         return state;
     }
 
+    const idIdx = participant.streams.findIndex((s) => s.id === streamId);
     const streams = [...participant.streams];
-    const idIdx = streams.findIndex((s) => s.id === streamId);
     streams[idIdx] = { ...streams[idIdx], state: state_ };
 
     return updateParticipant(state, participantId, { streams });
@@ -178,9 +178,9 @@ export const remoteParticipantsSlice = createSlice({
         streamStatusUpdated: (state, action: PayloadAction<StreamStatusUpdate[]>) => {
             let newState = state;
 
-            action.payload.forEach((update) => {
-                newState = updateStreamState(newState, update.clientId, update.streamId, update.state);
-            });
+            for (const { clientId, streamId, state } of action.payload) {
+                newState = updateStreamState(newState, clientId, streamId, state);
+            }
 
             return newState;
         },

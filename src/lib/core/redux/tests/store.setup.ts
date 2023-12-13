@@ -93,6 +93,7 @@ export function createStore({ initialState, withSignalConnection, withRtcManager
             rtcManagerDispatcher: createRtcDispatcher({ emitter: mockRtcEmitter }),
             rtcManagerInitialized: true,
             rtcManager: mockRtcManager,
+            isAcceptingStreams: false,
         };
     }
 

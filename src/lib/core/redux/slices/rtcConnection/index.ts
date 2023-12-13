@@ -23,6 +23,7 @@ import {
 } from "../localMedia";
 import { rtcEvents } from "./actions";
 import { StreamStatusUpdate } from "./types";
+import { signalEvents } from "../signalConnection/actions";
 
 export const createWebRtcEmitter = (dispatch: AppDispatch) => {
     return {
@@ -61,6 +62,7 @@ export interface RtcConnectionState {
     rtcManagerDispatcher: RtcManagerDispatcher | null;
     rtcManagerInitialized: boolean;
     status: "" | "ready" | "reconnect";
+    isAcceptingStreams: boolean;
 }
 
 const initialState: RtcConnectionState = {
@@ -72,12 +74,19 @@ const initialState: RtcConnectionState = {
     rtcManagerDispatcher: null,
     rtcManagerInitialized: false,
     status: "",
+    isAcceptingStreams: false,
 };
 
 export const rtcConnectionSlice = createSlice({
     name: "rtcConnection",
     initialState,
     reducers: {
+        isAcceptingStreams: (state, action: PayloadAction<boolean>) => {
+            return {
+                ...state,
+                isAcceptingStreams: action.payload,
+            };
+        },
         resolutionReported: (state, action: PayloadAction<StreamResolutionUpdate>) => {
             const { streamId, width, height } = action.payload;
 
@@ -111,10 +120,7 @@ export const rtcConnectionSlice = createSlice({
         rtcManagerDestroyed: (state) => {
             return {
                 ...state,
-                dispatcherCreated: false,
-                rtcManagerDispatcher: null,
                 rtcManager: null,
-                rtcManagerInitialized: false,
             };
         },
         rtcManagerInitialized: (state) => {
@@ -131,6 +137,12 @@ export const rtcConnectionSlice = createSlice({
                 status: "reconnect",
             };
         });
+        builder.addCase(signalEvents.roomJoined, (state) => {
+            return {
+                ...state,
+                status: state.status === "reconnect" ? "ready" : state.status,
+            };
+        });
     },
 });
 
@@ -145,6 +157,7 @@ export const {
     rtcManagerCreated,
     rtcManagerDestroyed,
     rtcManagerInitialized,
+    isAcceptingStreams,
 } = rtcConnectionSlice.actions;
 
 export const doConnectRtc = createAppThunk(() => (dispatch, getState) => {
@@ -196,6 +209,7 @@ export const doDisconnectRtc = createAppThunk(() => (dispatch, getState) => {
 });
 
 export const doHandleAcceptStreams = createAppThunk((payload: StreamStatusUpdate[]) => (dispatch, getState) => {
+    dispatch(isAcceptingStreams(true));
     const state = getState();
     const rtcManager = selectRtcConnectionRaw(state).rtcManager;
     const remoteParticipants = selectRemoteParticipants(state);
@@ -238,6 +252,7 @@ export const doHandleAcceptStreams = createAppThunk((payload: StreamStatusUpdate
     }
 
     dispatch(streamStatusUpdated(updates));
+    dispatch(isAcceptingStreams(false));
 });
 
 export const doRtcReportStreamResolution = createAppThunk(
@@ -287,6 +302,7 @@ export const selectRtcManager = (state: RootState) => state.rtcConnection.rtcMan
 export const selectRtcDispatcherCreated = (state: RootState) => state.rtcConnection.dispatcherCreated;
 export const selectRtcIsCreatingDispatcher = (state: RootState) => state.rtcConnection.isCreatingDispatcher;
 export const selectRtcStatus = (state: RootState) => state.rtcConnection.status;
+export const selectIsAcceptingStreams = (state: RootState) => state.rtcConnection.isAcceptingStreams;
 
 /**
  * Reactors
@@ -421,8 +437,11 @@ export const selectStreamsToAccept = createSelector(
     }
 );
 
-createReactor([selectStreamsToAccept], ({ dispatch }, streamsToAccept) => {
-    if (0 < streamsToAccept.length) {
-        dispatch(doHandleAcceptStreams(streamsToAccept));
+createReactor(
+    [selectStreamsToAccept, selectIsAcceptingStreams],
+    ({ dispatch }, streamsToAccept, isAcceptingStreams) => {
+        if (0 < streamsToAccept.length && !isAcceptingStreams) {
+            dispatch(doHandleAcceptStreams(streamsToAccept));
+        }
     }
-});
+);
