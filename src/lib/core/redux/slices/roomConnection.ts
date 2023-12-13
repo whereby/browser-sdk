@@ -132,6 +132,7 @@ export const doConnectRoom = createAppThunk(() => (dispatch, getState) => {
     const organizationId = selectOrganizationId(state);
     const isCameraEnabled = selectIsCameraEnabled(getState());
     const isMicrophoneEnabled = selectIsMicrophoneEnabled(getState());
+    const selfId = selectSelfId(getState());
 
     socket?.emit("join_room", {
         avatarUrl: null,
@@ -147,7 +148,7 @@ export const doConnectRoom = createAppThunk(() => (dispatch, getState) => {
         organizationId,
         roomKey,
         roomName,
-        selfId: "",
+        selfId,
         userAgent: `browser-sdk:${sdkVersion || "unknown"}`,
         externalId,
     });

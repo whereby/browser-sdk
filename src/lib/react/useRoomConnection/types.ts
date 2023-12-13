@@ -24,6 +24,7 @@ export type ConnectionStatus =
     | "initializing"
     | "connecting"
     | "connected"
+    | "reconnect"
     | "room_locked"
     | "knocking"
     | "disconnecting"
