@@ -86,6 +86,7 @@ declare module "@whereby/jslib-media/src/webrtc/RtcManager" {
         removeStream(streamId: string, _stream: MediaStream, requestedByClientId: string | null): void;
         shouldAcceptStreamsFromBothSides?: () => boolean;
         updateStreamResolution(streamId: string, ignored: null, resolution: { width: number; height: number }): void;
+        sendStatsCustomEvent(eventName: string, data: unknown): void;
     }
 }
 
