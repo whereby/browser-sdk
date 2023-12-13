@@ -13,6 +13,8 @@ export default function VideoExperience({
     localMedia?: UseLocalMediaResult;
 }) {
     const [chatMessage, setChatMessage] = useState("");
+    const [isLocalScreenshareActive, setIsLocalScreenshareActive] = useState(false);
+
     const { state, actions, components } = useRoomConnection(roomName, {
         displayName,
         localMediaOptions: {
@@ -31,6 +33,8 @@ export default function VideoExperience({
         toggleMicrophone,
         acceptWaitingParticipant,
         rejectWaitingParticipant,
+        startScreenshare,
+        stopScreenshare,
     } = actions;
     const { VideoView } = components;
 
@@ -115,6 +119,18 @@ export default function VideoExperience({
                     <div className="controls">
                         <button onClick={() => toggleCamera()}>Toggle camera</button>
                         <button onClick={() => toggleMicrophone()}>Toggle microphone</button>
+                        <button
+                            onClick={() => {
+                                if (isLocalScreenshareActive) {
+                                    stopScreenshare();
+                                } else {
+                                    startScreenshare();
+                                }
+                                setIsLocalScreenshareActive((prev) => !prev);
+                            }}
+                        >
+                            Toggle screenshare
+                        </button>
                         <DisplayNameForm initialDisplayName={displayName} onSetDisplayName={setDisplayName} />
                     </div>
                 </>
