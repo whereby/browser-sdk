@@ -10,6 +10,11 @@ export type Box = {
     right: number;
 };
 
+export type Origin = {
+    top: number;
+    left: number;
+};
+
 export function makeOrigin({ top = 0, left = 0 } = {}) {
     return {
         top,
@@ -17,12 +22,22 @@ export function makeOrigin({ top = 0, left = 0 } = {}) {
     };
 }
 
+export type Bounds = {
+    width: number;
+    height: number;
+};
+
 export function makeBounds({ width = 0, height = 0 } = {}) {
     return {
         width: Math.max(width, 0),
         height: Math.max(height, 0),
     };
 }
+
+export type Frame = {
+    origin: Origin;
+    bounds: Bounds;
+};
 
 export function makeFrame({ top = 0, left = 0, width = 0, height = 0 } = {}) {
     return {

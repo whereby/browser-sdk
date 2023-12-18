@@ -6,7 +6,7 @@ import * as centerGrid from "../centerGridLayout";
 // import * as groupsGrid from "./GroupsPreview/groupsGridLayout";
 // import * as groupsTable from "./GroupsPreview/groupsTableLayout";
 
-import { makeOrigin, makeBounds, makeFrame, insetBounds, makeBox } from "../layoutHelpers";
+import { makeOrigin, makeBounds, makeFrame, insetBounds, makeBox, Frame } from "../layoutHelpers";
 import { type Box } from "../layoutHelpers";
 import layoutConstants from "../layoutConstants";
 
@@ -925,7 +925,7 @@ interface CalculateLayoutOptions {
     breakoutGroupedClients?: [];
     breakoutStagePaddings?: Box;
     floatingVideo?: any;
-    frame: any;
+    frame: Frame;
     gridGap: number;
     isConstrained: boolean;
     isMaximizeMode?: boolean;
@@ -946,7 +946,7 @@ export function calculateLayout({
     breakoutActive = false,
     breakoutGroupedClients = [],
     breakoutStagePaddings = makeBox(),
-    floatingVideo,
+    floatingVideo = null,
     frame,
     gridGap = 0,
     isConstrained = false,
