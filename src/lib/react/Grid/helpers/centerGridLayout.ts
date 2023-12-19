@@ -7,15 +7,17 @@ const NORMAL_AR = 4 / 3;
 
 const clamp = ({ value, min, max }: { value: number; min: number; max: number }) => Math.min(Math.max(value, min), max);
 
-const hasDuplicates = (arr: unknown[]) => new Set(arr).size !== arr.length;
+function hasDuplicates<T>(...array: T[]) {
+    return new Set(array).size !== array.length;
+}
 
-const findMostCommon = (arr: unknown[]) => {
+function findMostCommon<T>(arr: T[]) {
     return arr.sort((a, b) => arr.filter((v) => v === a).length - arr.filter((v) => v === b).length).pop();
-};
+}
 
 // Grid cells are all the same aspect ratio (not to be confused with the video cells)
 // Pick the best ratio given a list of the video cell ratios:
-export function pickCellAspectRatio({ choices = [] }) {
+export function pickCellAspectRatio({ choices = [] }: { choices: number[] }) {
     // If all cells are the same aspect ratio use that:
     const minAr = Math.min(...choices);
     const maxAr = Math.max(...choices);
@@ -28,7 +30,7 @@ export function pickCellAspectRatio({ choices = [] }) {
         // ratio but limit it to wide cells. If we don't have a majority choice
         // just go with the widest:
         const dominantAr = hasDuplicates(choices) ? findMostCommon(choices) : maxAr;
-        chosenAr = clamp({ value: dominantAr, min: NORMAL_AR, max: WIDE_AR });
+        chosenAr = clamp({ value: dominantAr || maxAr, min: NORMAL_AR, max: WIDE_AR });
     }
     return {
         minAr,
