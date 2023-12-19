@@ -1,8 +1,8 @@
 import * as React from "react";
 import { RemoteParticipant } from "..";
-import { calculateLayout } from "./VideoStageLayout/stageLayout";
-import { makeBounds, makeFrame } from "./layoutHelpers";
-import { makeVideoCellView } from "./cellViewHelpers";
+import { calculateLayout } from "./helpers/stageLayout";
+import { makeBounds, makeFrame } from "./helpers/layoutHelpers";
+import { makeVideoCellView } from "./helpers/cellView";
 import debounce from "../../../lib/utils/debounce";
 
 interface GridProps {
@@ -54,7 +54,7 @@ function Grid({ remoteParticipants }: GridProps) {
                         });
                     });
                 },
-                { delay: 1000, edges: true }
+                { delay: 60 }
             )
         );
         resizeObserver.observe(gridRef.current);

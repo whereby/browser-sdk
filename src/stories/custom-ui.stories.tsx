@@ -182,7 +182,7 @@ export const GridStory = ({ roomUrl }: { roomUrl: string; displayName?: string }
     const roomConnection = useRoomConnection(roomUrl, { localMediaOptions: { audio: false, video: false } });
 
     return (
-        <div style={{ height: "400px" }}>
+        <div style={{ height: "100vh" }}>
             <VideoGrid remoteParticipants={roomConnection.state.remoteParticipants} />
         </div>
     );
