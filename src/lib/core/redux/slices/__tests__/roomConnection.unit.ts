@@ -60,7 +60,8 @@ describe("roomConnectionSlice", () => {
                             organizationId,
                             roomConnectionStatus,
                             signalIdentified,
-                            localMediaStatus
+                            localMediaStatus,
+                            true
                         )
                     ).toEqual(expected);
                 }

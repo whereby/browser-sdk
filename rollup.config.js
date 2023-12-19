@@ -65,6 +65,24 @@ const plugins = [
 ];
 
 module.exports = [
+    {
+        input: "src/lib/core/index.ts",
+        output: {
+            exports: "named",
+            file: "dist/core/index.js",
+            format: "cjs",
+        },
+        plugins: [
+            nodeResolve({
+                browser: false,
+                preferBuiltins: true,
+            }),
+            commonjs(),
+            json(),
+            replace(replaceValues),
+            typescript(),
+        ],
+    },
     // Esm build of lib, to be used with bundlers
     {
         input: "src/lib/react/index.ts",
@@ -96,7 +114,6 @@ module.exports = [
         external: ["heresy", ...peerDependencies],
         plugins,
     },
-
     // CDN builds
     {
         input: "src/lib/embed/index.ts",
@@ -136,6 +153,12 @@ module.exports = [
     },
 
     // Type definitions
+    {
+        input: "src/lib/core/index.ts",
+        output: [{ file: "dist/core/index.d.ts", format: "es" }],
+        external: ["@whereby/jslib-media/src/webrtc/RtcManager"],
+        plugins: [dts()],
+    },
     {
         input: "src/lib/react/index.ts",
         output: [{ file: "dist/react/index.d.ts", format: "es" }],

@@ -18,7 +18,8 @@ describe("localMediaSlice", () => {
                         selectLocalMediaShouldStartWithOptions.resultFunc(
                             appWantsToJoin,
                             localMediaStatus,
-                            localMediaOptions
+                            localMediaOptions,
+                            false
                         )
                     ).toEqual(expected);
                 }

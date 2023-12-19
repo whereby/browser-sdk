@@ -11,6 +11,10 @@
     "browserslist": "> 0.5%, last 2 versions, not dead",
     "source": "src/index.js",
     "exports": {
+        "./core": {
+            "import": "./dist/core/index.js",
+            "types": "./dist/core/index.d.ts"
+        },
         "./react": {
             "import": "./dist/react/index.esm.js",
             "types": "./dist/react/index.d.ts"
@@ -26,6 +30,9 @@
     },
     "typesVersions": {
         "*": {
+            "core": [
+                "dist/core/index.d.ts"
+            ],
             "react": [
                 "dist/react/index.d.ts"
             ],

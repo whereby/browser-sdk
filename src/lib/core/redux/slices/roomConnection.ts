@@ -10,6 +10,7 @@ import {
     selectAppSdkVersion,
     selectAppExternalId,
     setRoomKey,
+    selectAppIsLocalMediaDisabled,
 } from "./app";
 
 import { selectOrganizationId } from "./organization";
@@ -189,10 +190,22 @@ export const selectRoomConnectionStatus = (state: RootState) => state.roomConnec
  */
 
 export const selectShouldConnectRoom = createSelector(
-    [selectOrganizationId, selectRoomConnectionStatus, selectSignalConnectionDeviceIdentified, selectLocalMediaStatus],
-    (hasOrganizationIdFetched, roomConnectionStatus, signalConnectionDeviceIdentified, localMediaStatus) => {
+    [
+        selectOrganizationId,
+        selectRoomConnectionStatus,
+        selectSignalConnectionDeviceIdentified,
+        selectLocalMediaStatus,
+        selectAppIsLocalMediaDisabled,
+    ],
+    (
+        hasOrganizationIdFetched,
+        roomConnectionStatus,
+        signalConnectionDeviceIdentified,
+        localMediaStatus,
+        isLocalMediaDisabled
+    ) => {
         if (
-            localMediaStatus === "started" &&
+            (localMediaStatus === "started" || isLocalMediaDisabled) &&
             signalConnectionDeviceIdentified &&
             !!hasOrganizationIdFetched &&
             ["initializing", "reconnect"].includes(roomConnectionStatus)
