@@ -1,7 +1,7 @@
 import * as React from "react";
 import { RemoteParticipant } from "..";
 import { calculateLayout } from "./helpers/stageLayout";
-import { makeBounds, makeFrame } from "./helpers/layoutHelpers";
+import { makeBounds, makeFrame } from "./helpers/layout";
 import { makeVideoCellView } from "./helpers/cellView";
 import debounce from "../../../lib/utils/debounce";
 
