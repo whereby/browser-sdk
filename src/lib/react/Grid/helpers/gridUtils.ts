@@ -1,4 +1,4 @@
-import { makeFrame } from "./layoutHelpers";
+import { makeFrame } from "./layout";
 
 export function fitToBounds(aspectRatio: number, containerSize: { width: number; height: number }) {
     const { width, height } = containerSize;

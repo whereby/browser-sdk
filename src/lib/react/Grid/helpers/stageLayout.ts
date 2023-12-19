@@ -1,14 +1,14 @@
-import { fitToBounds } from "../gridUtils";
+import { fitToBounds } from "./gridUtils";
 
-import * as centerGrid from "../centerGridLayout";
+import * as centerGrid from "./centerGridLayout";
 // import * as constrainedGrid from "./VideoGrid/constrainedGridLayout";
 // import * as subgrid from "./VideoGrid/subgridLayout";
 // import * as groupsGrid from "./GroupsPreview/groupsGridLayout";
 // import * as groupsTable from "./GroupsPreview/groupsTableLayout";
 
-import { makeOrigin, makeBounds, makeFrame, insetBounds, makeBox, Frame } from "../layoutHelpers";
-import { type Box } from "../layoutHelpers";
-import layoutConstants from "../layoutConstants";
+import { makeOrigin, makeBounds, makeFrame, insetBounds, makeBox, Frame } from "./layout";
+import { type Box } from "./layout";
+import layoutConstants from "./layoutConstants";
 
 const { BOTTOM_TOOLBAR_HEIGHT, VIDEO_CONTROLS_MIN_WIDTH, SUBGRID_EMPTY_STAGE_MAX_WIDTH, TABLET_BREAKPOINT } =
     layoutConstants;
