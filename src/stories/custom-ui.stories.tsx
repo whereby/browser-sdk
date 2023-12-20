@@ -183,7 +183,42 @@ export const GridStory = ({ roomUrl }: { roomUrl: string; displayName?: string }
 
     return (
         <div style={{ height: "100vh" }}>
-            <VideoGrid remoteParticipants={roomConnection.state.remoteParticipants} />
+            <VideoGrid roomConnection={roomConnection} />
+        </div>
+    );
+};
+
+export const GridWithCustomVideosStory = ({ roomUrl }: { roomUrl: string; displayName?: string }) => {
+    if (!roomUrl || !roomUrl.match(roomRegEx)) {
+        return <p>Set room url on the Controls panel</p>;
+    }
+
+    const roomConnection = useRoomConnection(roomUrl, { localMediaOptions: { audio: false, video: false } });
+
+    return (
+        <div style={{ height: "100vh" }}>
+            <VideoGrid
+                roomConnection={roomConnection}
+                renderParticipant={({ participant }) => {
+                    if (!participant.stream) return null;
+
+                    return (
+                        <div
+                            style={{ display: "flex", alignItems: "center", justifyContent: "center", height: "100%" }}
+                        >
+                            <VideoView
+                                style={{
+                                    borderRadius: "100%",
+                                    objectFit: "cover",
+                                    width: "60%",
+                                    border: "10px striped red",
+                                }}
+                                stream={participant.stream}
+                            />
+                        </div>
+                    );
+                }}
+            />
         </div>
     );
 };

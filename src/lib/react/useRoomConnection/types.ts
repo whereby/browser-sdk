@@ -3,6 +3,8 @@ import { LocalParticipant, RemoteParticipant, Screenshare } from "../../RoomPart
 import { ChatMessage as SignalChatMessage } from "@whereby/jslib-media/src/utils/ServerSocket";
 import { LocalMediaOptions } from "../../core/redux/slices/localMedia";
 import { UseLocalMediaResult } from "../useLocalMedia/types";
+import { Store } from "../../../lib/core/redux/store";
+import VideoView from "../VideoView";
 
 export type RemoteParticipantState = Omit<RemoteParticipant, "newJoiner" | "streams">;
 export type LocalParticipantState = LocalParticipant;
@@ -79,3 +81,16 @@ export interface RoomConnectionActions {
     stopCloudRecording(): void;
     stopScreenshare(): void;
 }
+
+export type VideoViewComponentProps = Omit<React.ComponentProps<typeof VideoView>, "onResize">;
+
+interface RoomConnectionComponents {
+    VideoView: (props: VideoViewComponentProps) => ReturnType<typeof VideoView>;
+}
+
+export type RoomConnectionRef = {
+    state: RoomConnectionState;
+    actions: RoomConnectionActions;
+    components: RoomConnectionComponents;
+    _ref: Store;
+};

@@ -1,15 +1,49 @@
 import * as React from "react";
-import { RemoteParticipant } from "..";
+import { RemoteParticipant, VideoView } from "..";
 import { calculateLayout } from "./helpers/stageLayout";
 import { makeBounds, makeFrame } from "./helpers/layout";
 import { makeVideoCellView } from "./helpers/cellView";
 import debounce from "../../../lib/utils/debounce";
+import { RoomConnectionRef } from "../useRoomConnection/types";
 
-interface GridProps {
-    remoteParticipants: RemoteParticipant[];
+function GridVideoCellView({
+    cell,
+    participant,
+    render,
+}: {
+    cell: { clientId: string; bounds: { width: number; height: number }; origin: { top: number; left: number } };
+    participant: RemoteParticipant;
+    render?: () => React.ReactNode;
+}) {
+    return (
+        <div
+            style={{
+                position: "absolute",
+                width: cell.bounds.width,
+                height: cell.bounds.height,
+                boxSizing: "border-box",
+                top: cell.origin.top,
+                left: cell.origin.left,
+            }}
+        >
+            {render ? render() : participant.stream ? <VideoView style={{}} stream={participant.stream} /> : null}
+        </div>
+    );
 }
 
-function Grid({ remoteParticipants }: GridProps) {
+interface GridProps {
+    roomConnection: RoomConnectionRef;
+    renderParticipant?: ({
+        cell,
+        participant,
+    }: {
+        cell: { clientId: string; bounds: { width: number; height: number }; origin: { top: number; left: number } };
+        participant: RemoteParticipant;
+    }) => React.ReactNode;
+}
+
+function Grid({ roomConnection, renderParticipant }: GridProps) {
+    const { remoteParticipants } = roomConnection.state;
     const gridRef = React.useRef<HTMLDivElement>(null);
     const [videos, setVideos] = React.useState<ReturnType<typeof makeVideoCellView>[]>([]);
     const [stageLayout, setStageLayout] = React.useState<ReturnType<typeof calculateLayout> | null>(null);
@@ -18,13 +52,10 @@ function Grid({ remoteParticipants }: GridProps) {
         setVideos(
             remoteParticipants.map((participant) =>
                 makeVideoCellView({
-                    aspectRatio: 1,
+                    aspectRatio: 16 / 9,
                     avatarSize: 0,
                     cellPaddings: 10,
                     client: participant,
-                    isDraggable: false,
-                    isPlaceholder: false,
-                    isSubgrid: false,
                 })
             )
         );
@@ -44,7 +75,7 @@ function Grid({ remoteParticipants }: GridProps) {
                                 width: gridRef.current?.clientWidth,
                                 height: gridRef.current?.clientHeight,
                             }),
-                            gridGap: 10,
+                            gridGap: 0,
                             isConstrained: false,
                             roomBounds: makeBounds({
                                 width: gridRef.current?.clientWidth,
@@ -70,32 +101,20 @@ function Grid({ remoteParticipants }: GridProps) {
             style={{
                 width: "100%",
                 height: "100%",
-                backgroundColor: "blue",
                 position: "relative",
             }}
         >
-            {videos.map((_, i) => {
+            {remoteParticipants.map((participant, i) => {
                 const cell = stageLayout?.videoGrid.cells[i];
 
-                if (!stageLayout || !cell) return null;
+                if (!cell) return null;
 
-                const origin = {
-                    top: stageLayout.videoGrid.origin.top + stageLayout.videoGrid.paddings.top + cell.origin.top,
-                    left: stageLayout.videoGrid.origin.left + stageLayout.videoGrid.paddings.left + cell.origin.left,
-                };
                 return (
-                    <div
+                    <GridVideoCellView
                         key={cell.clientId}
-                        style={{
-                            backgroundColor: "red",
-                            width: cell.bounds.width,
-                            height: cell.bounds.height,
-                            border: "1px solid black",
-                            boxSizing: "border-box",
-                            position: "absolute",
-                            top: origin.top,
-                            left: origin.left,
-                        }}
+                        cell={cell}
+                        participant={participant}
+                        render={renderParticipant ? () => renderParticipant({ cell, participant }) : undefined}
                     />
                 );
             })}
