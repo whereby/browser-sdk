@@ -309,24 +309,23 @@ export const selectIsAcceptingStreams = (state: RootState) => state.rtcConnectio
  */
 startAppListening({
     predicate: (_action) => {
-        return (
-            Object.entries(rtcAnalyticsCustomEvents)
-                // eslint-disable-next-line @typescript-eslint/no-unused-vars
-                .map(([_, value]) => value.actionType)
-                .includes(_action.type)
-        );
+        const rtcCustomEventActions = Object.values(rtcAnalyticsCustomEvents).map(({ actionType }) => actionType);
+
+        const isRtcEvent = rtcCustomEventActions.includes(_action.type);
+
+        return isRtcEvent;
     },
     effect: ({ type }, { getState }) => {
         const state: RootState = getState();
         const rtcManager = selectRtcConnectionRaw(state).rtcManager;
 
-        const rtcCustomEvent = Object.entries(rtcAnalyticsCustomEvents).find(([_, value]) => value.actionType === type);
+        const rtcCustomEvent = Object.values(rtcAnalyticsCustomEvents).find(({ actionType }) => actionType === type);
 
         if (!rtcCustomEvent) {
             throw new Error("No rtc custom event");
         }
 
-        const { getValue, getOutput, rtcEventName } = rtcCustomEvent[1];
+        const { getValue, getOutput, rtcEventName } = rtcCustomEvent;
         const value = getValue(state);
         const output = { ...(getOutput(value) as Record<string, unknown>), _time: Date.now() };
 
