@@ -21,7 +21,7 @@ import {
     doStartScreenshare,
     stopScreenshare,
 } from "../localMedia";
-import { rtcEvents } from "./actions";
+import { rtcAnalyticsCustomEvents, rtcEvents } from "./actions";
 import { StreamStatusUpdate } from "./types";
 import { signalEvents } from "../signalConnection/actions";
 
@@ -307,6 +307,36 @@ export const selectIsAcceptingStreams = (state: RootState) => state.rtcConnectio
 /**
  * Reactors
  */
+startAppListening({
+    predicate: (_action) => {
+        const rtcCustomEventActions = Object.values(rtcAnalyticsCustomEvents).map(({ actionType }) => actionType);
+
+        const isRtcEvent = rtcCustomEventActions.includes(_action.type);
+
+        return isRtcEvent;
+    },
+    effect: ({ type }, { getState }) => {
+        const state: RootState = getState();
+        const rtcManager = selectRtcConnectionRaw(state).rtcManager;
+
+        const rtcCustomEvent = Object.values(rtcAnalyticsCustomEvents).find(({ actionType }) => actionType === type);
+
+        if (!rtcCustomEvent) {
+            throw new Error("No rtc custom event");
+        }
+
+        const { getValue, getOutput, rtcEventName } = rtcCustomEvent;
+        const value = getValue(state);
+        const output = { ...(getOutput(value) as Record<string, unknown>), _time: Date.now() };
+
+        if (!rtcManager) {
+            throw new Error("No rtc manager");
+        }
+
+        rtcManager.sendStatsCustomEvent(rtcEventName, output);
+    },
+});
+
 startAppListening({
     actionCreator: reactSetDevice.fulfilled,
     effect: ({ payload }, { getState }) => {
