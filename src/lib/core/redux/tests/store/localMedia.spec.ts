@@ -90,6 +90,7 @@ describe("actions", () => {
                         status: "started",
                         stream: newStream,
                         devices: expect.any(Object),
+                        options: { audio: true, video: true },
                     });
                 });
             });
