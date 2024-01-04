@@ -296,6 +296,12 @@ export const doSetDevice = createAppAsyncThunk(
                 { replaceStream: stream }
             );
 
+            const isAudioEnabled = selectIsMicrophoneEnabled(state);
+            stream.getAudioTracks().forEach((track) => (track.enabled = isAudioEnabled));
+
+            const isVideoEnabled = selectIsCameraEnabled(state);
+            stream.getVideoTracks().forEach((track) => (track.enabled = isVideoEnabled));
+
             return { replacedTracks };
         } catch (error) {
             return rejectWithValue(error);
