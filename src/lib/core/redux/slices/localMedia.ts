@@ -322,6 +322,8 @@ export const doStartLocalMedia = createAppAsyncThunk(
 
         if (!(payload.audio || payload.video)) {
             return { stream: new MediaStream() };
+        } else {
+            dispatch(doSetLocalMediaOptions({ options: payload }));
         }
 
         try {
