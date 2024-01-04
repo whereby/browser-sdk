@@ -292,6 +292,41 @@ export const doRtcManagerInitialize = createAppThunk(() => (dispatch, getState) 
     dispatch(rtcManagerInitialized());
 });
 
+const makeComparable = (value: any) => {
+    if (typeof value === "object") return JSON.stringify(value);
+
+    return value;
+};
+
+const reportedRtcCustomEventValues: { [key: string]: any } = {};
+
+export const doRtcAnalyticsCustomEventsInitailize = createAppThunk(() => (dispatch, getState) => {
+    console.log("trace - doRtcAnalyticsCustomEventsInitailize");
+
+    const state = getState();
+    const rtcManager = selectRtcConnectionRaw(state).rtcManager;
+
+    if (!rtcManager) return;
+
+    Object.values(rtcAnalyticsCustomEvents).forEach(({ rtcEventName, getValue, getOutput }) => {
+        const value = getValue(state);
+        const output = { ...(getOutput(value) as Record<string, unknown>), _time: Date.now() };
+
+        console.log(rtcEventName + " value: ", value);
+
+        const comparableValue = makeComparable(value);
+        console.log(rtcEventName + " comparable value: ", comparableValue);
+
+        if (reportedRtcCustomEventValues[rtcEventName] !== comparableValue) {
+            console.log("trace - sending");
+            rtcManager.sendStatsCustomEvent(rtcEventName, output);
+        }
+
+        console.log("trace - updating reported value", { rtcEventName, value });
+        reportedRtcCustomEventValues[rtcEventName] = comparableValue;
+    });
+});
+
 /**
  * Selectors
  */
@@ -317,23 +352,25 @@ startAppListening({
     },
     effect: ({ type }, { getState }) => {
         const state: RootState = getState();
+
         const rtcManager = selectRtcConnectionRaw(state).rtcManager;
+        if (!rtcManager) return;
 
         const rtcCustomEvent = Object.values(rtcAnalyticsCustomEvents).find(({ actionType }) => actionType === type);
-
-        if (!rtcCustomEvent) {
-            throw new Error("No rtc custom event");
-        }
+        if (!rtcCustomEvent) return;
 
         const { getValue, getOutput, rtcEventName } = rtcCustomEvent;
+
         const value = getValue(state);
+        const comparableValue = makeComparable(value);
         const output = { ...(getOutput(value) as Record<string, unknown>), _time: Date.now() };
 
-        if (!rtcManager) {
-            throw new Error("No rtc manager");
+        if (reportedRtcCustomEventValues[rtcEventName] !== comparableValue) {
+            rtcManager.sendStatsCustomEvent(rtcEventName, output);
         }
 
-        rtcManager.sendStatsCustomEvent(rtcEventName, output);
+        console.log("trace - updating reported value", { rtcEventName, value });
+        reportedRtcCustomEventValues[rtcEventName] = comparableValue;
     },
 });
 
@@ -408,6 +445,7 @@ export const selectShouldInitializeRtc = createSelector(
 createReactor([selectShouldInitializeRtc], ({ dispatch }, shouldInitializeRtc) => {
     if (shouldInitializeRtc) {
         dispatch(doRtcManagerInitialize());
+        dispatch(doRtcAnalyticsCustomEventsInitailize());
     }
 });
 
