@@ -21,7 +21,7 @@ import {
     doStartScreenshare,
     stopScreenshare,
 } from "../localMedia";
-import { rtcAnalyticsCustomEvents, rtcEvents } from "./actions";
+import { rtcEvents } from "./actions";
 import { StreamStatusUpdate } from "./types";
 import { signalEvents } from "../signalConnection/actions";
 
@@ -292,34 +292,6 @@ export const doRtcManagerInitialize = createAppThunk(() => (dispatch, getState) 
     dispatch(rtcManagerInitialized());
 });
 
-const makeComparable = (value: any) => {
-    if (typeof value === "object") return JSON.stringify(value);
-
-    return value;
-};
-
-const reportedRtcCustomEventValues: { [key: string]: any } = {};
-
-export const doRtcAnalyticsCustomEventsInitailize = createAppThunk(() => (dispatch, getState) => {
-    const state = getState();
-    const rtcManager = selectRtcConnectionRaw(state).rtcManager;
-
-    if (!rtcManager) return;
-
-    Object.values(rtcAnalyticsCustomEvents).forEach(({ rtcEventName, getValue, getOutput }) => {
-        const value = getValue(state);
-        const output = { ...(getOutput(value) as Record<string, unknown>), _time: Date.now() };
-
-        const comparableValue = makeComparable(value);
-
-        if (reportedRtcCustomEventValues[rtcEventName] !== comparableValue) {
-            rtcManager.sendStatsCustomEvent(rtcEventName, output);
-        }
-
-        reportedRtcCustomEventValues[rtcEventName] = comparableValue;
-    });
-});
-
 /**
  * Selectors
  */
@@ -335,36 +307,6 @@ export const selectIsAcceptingStreams = (state: RootState) => state.rtcConnectio
 /**
  * Reactors
  */
-startAppListening({
-    predicate: (_action) => {
-        const rtcCustomEventActions = Object.values(rtcAnalyticsCustomEvents).map(({ actionType }) => actionType);
-
-        const isRtcEvent = rtcCustomEventActions.includes(_action.type);
-
-        return isRtcEvent;
-    },
-    effect: ({ type }, { getState }) => {
-        const state: RootState = getState();
-
-        const rtcManager = selectRtcConnectionRaw(state).rtcManager;
-        if (!rtcManager) return;
-
-        const rtcCustomEvent = Object.values(rtcAnalyticsCustomEvents).find(({ actionType }) => actionType === type);
-        if (!rtcCustomEvent) return;
-
-        const { getValue, getOutput, rtcEventName } = rtcCustomEvent;
-
-        const value = getValue(state);
-        const comparableValue = makeComparable(value);
-        const output = { ...(getOutput(value) as Record<string, unknown>), _time: Date.now() };
-
-        if (reportedRtcCustomEventValues[rtcEventName] !== comparableValue) {
-            rtcManager.sendStatsCustomEvent(rtcEventName, output);
-        }
-
-        reportedRtcCustomEventValues[rtcEventName] = comparableValue;
-    },
-});
 
 startAppListening({
     actionCreator: doSetDevice.fulfilled,
@@ -437,7 +379,6 @@ export const selectShouldInitializeRtc = createSelector(
 createReactor([selectShouldInitializeRtc], ({ dispatch }, shouldInitializeRtc) => {
     if (shouldInitializeRtc) {
         dispatch(doRtcManagerInitialize());
-        dispatch(doRtcAnalyticsCustomEventsInitailize());
     }
 });
 
