@@ -301,8 +301,6 @@ const makeComparable = (value: any) => {
 const reportedRtcCustomEventValues: { [key: string]: any } = {};
 
 export const doRtcAnalyticsCustomEventsInitailize = createAppThunk(() => (dispatch, getState) => {
-    console.log("trace - doRtcAnalyticsCustomEventsInitailize");
-
     const state = getState();
     const rtcManager = selectRtcConnectionRaw(state).rtcManager;
 
@@ -312,17 +310,12 @@ export const doRtcAnalyticsCustomEventsInitailize = createAppThunk(() => (dispat
         const value = getValue(state);
         const output = { ...(getOutput(value) as Record<string, unknown>), _time: Date.now() };
 
-        console.log(rtcEventName + " value: ", value);
-
         const comparableValue = makeComparable(value);
-        console.log(rtcEventName + " comparable value: ", comparableValue);
 
         if (reportedRtcCustomEventValues[rtcEventName] !== comparableValue) {
-            console.log("trace - sending");
             rtcManager.sendStatsCustomEvent(rtcEventName, output);
         }
 
-        console.log("trace - updating reported value", { rtcEventName, value });
         reportedRtcCustomEventValues[rtcEventName] = comparableValue;
     });
 });
@@ -369,7 +362,6 @@ startAppListening({
             rtcManager.sendStatsCustomEvent(rtcEventName, output);
         }
 
-        console.log("trace - updating reported value", { rtcEventName, value });
         reportedRtcCustomEventValues[rtcEventName] = comparableValue;
     },
 });
