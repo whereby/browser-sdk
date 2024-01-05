@@ -17,7 +17,7 @@ import {
     selectIsMicrophoneEnabled,
     selectLocalMediaStream,
     selectLocalMediaStatus,
-    reactSetDevice,
+    doSetDevice,
     doStartScreenshare,
     stopScreenshare,
 } from "../localMedia";
@@ -338,7 +338,7 @@ startAppListening({
 });
 
 startAppListening({
-    actionCreator: reactSetDevice.fulfilled,
+    actionCreator: doSetDevice.fulfilled,
     effect: ({ payload }, { getState }) => {
         const { replacedTracks } = payload;
         const { rtcManager } = selectRtcConnectionRaw(getState());

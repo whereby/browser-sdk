@@ -89,7 +89,7 @@ export const localMediaSlice = createSlice({
                     options: action.payload.localMediaOptions,
                 };
             })
-            .addCase(reactSetDevice.pending, (state, action) => {
+            .addCase(doSetDevice.pending, (state, action) => {
                 const { audio, video } = action.meta.arg;
                 return {
                     ...state,
@@ -97,7 +97,7 @@ export const localMediaSlice = createSlice({
                     isSettingMicrophoneDevice: audio,
                 };
             })
-            .addCase(reactSetDevice.fulfilled, (state, action) => {
+            .addCase(doSetDevice.fulfilled, (state, action) => {
                 const { audio, video } = action.meta.arg;
                 return {
                     ...state,
@@ -105,7 +105,7 @@ export const localMediaSlice = createSlice({
                     isSettingMicrophoneDevice: audio ? false : state.isSettingMicrophoneDevice,
                 };
             })
-            .addCase(reactSetDevice.rejected, (state, action) => {
+            .addCase(doSetDevice.rejected, (state, action) => {
                 const { audio, video } = action.meta.arg;
                 return {
                     ...state,
@@ -115,13 +115,13 @@ export const localMediaSlice = createSlice({
                     microphoneDeviceError: audio ? action.error : state.microphoneDeviceError,
                 };
             })
-            .addCase(reactToggleCamera.pending, (state) => {
+            .addCase(doToggleCamera.pending, (state) => {
                 return {
                     ...state,
                     isTogglingCamera: true,
                 };
             })
-            .addCase(reactToggleCamera.fulfilled, (state) => {
+            .addCase(doToggleCamera.fulfilled, (state) => {
                 return {
                     ...state,
                     isTogglingCamera: false,
@@ -205,7 +205,7 @@ export const {
     stopScreenshare,
 } = localMediaSlice.actions;
 
-const reactToggleCamera = createAppAsyncThunk("localMedia/doToggleCamera", async (_, { getState, rejectWithValue }) => {
+const doToggleCamera = createAppAsyncThunk("localMedia/doToggleCamera", async (_, { getState, rejectWithValue }) => {
     const state = getState();
     const stream = selectLocalMediaStream(state);
     if (!stream) {
@@ -213,8 +213,6 @@ const reactToggleCamera = createAppAsyncThunk("localMedia/doToggleCamera", async
     }
     let track = stream.getVideoTracks()[0];
     const enabled = selectIsCameraEnabled(state);
-
-    // this.dispatchEvent(new LocalMediaEvent("camera_enabled", { detail: { enabled: this._cameraEnabled } }));
 
     // Only stop tracks if we fully own the media stream
     const shouldStopTrack = selectLocalMediaOwnsStream(state);
@@ -260,7 +258,7 @@ const reactToggleCamera = createAppAsyncThunk("localMedia/doToggleCamera", async
     }
 });
 
-const reactToggleMicrophone = createAppAsyncThunk("localMedia/doToggleMicrophone", (_, { getState }) => {
+const doToggleMicrophone = createAppAsyncThunk("localMedia/doToggleMicrophone", (_, { getState }) => {
     const state = getState();
     const stream = selectLocalMediaStream(state);
     if (!stream) {
@@ -275,7 +273,7 @@ const reactToggleMicrophone = createAppAsyncThunk("localMedia/doToggleMicrophone
     audioTrack.enabled = enabled;
 });
 
-export const reactSetDevice = createAppAsyncThunk(
+export const doSetDevice = createAppAsyncThunk(
     "localMedia/reactSetDevice",
     async ({ audio, video }: { audio: boolean; video: boolean }, { getState, rejectWithValue }) => {
         try {
@@ -324,6 +322,8 @@ export const doStartLocalMedia = createAppAsyncThunk(
 
         if (!(payload.audio || payload.video)) {
             return { stream: new MediaStream() };
+        } else {
+            dispatch(doSetLocalMediaOptions({ options: payload }));
         }
 
         try {
@@ -496,7 +496,7 @@ startAppListening({
         return isReady && oldValue !== newValue;
     },
     effect: (_, { dispatch }) => {
-        dispatch(reactToggleMicrophone());
+        dispatch(doToggleMicrophone());
     },
 });
 
@@ -512,7 +512,7 @@ startAppListening({
         return isReady && oldValue !== newValue;
     },
     effect: (_action, { dispatch }) => {
-        dispatch(reactToggleCamera());
+        dispatch(doToggleCamera());
     },
 });
 
@@ -524,7 +524,7 @@ startAppListening({
         return isReady && oldValue !== newValue;
     },
     effect: (_action, { dispatch }) => {
-        dispatch(reactSetDevice({ audio: false, video: true }));
+        dispatch(doSetDevice({ audio: false, video: true }));
     },
 });
 
@@ -536,6 +536,6 @@ startAppListening({
         return isReady && oldValue !== newValue;
     },
     effect: (_action, { dispatch }) => {
-        dispatch(reactSetDevice({ audio: true, video: false }));
+        dispatch(doSetDevice({ audio: true, video: false }));
     },
 });
