@@ -101,7 +101,7 @@ define("WherebyEmbed", {
     },
 
     onmessage({ origin, data }) {
-        if (origin !== this.roomUrl.origin) return;
+        if (!this.roomUrl || origin !== this.roomUrl.origin) return;
         const { type, payload: detail } = data;
         this.dispatchEvent(new CustomEvent(type, { detail }));
     },
