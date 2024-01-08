@@ -1,28 +1,42 @@
 import { define, ref } from "heresy";
-export { sdkVersion } from "../version";
+
+import { parseRoomUrlAndSubdomain } from "../utils/roomUrl";
+import { sdkVersion } from "../version";
 
 interface WherebyEmbedAttributes {
     audio: string;
     avatarUrl: string;
     background: string;
+    breakout: string;
     cameraAccess: string;
     chat: string;
     displayName: string;
     emptyRoomInvitation: string;
     externalId: string;
     floatSelf: string;
+    groups: string;
     help: string;
+    lang: string;
     leaveButton: string;
+    locking: string;
     logo: string;
+    lowData: string;
+    metadata: string;
     minimal: string;
+    moreButton: string;
+    participantCount: string;
     people: string;
+    pipButton: string;
     precallReview: string;
     recording: string;
+    room: string;
+    settingsButton: string;
     screenshare: string;
+    style: { [key: string]: string };
+    subgridLabels: string;
+    title: string;
     video: string;
     virtualBackgroundUrl: string;
-    room: string;
-    style: { [key: string]: string };
 }
 declare global {
     namespace JSX {
@@ -35,7 +49,7 @@ declare global {
 const boolAttrs = [
     "audio",
     "background",
-    "cameraaccess",
+    "cameraAccess",
     "chat",
     "people",
     "embed",
@@ -80,9 +94,10 @@ define("WherebyEmbed", {
         "virtualBackgroundUrl",
         "avatarUrl",
         "externalId",
+        "title",
         ...boolAttrs,
     ].map((a) => a.toLowerCase()),
-    onattributechanged({ attributeName, oldValue }: { attributeName: string; oldValue: string | boolean }) {
+    onattributechanged({ attributeName, oldValue }) {
         if (["room", "subdomain"].includes(attributeName) && oldValue == null) return;
         this.render();
     },
@@ -102,7 +117,7 @@ define("WherebyEmbed", {
     // Commands
     _postCommand(command: string, args = []) {
         if (this.iframe.current) {
-            this.iframe.current.contentWindow.postMessage({ command, args }, this.url.origin);
+            this.iframe.current.contentWindow.postMessage({ command, args }, this.roomUrl.origin);
         }
     },
     startRecording() {
@@ -110,6 +125,12 @@ define("WherebyEmbed", {
     },
     stopRecording() {
         this._postCommand("stop_recording");
+    },
+    startStreaming() {
+        this._postCommand("start_streaming");
+    },
+    stopStreaming() {
+        this._postCommand("stop_streaming");
     },
     toggleCamera(enabled: boolean) {
         this._postCommand("toggle_camera", [enabled]);
@@ -120,8 +141,12 @@ define("WherebyEmbed", {
     toggleScreenshare(enabled: boolean) {
         this._postCommand("toggle_screenshare", [enabled]);
     },
+    toggleChat(enabled: boolean) {
+        this._postCommand("toggle_chat", [enabled]);
+    },
+
     onmessage({ origin, data }: { origin: string; data: { type: string; payload: string } }) {
-        if (origin !== this.url.origin) return;
+        if (!this.roomUrl || origin !== this.roomUrl.origin) return;
         const { type, payload: detail } = data;
         this.dispatchEvent(new CustomEvent(type, { detail }));
     },
@@ -129,39 +154,36 @@ define("WherebyEmbed", {
         const {
             avatarurl: avatarUrl,
             displayname: displayName,
-            externalId: externalId,
             lang,
             metadata,
+            externalid: externalId,
             minimal,
             room,
             groups,
             virtualbackgroundurl: virtualBackgroundUrl,
+            title,
         } = this;
-        if (!room) return this.html`Whereby: Missing room attribute.`;
-        // Get subdomain from room URL, or use it specified
-        const m = /https:\/\/([^.]+)(\.whereby.com|-ip-\d+-\d+-\d+-\d+.hereby.dev:4443)\/.+/.exec(room);
-        const subdomain = (m && m[1]) || this.subdomain;
-        if (!subdomain) return this.html`Whereby: Missing subdomain attr.`;
-        if (!m) {
-            return this.html`could not parse URL.`;
+        let roomUrl, subdomain;
+
+        try {
+            ({ roomUrl, subdomain } = parseRoomUrlAndSubdomain(room, this.subdomain));
+        } catch (error: any) {
+            return this.html`Whereby: ${error.message}`;
         }
-        const baseURL = m[2] || `.whereby.com`;
-        this.url = new URL(room, `https://${subdomain}${baseURL}`);
-        const roomUrl = new URL(room);
-        if (roomUrl.searchParams.get("roomKey")) {
-            this.url.searchParams.append("roomKey", roomUrl.searchParams.get("roomKey"));
-        }
+
+        this.roomUrl = roomUrl;
+
         Object.entries({
             jsApi: true,
-            we: "__SDK_VERSION__",
+            we: sdkVersion,
             iframeSource: subdomain,
             ...(displayName && { displayName }),
-            ...(lang && { lang }),
-            ...(metadata && { metadata }),
+            ...(lang && { lang: lang }),
+            ...(metadata && { metadata: metadata }),
             ...(externalId && { externalId }),
-            ...(groups && { groups }),
-            ...(virtualBackgroundUrl && { virtualBackgroundUrl }),
-            ...(avatarUrl && { avatarUrl }),
+            ...(groups && { groups: groups }),
+            ...(virtualBackgroundUrl && { virtualBackgroundUrl: virtualBackgroundUrl }),
+            ...(avatarUrl && { avatarUrl: avatarUrl }),
             // the original ?embed name was confusing, so we give minimal
             ...(minimal != null && { embed: minimal }),
             ...boolAttrs.reduce(
@@ -170,15 +192,18 @@ define("WherebyEmbed", {
                 {}
             ),
         }).forEach(([k, v]) => {
-            if (!this.url.searchParams.has(k) && typeof v === "string") {
-                this.url.searchParams.set(k, v);
+            if (!this.roomUrl.searchParams.has(k)) {
+                this.roomUrl.searchParams.set(k, v);
             }
         });
-        return this.html`
-        <iframe
-            ref=${this.iframe}
-            src=${this.url}
-            allow="autoplay; camera; microphone; fullscreen; speaker; display-capture" />
-        `;
+        this.html`
+      <iframe
+        title=${title || "Video calling component"}
+        ref=${this.iframe}
+        src=${this.roomUrl}
+        allow="autoplay; camera; microphone; fullscreen; speaker; display-capture" />
+      `;
     },
 });
+
+export default { sdkVersion: sdkVersion };
