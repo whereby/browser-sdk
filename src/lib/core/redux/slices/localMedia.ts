@@ -4,7 +4,7 @@ import { createAppAsyncThunk, createAppThunk } from "../../redux/thunk";
 import { RootState } from "../../redux/store";
 import { createReactor, startAppListening } from "../../redux/listenerMiddleware";
 import { doAppJoin, selectAppWantsToJoin } from "./app";
-import debounce from "~/lib/utils/debounce";
+import debounce from "../../../utils/debounce";
 
 export type LocalMediaOptions = {
     audio: boolean;
@@ -144,7 +144,7 @@ export const localMediaSlice = createSlice({
                     status: "starting",
                 };
             })
-            .addCase(doStartLocalMedia.fulfilled, (state, { payload: { stream } }) => {
+            .addCase(doStartLocalMedia.fulfilled, (state, { payload: { stream, onDeviceChange } }) => {
                 let cameraDeviceId = undefined;
                 let cameraEnabled = false;
                 let microphoneDeviceId = undefined;
@@ -171,6 +171,7 @@ export const localMediaSlice = createSlice({
                     currentMicrophoneDeviceId: microphoneDeviceId,
                     cameraEnabled,
                     microphoneEnabled,
+                    onDeviceChange,
                 };
             })
             .addCase(doStartLocalMedia.rejected, (state, action) => {
@@ -449,11 +450,6 @@ export const doSwitchLocalStream = createAppAsyncThunk(
 export const doStartLocalMedia = createAppAsyncThunk(
     "localMedia/doStartLocalMedia",
     async (payload: LocalMediaOptions | MediaStream, { getState, dispatch, rejectWithValue }) => {
-        // Resolve if existing stream is passed
-        if ("getTracks" in payload) {
-            return Promise.resolve({ stream: payload });
-        }
-
         const onDeviceChange = debounce(
             () => {
                 dispatch(doUpdateDeviceList());
@@ -461,10 +457,17 @@ export const doStartLocalMedia = createAppAsyncThunk(
             { delay: 500 }
         );
 
-        global.navigator.mediaDevices && global.navigator.mediaDevices.addEventListener("devicechange", onDeviceChange);
+        if (global.navigator.mediaDevices) {
+            global.navigator.mediaDevices.addEventListener("devicechange", onDeviceChange);
+        }
+
+        // Resolve if existing stream is passed
+        if ("getTracks" in payload) {
+            return Promise.resolve({ stream: payload, onDeviceChange });
+        }
 
         if (!(payload.audio || payload.video)) {
-            return { stream: new MediaStream() };
+            return { stream: new MediaStream(), onDeviceChange };
         } else {
             dispatch(doSetLocalMediaOptions({ options: payload }));
         }
@@ -483,7 +486,7 @@ export const doStartLocalMedia = createAppAsyncThunk(
                 videoId: payload.video,
             });
 
-            return { stream };
+            return { stream, onDeviceChange };
         } catch (error) {
             return rejectWithValue(error);
         }
@@ -493,6 +496,7 @@ export const doStartLocalMedia = createAppAsyncThunk(
 export const doStopLocalMedia = createAppThunk(() => (dispatch, getState) => {
     const screenshareStream = selectScreenshareStream(getState());
     const stream = selectLocalMediaStream(getState());
+    const onDeviceChange = selectLocalMediaRaw(getState()).onDeviceChange;
 
     screenshareStream?.getTracks().forEach((track) => {
         track.stop();
@@ -501,6 +505,10 @@ export const doStopLocalMedia = createAppThunk(() => (dispatch, getState) => {
     stream?.getTracks().forEach((track) => {
         track.stop();
     });
+
+    if (global.navigator.mediaDevices && onDeviceChange) {
+        global.navigator.mediaDevices.removeEventListener("devicechange", onDeviceChange);
+    }
 
     dispatch(localMediaStopped());
 });

@@ -3,7 +3,7 @@ interface Options {
     edges?: boolean;
 }
 
-interface DebouncedFunction {
+export interface DebouncedFunction {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     (...args: any[]): void;
 }

@@ -56,7 +56,11 @@ describe("actions", () => {
 
                 const after = store.getState().localMedia;
 
-                expect(diff(before, after)).toEqual({ status: "started", stream: existingStream });
+                expect(diff(before, after)).toEqual({
+                    status: "started",
+                    stream: existingStream,
+                    onDeviceChange: expect.any(Function),
+                });
             });
         });
 
@@ -91,6 +95,7 @@ describe("actions", () => {
                         stream: newStream,
                         devices: expect.any(Object),
                         options: { audio: true, video: true },
+                        onDeviceChange: expect.any(Function),
                     });
                 });
             });
