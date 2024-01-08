@@ -6,11 +6,13 @@ import {
     doStopLocalMedia,
     doToggleCameraEnabled,
     doToggleMicrophoneEnabled,
+    doUpdateDeviceList,
 } from "../../core/redux/slices/localMedia";
 import { LocalMediaState, UseLocalMediaOptions, UseLocalMediaResult } from "./types";
 import { selectLocalMediaState } from "./selector";
 import { createStore, observeStore, Store } from "../../core/redux/store";
 import { createServices } from "../../services";
+import debounce from "../../utils/debounce";
 
 const initialState: LocalMediaState = {
     cameraDeviceError: null,
@@ -32,9 +34,11 @@ export function useLocalMedia(
         return createStore({ injectServices: services });
     });
     const [localMediaState, setLocalMediaState] = useState(initialState);
+
     useEffect(() => {
         const unsubscribe = observeStore(store, selectLocalMediaState, setLocalMediaState);
         store.dispatch(doStartLocalMedia(optionsOrStream));
+
         return () => {
             unsubscribe();
             store.dispatch(doStopLocalMedia());

@@ -117,6 +117,7 @@ describe("actions", () => {
                         microphoneEnabled: true,
                         status: "started",
                         stream: new MockMediaStream([audioTrack, videoTrack]),
+                        isSwitchingStream: false,
                     },
                 };
             });
