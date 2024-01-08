@@ -72,7 +72,6 @@ const WherebyEmbed = ({
     recording,
     room,
     screenshare,
-    style,
     video,
     virtualBackgroundUrl,
 }: Partial<WherebyEmbedAttributes>) => {
@@ -124,7 +123,6 @@ WherebyEmbedElement.args = {
     precallReview: true,
     room: process.env.STORYBOOK_ROOM,
     screenshare: true,
-    style: "height: 100vh",
     video: true,
     virtualBackgroundUrl: "",
 };
@@ -137,7 +135,7 @@ WherebyEmbedElement.parameters = {
     },
 };
 
-export const Recording = (args) => {
+/*export const Recording = (args) => {
     const el = WherebyEmbed(args);
     el.setAttribute("style", "height: 400px");
 
@@ -169,4 +167,4 @@ export const Recording = (args) => {
 Recording.args = {
     ...Primary.args,
     recording: "cloud",
-};
+};*/
