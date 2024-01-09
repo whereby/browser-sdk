@@ -1,0 +1,74 @@
+.container {
+    display: flex;
+    min-height: 290px;
+    background-color: pink;
+    gap: 10px;
+    padding: 10px;
+}
+
+.participantWrapper {
+    position: relative;
+    flex-direction: column;
+    display: flex;
+    width: 140px;
+}
+
+.bouncingball {
+    width: 140px;
+    height: 140px;
+    border-radius: 100%;
+    background: #ccc;
+    animation: bounce 1s;
+    transform: translateY(0px);
+    animation-iteration-count: infinite;
+    position: absolute;
+    top: 25px;
+    overflow: hidden;
+}
+
+.displayName {
+    text-align: center;
+    color: #ffffff;
+    padding: 2px 4px;
+    border-radius: 3px;
+    background-color: rgba(0, 0, 0, 0.5);
+}
+
+.controls {
+    display: flex;
+    gap: 10px;
+    margin-top: 12px;
+}
+
+@keyframes bounce {
+    0% {
+        top: 25px;
+        -webkit-animation-timing-function: ease-in;
+    }
+    40% {
+    }
+    50% {
+        top: 140px;
+        height: 140px;
+        -webkit-animation-timing-function: ease-out;
+    }
+    55% {
+        top: 160px;
+        height: 120px;
+        -webkit-animation-timing-function: ease-in;
+    }
+    65% {
+        top: 120px;
+        height: 140px;
+        -webkit-animation-timing-function: ease-out;
+    }
+    95% {
+        top: 25px;
+        -webkit-animation-timing-function: ease-in;
+    }
+    100% {
+        top: 25px;
+        -webkit-animation-timing-function: ease-in;
+    }
+}
+

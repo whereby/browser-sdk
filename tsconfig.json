@@ -1,0 +1,30 @@
+{
+    "compilerOptions": {
+      "allowJs": true,
+      "allowSyntheticDefaultImports": true,
+      "baseUrl": "./",
+      "checkJs": false,
+      "declaration": false,
+      "downlevelIteration": true,
+      "esModuleInterop": true,
+      "forceConsistentCasingInFileNames": true,
+      "importHelpers": true,
+      "isolatedModules": true,
+      "jsx": "react",
+      "lib": ["dom", "dom.iterable", "esnext", "es2015.collection", "es2015.iterable"],
+      "module": "esnext",
+      "moduleResolution": "node",
+      "noEmit": true,
+      "noFallthroughCasesInSwitch": true,
+      "paths": {
+        "~/*": ["src/*"],
+        "@tests/*": ["tests/*"],
+        "@types": ["src/__types__/index.ts"]
+      },
+      "resolveJsonModule": true,
+      "skipLibCheck": true,
+      "strict": true,
+      "target": "es6"
+    },
+    "include": ["src/**/*.ts", "src/**/*.tsx", "tests/**/*.ts", "tests/**/*.tsx"]
+  }
