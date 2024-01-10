@@ -1,4 +1,4 @@
-import { createSelector, createSlice, PayloadAction } from "@reduxjs/toolkit";
+import { createSelector, createSlice, isAnyOf, PayloadAction } from "@reduxjs/toolkit";
 import { getStream, getUpdatedDevices, getDeviceData } from "@whereby/jslib-media/src/webrtc/MediaDevices";
 import { createAppAsyncThunk, createAppThunk } from "../../redux/thunk";
 import { RootState } from "../../redux/store";
@@ -16,6 +16,7 @@ export type LocalMediaOptions = {
  */
 
 export interface LocalMediaState {
+    busyDeviceIds: string[];
     cameraDeviceError?: unknown;
     cameraEnabled: boolean;
     currentCameraDeviceId?: string;
@@ -35,6 +36,7 @@ export interface LocalMediaState {
 }
 
 export const initialState: LocalMediaState = {
+    busyDeviceIds: [],
     cameraEnabled: false,
     devices: [],
     isSettingCameraDevice: false,
@@ -49,6 +51,16 @@ export const localMediaSlice = createSlice({
     name: "localMedia",
     initialState,
     reducers: {
+        deviceBusy(state, action: PayloadAction<{ deviceId: string }>) {
+            if (state.busyDeviceIds.includes(action.payload.deviceId)) {
+                return state;
+            }
+
+            return {
+                ...state,
+                busyDeviceIds: [...state.busyDeviceIds, action.payload.deviceId],
+            };
+        },
         toggleCameraEnabled(state, action: PayloadAction<{ enabled?: boolean }>) {
             return {
                 ...state,
@@ -96,6 +108,15 @@ export const localMediaSlice = createSlice({
                 ...state,
                 status: "stopped",
                 stream: undefined,
+            };
+        },
+        localStreamMetadataUpdated(state, action: PayloadAction<ReturnType<typeof getDeviceData>>) {
+            const { audio, video } = action.payload;
+            return {
+                ...state,
+                currentCameraDeviceId: video.deviceId,
+                currentMicrophoneDeviceId: audio.deviceId,
+                busyDeviceIds: state.busyDeviceIds.filter((id) => id !== audio.deviceId && id !== video.deviceId),
             };
         },
     },
@@ -200,17 +221,9 @@ export const localMediaSlice = createSlice({
             };
         });
         builder.addCase(doSwitchLocalStream.fulfilled, (state) => {
-            const deviceData = getDeviceData({
-                devices: state.devices,
-                audioTrack: state.stream?.getAudioTracks()[0],
-                videoTrack: state.stream?.getVideoTracks()[0],
-            });
-
             return {
                 ...state,
                 isSwitchingStream: false,
-                currentCameraDeviceId: deviceData.video.deviceId,
-                currentMicrophoneDeviceId: deviceData.audio.deviceId,
             };
         });
         builder.addCase(doSwitchLocalStream.rejected, (state) => {
@@ -227,6 +240,7 @@ export const localMediaSlice = createSlice({
  */
 
 export const {
+    deviceBusy,
     setCurrentCameraDeviceId,
     setCurrentMicrophoneDeviceId,
     toggleCameraEnabled,
@@ -234,6 +248,7 @@ export const {
     setLocalMediaOptions,
     setLocalMediaStream,
     localMediaStopped,
+    localStreamMetadataUpdated,
 } = localMediaSlice.actions;
 
 const doToggleCamera = createAppAsyncThunk("localMedia/doToggleCamera", async (_, { getState, rejectWithValue }) => {
@@ -347,7 +362,7 @@ export const doUpdateDeviceList = createAppAsyncThunk(
         let newDevices: MediaDeviceInfo[] = [];
         let oldDevices: MediaDeviceInfo[] = [];
         const stream = selectLocalMediaStream(state);
-
+        const busy = selectBusyDeviceIds(state);
         try {
             newDevices = await navigator.mediaDevices.enumerateDevices();
             oldDevices = selectLocalMediaDevices(state);
@@ -383,7 +398,10 @@ export const doUpdateDeviceList = createAppAsyncThunk(
                 const videoDevices = selectLocalMediaDevices(state).filter((d) => d.kind === "videoinput");
                 const videoId = selectCurrentCameraDeviceId(state);
 
-                let nextVideoId = nextId(videoDevices, videoId);
+                let nextVideoId = nextId(
+                    videoDevices.filter((d) => !busy.includes(d.deviceId)),
+                    videoId
+                );
                 if (!nextVideoId || videoId === nextVideoId) {
                     nextVideoId = nextId(videoDevices, videoId);
                 }
@@ -396,7 +414,10 @@ export const doUpdateDeviceList = createAppAsyncThunk(
                 const audioDevices = selectLocalMediaDevices(state).filter((d) => d.kind === "audioinput");
                 const audioId = selectCurrentMicrophoneDeviceId(state);
 
-                let nextAudioId = nextId(audioDevices, audioId);
+                let nextAudioId = nextId(
+                    audioDevices.filter((d) => !busy.includes(d.deviceId)),
+                    audioId
+                );
                 if (!nextAudioId || audioId === nextAudioId) {
                     nextAudioId = nextId(audioDevices, audioId);
                 }
@@ -418,10 +439,11 @@ export const doUpdateDeviceList = createAppAsyncThunk(
 
 export const doSwitchLocalStream = createAppAsyncThunk(
     "localMedia/doSwitchLocalStream",
-    async ({ audioId, videoId }: { audioId?: string; videoId?: string }, { getState, rejectWithValue }) => {
+    async ({ audioId, videoId }: { audioId?: string; videoId?: string }, { dispatch, getState, rejectWithValue }) => {
         const state = getState();
         const replaceStream = selectLocalMediaStream(state);
         const constraintsOptions = selectLocalMediaConstraintsOptions(state);
+        const onlySwitchingOne = !!(videoId && !audioId) || !!(!videoId && audioId);
         if (!replaceStream) {
             // Switching no stream makes no sense
             return;
@@ -438,9 +460,26 @@ export const doSwitchLocalStream = createAppAsyncThunk(
                 { replaceStream }
             );
 
+            const deviceId = audioId || videoId;
+            if (onlySwitchingOne && deviceId) {
+                dispatch(
+                    deviceBusy({
+                        deviceId,
+                    })
+                );
+            }
+
             return { replacedTracks };
         } catch (error) {
             console.error(error);
+            const deviceId = audioId || videoId;
+            if (onlySwitchingOne && deviceId) {
+                dispatch(
+                    deviceBusy({
+                        deviceId,
+                    })
+                );
+            }
             return rejectWithValue(error);
         }
     }
@@ -511,6 +550,7 @@ export const doStopLocalMedia = createAppThunk(() => (dispatch, getState) => {
  * Selectors
  */
 
+export const selectBusyDeviceIds = (state: RootState) => state.localMedia.busyDeviceIds;
 export const selectCameraDeviceError = (state: RootState) => state.localMedia.cameraDeviceError;
 export const selectCurrentCameraDeviceId = (state: RootState) => state.localMedia.currentCameraDeviceId;
 export const selectCurrentMicrophoneDeviceId = (state: RootState) => state.localMedia.currentMicrophoneDeviceId;
@@ -541,11 +581,17 @@ export const selectLocalMediaConstraintsOptions = createSelector(selectLocalMedi
     },
 }));
 export const selectIsLocalMediaStarting = createSelector(selectLocalMediaStatus, (status) => status === "starting");
-export const selectCameraDevices = createSelector(selectLocalMediaDevices, (devices) =>
-    devices.filter((d) => d.kind === "videoinput")
+export const selectCameraDevices = createSelector(
+    selectLocalMediaDevices,
+    selectBusyDeviceIds,
+    (devices, busyDeviceIds) =>
+        devices.filter((d) => d.kind === "videoinput").filter((d) => !busyDeviceIds.includes(d.deviceId))
 );
-export const selectMicrophoneDevices = createSelector(selectLocalMediaDevices, (devices) =>
-    devices.filter((d) => d.kind === "audioinput")
+export const selectMicrophoneDevices = createSelector(
+    selectLocalMediaDevices,
+    selectBusyDeviceIds,
+    (devices, busyDeviceIds) =>
+        devices.filter((d) => d.kind === "audioinput").filter((d) => !busyDeviceIds.includes(d.deviceId))
 );
 export const selectSpeakerDevices = createSelector(selectLocalMediaDevices, (devices) =>
     devices.filter((d) => d.kind === "audiooutput")
@@ -638,5 +684,29 @@ startAppListening({
     },
     effect: (_action, { dispatch }) => {
         dispatch(doSetDevice({ audio: true, video: false }));
+    },
+});
+
+startAppListening({
+    matcher: isAnyOf(
+        doStartLocalMedia.fulfilled,
+        doUpdateDeviceList.fulfilled,
+        doSwitchLocalStream.fulfilled,
+        doSwitchLocalStream.rejected
+    ),
+    effect: (_action, { dispatch, getState }) => {
+        const state = getState();
+        const stream = selectLocalMediaStream(state);
+        const devices = selectLocalMediaDevices(state);
+
+        if (!stream) return;
+
+        const deviceData = getDeviceData({
+            audioTrack: stream.getAudioTracks()[0],
+            videoTrack: stream.getVideoTracks()[0],
+            devices,
+        });
+
+        dispatch(localStreamMetadataUpdated(deviceData));
     },
 });
