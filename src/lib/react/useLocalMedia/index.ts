@@ -1,11 +1,11 @@
 import { useCallback, useEffect, useState } from "react";
 import {
-    doSetCurrentCameraDeviceId,
-    doSetCurrentMicrophoneDeviceId,
+    setCurrentCameraDeviceId,
+    setCurrentMicrophoneDeviceId,
     doStartLocalMedia,
     doStopLocalMedia,
-    doToggleCameraEnabled,
-    doToggleMicrophoneEnabled,
+    toggleCameraEnabled,
+    toggleMicrophoneEnabled,
 } from "../../core/redux/slices/localMedia";
 import { LocalMediaState, UseLocalMediaOptions, UseLocalMediaResult } from "./types";
 import { selectLocalMediaState } from "./selector";
@@ -44,19 +44,16 @@ export function useLocalMedia(
     }, []);
 
     const setCameraDevice = useCallback(
-        (deviceId: string) => store.dispatch(doSetCurrentCameraDeviceId({ deviceId })),
+        (deviceId: string) => store.dispatch(setCurrentCameraDeviceId({ deviceId })),
         [store]
     );
     const setMicrophoneDevice = useCallback(
-        (deviceId: string) => store.dispatch(doSetCurrentMicrophoneDeviceId({ deviceId })),
+        (deviceId: string) => store.dispatch(setCurrentMicrophoneDeviceId({ deviceId })),
         [store]
     );
-    const toggleCameraEnabled = useCallback(
-        (enabled?: boolean) => store.dispatch(doToggleCameraEnabled({ enabled })),
-        [store]
-    );
-    const toggleMicrophoneEnabled = useCallback(
-        (enabled?: boolean) => store.dispatch(doToggleMicrophoneEnabled({ enabled })),
+    const toggleCamera = useCallback((enabled?: boolean) => store.dispatch(toggleCameraEnabled({ enabled })), [store]);
+    const toggleMicrophone = useCallback(
+        (enabled?: boolean) => store.dispatch(toggleMicrophoneEnabled({ enabled })),
         [store]
     );
     return {
@@ -64,8 +61,8 @@ export function useLocalMedia(
         actions: {
             setCameraDevice,
             setMicrophoneDevice,
-            toggleCameraEnabled,
-            toggleMicrophoneEnabled,
+            toggleCameraEnabled: toggleCamera,
+            toggleMicrophoneEnabled: toggleMicrophone,
         },
         store,
     };
