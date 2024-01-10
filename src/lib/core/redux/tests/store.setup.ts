@@ -100,6 +100,7 @@ export function createStore({ initialState, withSignalConnection, withRtcManager
 
     const store = createRealStore({
         preloadedState: initialState,
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         injectServices: mockServices as any,
     });
 

@@ -74,6 +74,7 @@ export const localMediaSlice = createSlice({
                 stream: undefined,
             };
         },
+        // eslint-disable-next-line @typescript-eslint/no-unused-vars
         stopScreenshare(state, action: PayloadAction<{ stream: MediaStream }>) {
             return {
                 ...state,
