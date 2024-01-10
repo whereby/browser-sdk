@@ -167,8 +167,8 @@ define("WherebyEmbed", {
 
         try {
             ({ roomUrl, subdomain } = parseRoomUrlAndSubdomain(room, this.subdomain));
-        } catch (error: any) {
-            return this.html`Whereby: ${error.message}`;
+        } catch (error) {
+            return this.html`Whereby: ${error instanceof Error ? error.message : "unknown error"}`;
         }
 
         this.roomUrl = roomUrl;
