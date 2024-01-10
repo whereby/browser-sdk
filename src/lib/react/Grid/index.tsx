@@ -1,5 +1,5 @@
 import * as React from "react";
-import { RemoteParticipant, VideoView } from "..";
+import { LocalParticipant, RemoteParticipant, VideoView } from "..";
 import { calculateLayout } from "./helpers/stageLayout";
 import { makeBounds, makeFrame } from "./helpers/layout";
 import { makeVideoCellView } from "./helpers/cellView";
@@ -12,7 +12,7 @@ function GridVideoCellView({
     render,
 }: {
     cell: { clientId: string; bounds: { width: number; height: number }; origin: { top: number; left: number } };
-    participant: RemoteParticipant;
+    participant: RemoteParticipant | LocalParticipant;
     render?: () => React.ReactNode;
 }) {
     return (
@@ -38,19 +38,20 @@ interface GridProps {
         participant,
     }: {
         cell: { clientId: string; bounds: { width: number; height: number }; origin: { top: number; left: number } };
-        participant: RemoteParticipant;
+        participant: RemoteParticipant | LocalParticipant;
     }) => React.ReactNode;
+    videoGridGap?: number;
 }
 
-function Grid({ roomConnection, renderParticipant }: GridProps) {
-    const { remoteParticipants } = roomConnection.state;
+function Grid({ roomConnection, renderParticipant, videoGridGap = 0 }: GridProps) {
+    const { remoteParticipants, localParticipant } = roomConnection.state;
     const gridRef = React.useRef<HTMLDivElement>(null);
     const [videos, setVideos] = React.useState<ReturnType<typeof makeVideoCellView>[]>([]);
     const [stageLayout, setStageLayout] = React.useState<ReturnType<typeof calculateLayout> | null>(null);
 
     React.useEffect(() => {
         setVideos(
-            remoteParticipants.map((participant) =>
+            [localParticipant, ...remoteParticipants].map((participant) =>
                 makeVideoCellView({
                     aspectRatio: 16 / 9,
                     avatarSize: 0,
@@ -59,7 +60,7 @@ function Grid({ roomConnection, renderParticipant }: GridProps) {
                 })
             )
         );
-    }, [remoteParticipants]);
+    }, [remoteParticipants, localParticipant]);
 
     React.useEffect(() => {
         if (!gridRef.current || !videos.length) {
@@ -82,6 +83,7 @@ function Grid({ roomConnection, renderParticipant }: GridProps) {
                                 height: gridRef.current?.clientHeight,
                             }),
                             videos,
+                            videoGridGap,
                         });
                     });
                 },
@@ -104,10 +106,10 @@ function Grid({ roomConnection, renderParticipant }: GridProps) {
                 position: "relative",
             }}
         >
-            {remoteParticipants.map((participant, i) => {
+            {[localParticipant, ...remoteParticipants].map((participant, i) => {
                 const cell = stageLayout?.videoGrid.cells[i];
 
-                if (!cell) return null;
+                if (!cell || !participant) return null;
 
                 return (
                     <GridVideoCellView

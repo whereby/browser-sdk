@@ -179,11 +179,11 @@ export const GridStory = ({ roomUrl }: { roomUrl: string; displayName?: string }
         return <p>Set room url on the Controls panel</p>;
     }
 
-    const roomConnection = useRoomConnection(roomUrl, { localMediaOptions: { audio: false, video: false } });
+    const roomConnection = useRoomConnection(roomUrl, { localMediaOptions: { audio: false, video: true } });
 
     return (
         <div style={{ height: "100vh" }}>
-            <VideoGrid roomConnection={roomConnection} />
+            <VideoGrid roomConnection={roomConnection} videoGridGap={10} />
         </div>
     );
 };
@@ -193,28 +193,39 @@ export const GridWithCustomVideosStory = ({ roomUrl }: { roomUrl: string; displa
         return <p>Set room url on the Controls panel</p>;
     }
 
-    const roomConnection = useRoomConnection(roomUrl, { localMediaOptions: { audio: false, video: false } });
+    const roomConnection = useRoomConnection(roomUrl, { localMediaOptions: { audio: false, video: true } });
 
     return (
         <div style={{ height: "100vh" }}>
             <VideoGrid
                 roomConnection={roomConnection}
+                videoGridGap={10}
                 renderParticipant={({ participant }) => {
-                    if (!participant.stream) return null;
+                    if (!participant.stream) {
+                        return null;
+                    }
 
                     return (
                         <div
-                            style={{ display: "flex", alignItems: "center", justifyContent: "center", height: "100%" }}
+                            style={{
+                                display: "flex",
+                                flexDirection: "column",
+                                alignItems: "center",
+                                justifyContent: "center",
+                                height: "100%",
+                            }}
                         >
                             <VideoView
                                 style={{
+                                    border: "4px dashed red",
+                                    boxSizing: "border-box",
                                     borderRadius: "100%",
                                     objectFit: "cover",
                                     width: "60%",
-                                    border: "10px striped red",
                                 }}
                                 stream={participant.stream}
                             />
+                            <p>{participant.displayName}</p>
                         </div>
                     );
                 }}
