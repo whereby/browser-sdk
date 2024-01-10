@@ -6,7 +6,7 @@ import { rtcEvents } from "./rtcConnection/actions";
 import { StreamStatusUpdate } from "./rtcConnection/types";
 import { signalEvents } from "./signalConnection/actions";
 import { RtcStreamAddedPayload } from "@whereby/jslib-media/src/webrtc/RtcManagerDispatcher";
-import { selectScreenshareStream } from "./localMedia";
+import { selectLocalScreenshareStream } from "./localScreenshare";
 
 const NON_PERSON_ROLES = ["recorder", "streamer"];
 
@@ -277,7 +277,7 @@ export const selectRemoteParticipantsRaw = (state: RootState) => state.remotePar
 export const selectRemoteParticipants = (state: RootState) => state.remoteParticipants.remoteParticipants;
 
 export const selectScreenshares = createSelector(
-    selectScreenshareStream,
+    selectLocalScreenshareStream,
     selectRemoteParticipants,
     (localScreenshareStream, remoteParticipants) => {
         const screenshares: Screenshare[] = [];

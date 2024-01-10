@@ -27,7 +27,6 @@ export interface LocalMediaState {
     microphoneDeviceError?: unknown;
     microphoneEnabled: boolean;
     options?: LocalMediaOptions;
-    screenshareStream?: MediaStream;
     status: "" | "stopped" | "starting" | "started" | "error";
     startError?: unknown;
     stream?: MediaStream;
@@ -76,13 +75,6 @@ export const localMediaSlice = createSlice({
                 ...state,
                 status: "stopped",
                 stream: undefined,
-            };
-        },
-        // eslint-disable-next-line @typescript-eslint/no-unused-vars
-        stopScreenshare(state, action: PayloadAction<{ stream: MediaStream }>) {
-            return {
-                ...state,
-                screenshareStream: undefined,
             };
         },
     },
@@ -181,18 +173,6 @@ export const localMediaSlice = createSlice({
                     startError: action.error,
                 };
             })
-            .addCase(doStartScreenshare.fulfilled, (state, { payload: { stream } }) => {
-                return {
-                    ...state,
-                    screenshareStream: stream,
-                };
-            })
-            .addCase(doStartScreenshare.rejected, (state) => {
-                return {
-                    ...state,
-                    screenshareStream: undefined,
-                };
-            })
             .addCase(doSwitchLocalStream.pending, (state) => {
                 return {
                     ...state,
@@ -234,7 +214,6 @@ export const {
     doSetLocalMediaOptions,
     doSetLocalMediaStream,
     localMediaStopped,
-    stopScreenshare,
 } = localMediaSlice.actions;
 
 const doToggleCamera = createAppAsyncThunk("localMedia/doToggleCamera", async (_, { getState, rejectWithValue }) => {
@@ -494,13 +473,8 @@ export const doStartLocalMedia = createAppAsyncThunk(
 );
 
 export const doStopLocalMedia = createAppThunk(() => (dispatch, getState) => {
-    const screenshareStream = selectScreenshareStream(getState());
     const stream = selectLocalMediaStream(getState());
     const onDeviceChange = selectLocalMediaRaw(getState()).onDeviceChange;
-
-    screenshareStream?.getTracks().forEach((track) => {
-        track.stop();
-    });
 
     stream?.getTracks().forEach((track) => {
         track.stop();
@@ -511,50 +485,6 @@ export const doStopLocalMedia = createAppThunk(() => (dispatch, getState) => {
     }
 
     dispatch(localMediaStopped());
-});
-
-export const doStartScreenshare = createAppAsyncThunk(
-    "localMedia/doStartScreenshare",
-    async (_, { dispatch, getState, rejectWithValue }) => {
-        try {
-            const state = getState();
-            const screenshareStream = selectScreenshareStream(state);
-
-            if (screenshareStream) {
-                return { stream: screenshareStream };
-            }
-
-            const stream = await navigator.mediaDevices.getDisplayMedia();
-
-            const onEnded = () => {
-                dispatch(doStopScreenshare());
-            };
-
-            if ("oninactive" in stream) {
-                // Chrome
-                stream.addEventListener("inactive", onEnded);
-            } else {
-                // Firefox
-                stream.getVideoTracks()[0]?.addEventListener("ended", onEnded);
-            }
-
-            return { stream };
-        } catch (error) {
-            return rejectWithValue(error);
-        }
-    }
-);
-
-export const doStopScreenshare = createAppThunk(() => (dispatch, getState) => {
-    const state = getState();
-    const screenshareStream = selectScreenshareStream(state);
-
-    if (!screenshareStream) {
-        return;
-    }
-
-    screenshareStream.getTracks().forEach((track) => track.stop());
-    dispatch(stopScreenshare({ stream: screenshareStream }));
 });
 
 /**
@@ -576,7 +506,6 @@ export const selectLocalMediaRaw = (state: RootState) => state.localMedia;
 export const selectLocalMediaStatus = (state: RootState) => state.localMedia.status;
 export const selectLocalMediaStream = (state: RootState) => state.localMedia.stream;
 export const selectMicrophoneDeviceError = (state: RootState) => state.localMedia.microphoneDeviceError;
-export const selectScreenshareStream = (state: RootState) => state.localMedia.screenshareStream;
 export const selectLocalMediaStartError = (state: RootState) => state.localMedia.startError;
 export const selectLocalMediaIsSwitchingStream = (state: RootState) => state.localMedia.isSwitchingStream;
 export const selectLocalMediaConstraintsOptions = createSelector(selectLocalMediaDevices, (devices) => ({
