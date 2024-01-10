@@ -5,7 +5,7 @@ import { createReactor, startAppListening } from "../listenerMiddleware";
 import { selectRtcConnectionRaw, selectRtcManagerInitialized, selectRtcStatus } from "./rtcConnection";
 import { selectAppDisplayName, selectAppExternalId } from "./app";
 import { selectOrganizationId } from "./organization";
-import { selectLocalParticipantUserRole, selectSelfId } from "./localParticipant";
+import { selectLocalParticipantRole, selectSelfId } from "./localParticipant";
 import { selectSignalStatus } from "./signalConnection";
 import { selectDeviceId } from "./deviceCredentials";
 import {
@@ -104,7 +104,7 @@ export const rtcAnalyticsCustomEvents: { [key: string]: RtcAnalyticsCustomEvent 
     userRole: {
         actionType: "",
         rtcEventName: "userRole",
-        getValue: (state: RootState) => selectLocalParticipantUserRole(state),
+        getValue: (state: RootState) => selectLocalParticipantRole(state),
         getOutput: (value) => ({ userRole: value }),
     },
 };
