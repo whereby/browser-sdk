@@ -70,6 +70,7 @@ export const doGetDeviceCredentials = createAppAsyncThunk(
 
 export const selectDeviceCredentialsRaw = (state: RootState) => state.deviceCredentials;
 export const selectHasFetchedDeviceCredentials = (state: RootState) => !!state.deviceCredentials.data?.credentials;
+export const selectDeviceId = (state: RootState) => state.deviceCredentials.data?.credentials?.uuid;
 
 /**
  * Reactors

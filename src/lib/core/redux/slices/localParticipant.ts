@@ -11,6 +11,7 @@ import { signalEvents } from "./signalConnection/actions";
 
 export interface LocalParticipantState extends LocalParticipant {
     isScreenSharing: boolean;
+    roleName: string;
 }
 
 const initialState: LocalParticipantState = {
@@ -21,6 +22,7 @@ const initialState: LocalParticipantState = {
     isLocalParticipant: true,
     stream: undefined,
     isScreenSharing: false,
+    roleName: "",
 };
 
 export const doEnableAudio = createAppAsyncThunk(
@@ -100,9 +102,11 @@ export const localParticipantSlice = createSlice({
             };
         });
         builder.addCase(signalEvents.roomJoined, (state, action) => {
+            const client = action.payload?.room?.clients.find((c) => c.id === action.payload?.selfId);
             return {
                 ...state,
                 id: action.payload.selfId,
+                roleName: client?.role.roleName || "",
             };
         });
     },
@@ -112,6 +116,7 @@ export const { doSetLocalParticipant } = localParticipantSlice.actions;
 
 export const selectLocalParticipantRaw = (state: RootState) => state.localParticipant;
 export const selectSelfId = (state: RootState) => state.localParticipant.id;
+export const selectLocalParticipantRole = (state: RootState) => state.localParticipant.roleName;
 export const selectLocalParticipantIsScreenSharing = (state: RootState) => state.localParticipant.isScreenSharing;
 
 startAppListening({
