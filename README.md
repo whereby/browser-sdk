@@ -1,10 +1,5 @@
 # `@whereby.com/browser-sdk`
 
-> [!WARNING]
-> This is a pre-release of the v2 version of this library, adding support for
-> more custom integration using React hooks and plain JavaScript classes in
-> addition to the web component for embedding.
-
 Whereby browser SDK is a library for seamless integration of Whereby
 (https://whereby.com) video calls into your web application.
 
@@ -13,16 +8,17 @@ Whereby browser SDK is a library for seamless integration of Whereby
 ## Installation
 
 ```shell
-npm install @whereby.com/browser-sdk@2.0.0-beta3
+npm install @whereby.com/browser-sdk
 ```
 
 or
 
 ```shell
-yarn add @whereby.com/browser-sdk@2.0.0-beta3
+yarn add @whereby.com/browser-sdk
 ```
 
 ## Usage
+
 > [!IMPORTANT]
 > In order to make use of this functionality, you must have a Whereby account
 > from which you can create room urls, either [manually or through our
