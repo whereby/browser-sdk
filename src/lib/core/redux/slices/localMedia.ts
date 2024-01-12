@@ -1,9 +1,10 @@
-import { createSelector, createSlice, PayloadAction } from "@reduxjs/toolkit";
-import { getStream } from "@whereby/jslib-media/src/webrtc/MediaDevices";
+import { createSelector, createSlice, isAnyOf, PayloadAction } from "@reduxjs/toolkit";
+import { getStream, getUpdatedDevices, getDeviceData } from "@whereby/jslib-media/src/webrtc/MediaDevices";
 import { createAppAsyncThunk, createAppThunk } from "../../redux/thunk";
 import { RootState } from "../../redux/store";
 import { createReactor, startAppListening } from "../../redux/listenerMiddleware";
 import { doAppJoin, selectAppWantsToJoin } from "./app";
+import debounce from "../../../utils/debounce";
 
 export type LocalMediaOptions = {
     audio: boolean;
@@ -15,6 +16,7 @@ export type LocalMediaOptions = {
  */
 
 export interface LocalMediaState {
+    busyDeviceIds: string[];
     cameraDeviceError?: unknown;
     cameraEnabled: boolean;
     currentCameraDeviceId?: string;
@@ -26,13 +28,15 @@ export interface LocalMediaState {
     microphoneDeviceError?: unknown;
     microphoneEnabled: boolean;
     options?: LocalMediaOptions;
-    screenshareStream?: MediaStream;
     status: "" | "stopped" | "starting" | "started" | "error";
     startError?: unknown;
     stream?: MediaStream;
+    isSwitchingStream: boolean;
+    onDeviceChange?: () => void;
 }
 
 export const initialState: LocalMediaState = {
+    busyDeviceIds: [],
     cameraEnabled: false,
     devices: [],
     isSettingCameraDevice: false,
@@ -40,32 +44,64 @@ export const initialState: LocalMediaState = {
     isTogglingCamera: false,
     microphoneEnabled: false,
     status: "",
+    isSwitchingStream: false,
 };
 
 export const localMediaSlice = createSlice({
     name: "localMedia",
     initialState,
     reducers: {
-        doToggleCameraEnabled(state, action: PayloadAction<{ enabled?: boolean }>) {
-            state.cameraEnabled = action.payload.enabled ?? !state.cameraEnabled;
+        deviceBusy(state, action: PayloadAction<{ deviceId: string }>) {
+            if (state.busyDeviceIds.includes(action.payload.deviceId)) {
+                return state;
+            }
+
+            return {
+                ...state,
+                busyDeviceIds: [...state.busyDeviceIds, action.payload.deviceId],
+            };
         },
-        doSetCurrentCameraDeviceId(state, action: PayloadAction<{ deviceId?: string }>) {
-            state.currentCameraDeviceId = action.payload.deviceId;
+        toggleCameraEnabled(state, action: PayloadAction<{ enabled?: boolean }>) {
+            return {
+                ...state,
+                cameraEnabled: action.payload.enabled ?? !state.cameraEnabled,
+            };
         },
-        doToggleMicrophoneEnabled(state, action: PayloadAction<{ enabled?: boolean }>) {
-            state.microphoneEnabled = action.payload.enabled ?? !state.microphoneEnabled;
+        setCurrentCameraDeviceId(state, action: PayloadAction<{ deviceId?: string }>) {
+            return {
+                ...state,
+                currentCameraDeviceId: action.payload.deviceId,
+            };
         },
-        doSetCurrentMicrophoneDeviceId(state, action: PayloadAction<{ deviceId?: string }>) {
-            state.currentMicrophoneDeviceId = action.payload.deviceId;
+        toggleMicrophoneEnabled(state, action: PayloadAction<{ enabled?: boolean }>) {
+            return {
+                ...state,
+                microphoneEnabled: action.payload.enabled ?? !state.microphoneEnabled,
+            };
         },
-        doSetDevices(state, action: PayloadAction<{ devices: MediaDeviceInfo[] }>) {
-            state.devices = action.payload.devices;
+        setCurrentMicrophoneDeviceId(state, action: PayloadAction<{ deviceId?: string }>) {
+            return {
+                ...state,
+                currentMicrophoneDeviceId: action.payload.deviceId,
+            };
         },
-        doSetLocalMediaStream(state, action: PayloadAction<{ stream: MediaStream }>) {
-            state.stream = action.payload.stream;
+        setDevices(state, action: PayloadAction<{ devices: MediaDeviceInfo[] }>) {
+            return {
+                ...state,
+                devices: action.payload.devices,
+            };
         },
-        doSetLocalMediaOptions(state, action: PayloadAction<{ options: LocalMediaOptions }>) {
-            state.options = action.payload.options;
+        setLocalMediaStream(state, action: PayloadAction<{ stream: MediaStream }>) {
+            return {
+                ...state,
+                stream: action.payload.stream,
+            };
+        },
+        setLocalMediaOptions(state, action: PayloadAction<{ options: LocalMediaOptions }>) {
+            return {
+                ...state,
+                options: action.payload.options,
+            };
         },
         localMediaStopped(state) {
             return {
@@ -74,120 +110,128 @@ export const localMediaSlice = createSlice({
                 stream: undefined,
             };
         },
-        // eslint-disable-next-line @typescript-eslint/no-unused-vars
-        stopScreenshare(state, action: PayloadAction<{ stream: MediaStream }>) {
+        localStreamMetadataUpdated(state, action: PayloadAction<ReturnType<typeof getDeviceData>>) {
+            const { audio, video } = action.payload;
             return {
                 ...state,
-                screenshareStream: undefined,
+                currentCameraDeviceId: video.deviceId,
+                currentMicrophoneDeviceId: audio.deviceId,
+                busyDeviceIds: state.busyDeviceIds.filter((id) => id !== audio.deviceId && id !== video.deviceId),
             };
         },
     },
     extraReducers: (builder) => {
-        builder
-            .addCase(doAppJoin, (state, action) => {
-                return {
-                    ...state,
-                    options: action.payload.localMediaOptions,
-                };
-            })
-            .addCase(doSetDevice.pending, (state, action) => {
-                const { audio, video } = action.meta.arg;
-                return {
-                    ...state,
-                    isSettingCameraDevice: video,
-                    isSettingMicrophoneDevice: audio,
-                };
-            })
-            .addCase(doSetDevice.fulfilled, (state, action) => {
-                const { audio, video } = action.meta.arg;
-                return {
-                    ...state,
-                    isSettingCameraDevice: video ? false : state.isSettingCameraDevice,
-                    isSettingMicrophoneDevice: audio ? false : state.isSettingMicrophoneDevice,
-                };
-            })
-            .addCase(doSetDevice.rejected, (state, action) => {
-                const { audio, video } = action.meta.arg;
-                return {
-                    ...state,
-                    isSettingCameraDevice: video ? false : state.isSettingCameraDevice,
-                    isSettingMicrophoneDevice: audio ? false : state.isSettingMicrophoneDevice,
-                    cameraDeviceError: video ? action.error : state.cameraDeviceError,
-                    microphoneDeviceError: audio ? action.error : state.microphoneDeviceError,
-                };
-            })
-            .addCase(doToggleCamera.pending, (state) => {
-                return {
-                    ...state,
-                    isTogglingCamera: true,
-                };
-            })
-            .addCase(doToggleCamera.fulfilled, (state) => {
-                return {
-                    ...state,
-                    isTogglingCamera: false,
-                };
-            })
-            .addCase(doUpdateDeviceList.fulfilled, (state, action) => {
-                return {
-                    ...state,
-                    devices: action.payload.devices,
-                };
-            })
-            .addCase(doStartLocalMedia.pending, (state) => {
-                return {
-                    ...state,
-                    status: "starting",
-                };
-            })
-            .addCase(doStartLocalMedia.fulfilled, (state, { payload: { stream } }) => {
-                let cameraDeviceId = undefined;
-                let cameraEnabled = false;
-                let microphoneDeviceId = undefined;
-                let microphoneEnabled = false;
+        builder.addCase(doAppJoin, (state, action) => {
+            return {
+                ...state,
+                options: action.payload.localMediaOptions,
+            };
+        });
+        builder.addCase(doSetDevice.pending, (state, action) => {
+            const { audio, video } = action.meta.arg;
+            return {
+                ...state,
+                isSettingCameraDevice: video,
+                isSettingMicrophoneDevice: audio,
+            };
+        });
+        builder.addCase(doSetDevice.fulfilled, (state, action) => {
+            const { audio, video } = action.meta.arg;
+            return {
+                ...state,
+                isSettingCameraDevice: video ? false : state.isSettingCameraDevice,
+                isSettingMicrophoneDevice: audio ? false : state.isSettingMicrophoneDevice,
+            };
+        });
+        builder.addCase(doSetDevice.rejected, (state, action) => {
+            const { audio, video } = action.meta.arg;
+            return {
+                ...state,
+                isSettingCameraDevice: video ? false : state.isSettingCameraDevice,
+                isSettingMicrophoneDevice: audio ? false : state.isSettingMicrophoneDevice,
+                cameraDeviceError: video ? action.error : state.cameraDeviceError,
+                microphoneDeviceError: audio ? action.error : state.microphoneDeviceError,
+            };
+        });
+        builder.addCase(doToggleCamera.pending, (state) => {
+            return {
+                ...state,
+                isTogglingCamera: true,
+            };
+        });
+        builder.addCase(doToggleCamera.fulfilled, (state) => {
+            return {
+                ...state,
+                isTogglingCamera: false,
+            };
+        });
+        builder.addCase(doUpdateDeviceList.fulfilled, (state, action) => {
+            return {
+                ...state,
+                devices: action.payload.devices,
+            };
+        });
+        builder.addCase(doStartLocalMedia.pending, (state) => {
+            return {
+                ...state,
+                status: "starting",
+            };
+        });
+        builder.addCase(doStartLocalMedia.fulfilled, (state, { payload: { stream, onDeviceChange } }) => {
+            let cameraDeviceId = undefined;
+            let cameraEnabled = false;
+            let microphoneDeviceId = undefined;
+            let microphoneEnabled = false;
 
-                const audioTrack = stream.getAudioTracks()[0];
-                const videoTrack = stream.getVideoTracks()[0];
+            const audioTrack = stream.getAudioTracks()[0];
+            const videoTrack = stream.getVideoTracks()[0];
 
-                if (audioTrack) {
-                    microphoneDeviceId = audioTrack.getSettings().deviceId;
-                    microphoneEnabled = audioTrack.enabled;
-                }
+            if (audioTrack) {
+                microphoneDeviceId = audioTrack.getSettings().deviceId;
+                microphoneEnabled = audioTrack.enabled;
+            }
 
-                if (videoTrack) {
-                    cameraEnabled = videoTrack.enabled;
-                    cameraDeviceId = videoTrack.getSettings().deviceId;
-                }
+            if (videoTrack) {
+                cameraEnabled = videoTrack.enabled;
+                cameraDeviceId = videoTrack.getSettings().deviceId;
+            }
 
-                return {
-                    ...state,
-                    stream,
-                    status: "started",
-                    currentCameraDeviceId: cameraDeviceId,
-                    currentMicrophoneDeviceId: microphoneDeviceId,
-                    cameraEnabled,
-                    microphoneEnabled,
-                };
-            })
-            .addCase(doStartLocalMedia.rejected, (state, action) => {
-                return {
-                    ...state,
-                    status: "error",
-                    startError: action.error,
-                };
-            })
-            .addCase(doStartScreenshare.fulfilled, (state, { payload: { stream } }) => {
-                return {
-                    ...state,
-                    screenshareStream: stream,
-                };
-            })
-            .addCase(doStartScreenshare.rejected, (state) => {
-                return {
-                    ...state,
-                    screenshareStream: undefined,
-                };
-            });
+            return {
+                ...state,
+                stream,
+                status: "started",
+                currentCameraDeviceId: cameraDeviceId,
+                currentMicrophoneDeviceId: microphoneDeviceId,
+                cameraEnabled,
+                microphoneEnabled,
+                onDeviceChange,
+            };
+        });
+        builder.addCase(doStartLocalMedia.rejected, (state, action) => {
+            return {
+                ...state,
+                status: "error",
+                startError: action.error,
+            };
+        });
+        builder.addCase(doSwitchLocalStream.pending, (state) => {
+            return {
+                ...state,
+                isSwitchingStream: true,
+            };
+        });
+        builder.addCase(doSwitchLocalStream.fulfilled, (state) => {
+            return {
+                ...state,
+                isSwitchingStream: false,
+            };
+        });
+        builder.addCase(doSwitchLocalStream.rejected, (state) => {
+            return {
+                ...state,
+                isSwitchingStream: false,
+            };
+        });
     },
 });
 
@@ -196,14 +240,15 @@ export const localMediaSlice = createSlice({
  */
 
 export const {
-    doSetCurrentCameraDeviceId,
-    doSetCurrentMicrophoneDeviceId,
-    doToggleCameraEnabled,
-    doToggleMicrophoneEnabled,
-    doSetLocalMediaOptions,
-    doSetLocalMediaStream,
+    deviceBusy,
+    setCurrentCameraDeviceId,
+    setCurrentMicrophoneDeviceId,
+    toggleCameraEnabled,
+    toggleMicrophoneEnabled,
+    setLocalMediaOptions,
+    setLocalMediaStream,
     localMediaStopped,
-    stopScreenshare,
+    localStreamMetadataUpdated,
 } = localMediaSlice.actions;
 
 const doToggleCamera = createAppAsyncThunk("localMedia/doToggleCamera", async (_, { getState, rejectWithValue }) => {
@@ -310,27 +355,159 @@ export const doSetDevice = createAppAsyncThunk(
     }
 );
 
-const doUpdateDeviceList = createAppAsyncThunk("localMedia/doUpdateDeviceList", async (_, { rejectWithValue }) => {
-    try {
-        const devices = await navigator.mediaDevices.enumerateDevices();
-        return { devices };
-    } catch (error) {
-        return rejectWithValue(error);
+export const doUpdateDeviceList = createAppAsyncThunk(
+    "localMedia/doUpdateDeviceList",
+    async (_, { getState, dispatch, rejectWithValue }) => {
+        const state = getState();
+        let newDevices: MediaDeviceInfo[] = [];
+        let oldDevices: MediaDeviceInfo[] = [];
+        const stream = selectLocalMediaStream(state);
+        const busy = selectBusyDeviceIds(state);
+        try {
+            newDevices = await navigator.mediaDevices.enumerateDevices();
+            oldDevices = selectLocalMediaDevices(state);
+
+            const shouldHandleDeviceUpdate =
+                stream &&
+                !selectLocalMediaIsSwitchingStream(state) &&
+                newDevices &&
+                oldDevices &&
+                oldDevices.find((d) => d.deviceId);
+
+            if (!shouldHandleDeviceUpdate) {
+                return { devices: newDevices };
+            }
+
+            const { changedDevices } = getUpdatedDevices({
+                oldDevices,
+                newDevices,
+                currentAudioId: selectCurrentMicrophoneDeviceId(state),
+                currentVideoId: selectCurrentCameraDeviceId(state),
+            });
+
+            let autoSwitchAudioId = changedDevices.audioinput?.deviceId;
+            let autoSwitchVideoId = changedDevices.videoinput?.deviceId;
+
+            // eslint-disable-next-line no-inner-declarations
+            function nextId(devices: MediaDeviceInfo[], id?: string) {
+                const curIdx = id ? devices.findIndex((d) => d.deviceId === id) : 0;
+                return (devices[(curIdx + 1) % devices.length] || {}).deviceId;
+            }
+
+            if (autoSwitchVideoId !== undefined) {
+                const videoDevices = selectLocalMediaDevices(state).filter((d) => d.kind === "videoinput");
+                const videoId = selectCurrentCameraDeviceId(state);
+
+                let nextVideoId = nextId(
+                    videoDevices.filter((d) => !busy.includes(d.deviceId)),
+                    videoId
+                );
+                if (!nextVideoId || videoId === nextVideoId) {
+                    nextVideoId = nextId(videoDevices, videoId);
+                }
+                if (videoId !== nextVideoId) {
+                    autoSwitchVideoId = nextVideoId;
+                }
+            }
+
+            if (autoSwitchAudioId !== undefined) {
+                const audioDevices = selectLocalMediaDevices(state).filter((d) => d.kind === "audioinput");
+                const audioId = selectCurrentMicrophoneDeviceId(state);
+
+                let nextAudioId = nextId(
+                    audioDevices.filter((d) => !busy.includes(d.deviceId)),
+                    audioId
+                );
+                if (!nextAudioId || audioId === nextAudioId) {
+                    nextAudioId = nextId(audioDevices, audioId);
+                }
+                if (audioId !== nextAudioId) {
+                    autoSwitchAudioId = nextAudioId;
+                }
+            }
+
+            if (autoSwitchAudioId !== undefined || autoSwitchVideoId !== undefined) {
+                dispatch(doSwitchLocalStream({ audioId: autoSwitchAudioId, videoId: autoSwitchVideoId }));
+            }
+
+            return { devices: newDevices };
+        } catch (error) {
+            return rejectWithValue(error);
+        }
     }
-});
+);
+
+export const doSwitchLocalStream = createAppAsyncThunk(
+    "localMedia/doSwitchLocalStream",
+    async ({ audioId, videoId }: { audioId?: string; videoId?: string }, { dispatch, getState, rejectWithValue }) => {
+        const state = getState();
+        const replaceStream = selectLocalMediaStream(state);
+        const constraintsOptions = selectLocalMediaConstraintsOptions(state);
+        const onlySwitchingOne = !!(videoId && !audioId) || !!(!videoId && audioId);
+        if (!replaceStream) {
+            // Switching no stream makes no sense
+            return;
+        }
+
+        try {
+            const { replacedTracks } = await getStream(
+                {
+                    ...constraintsOptions,
+                    audioId: audioId === undefined ? false : audioId,
+                    videoId: videoId === undefined ? false : videoId,
+                    type: "exact",
+                },
+                { replaceStream }
+            );
+
+            const deviceId = audioId || videoId;
+            if (onlySwitchingOne && deviceId) {
+                dispatch(
+                    deviceBusy({
+                        deviceId,
+                    })
+                );
+            }
+
+            return { replacedTracks };
+        } catch (error) {
+            console.error(error);
+            const deviceId = audioId || videoId;
+            if (onlySwitchingOne && deviceId) {
+                dispatch(
+                    deviceBusy({
+                        deviceId,
+                    })
+                );
+            }
+            return rejectWithValue(error);
+        }
+    }
+);
 
 export const doStartLocalMedia = createAppAsyncThunk(
     "localMedia/doStartLocalMedia",
     async (payload: LocalMediaOptions | MediaStream, { getState, dispatch, rejectWithValue }) => {
+        const onDeviceChange = debounce(
+            () => {
+                dispatch(doUpdateDeviceList());
+            },
+            { delay: 500 }
+        );
+
+        if (global.navigator.mediaDevices) {
+            global.navigator.mediaDevices.addEventListener("devicechange", onDeviceChange);
+        }
+
         // Resolve if existing stream is passed
         if ("getTracks" in payload) {
-            return Promise.resolve({ stream: payload });
+            return Promise.resolve({ stream: payload, onDeviceChange });
         }
 
         if (!(payload.audio || payload.video)) {
-            return { stream: new MediaStream() };
+            return { stream: new MediaStream(), onDeviceChange };
         } else {
-            dispatch(doSetLocalMediaOptions({ options: payload }));
+            dispatch(setLocalMediaOptions({ options: payload }));
         }
 
         try {
@@ -347,7 +524,7 @@ export const doStartLocalMedia = createAppAsyncThunk(
                 videoId: payload.video,
             });
 
-            return { stream };
+            return { stream, onDeviceChange };
         } catch (error) {
             return rejectWithValue(error);
         }
@@ -355,68 +532,25 @@ export const doStartLocalMedia = createAppAsyncThunk(
 );
 
 export const doStopLocalMedia = createAppThunk(() => (dispatch, getState) => {
-    const screenshareStream = selectScreenshareStream(getState());
     const stream = selectLocalMediaStream(getState());
-
-    screenshareStream?.getTracks().forEach((track) => {
-        track.stop();
-    });
+    const onDeviceChange = selectLocalMediaRaw(getState()).onDeviceChange;
 
     stream?.getTracks().forEach((track) => {
         track.stop();
     });
 
+    if (global.navigator.mediaDevices && onDeviceChange) {
+        global.navigator.mediaDevices.removeEventListener("devicechange", onDeviceChange);
+    }
+
     dispatch(localMediaStopped());
-});
-
-export const doStartScreenshare = createAppAsyncThunk(
-    "localMedia/doStartScreenshare",
-    async (_, { dispatch, getState, rejectWithValue }) => {
-        try {
-            const state = getState();
-            const screenshareStream = selectScreenshareStream(state);
-
-            if (screenshareStream) {
-                return { stream: screenshareStream };
-            }
-
-            const stream = await navigator.mediaDevices.getDisplayMedia();
-
-            const onEnded = () => {
-                dispatch(doStopScreenshare());
-            };
-
-            if ("oninactive" in stream) {
-                // Chrome
-                stream.addEventListener("inactive", onEnded);
-            } else {
-                // Firefox
-                stream.getVideoTracks()[0]?.addEventListener("ended", onEnded);
-            }
-
-            return { stream };
-        } catch (error) {
-            return rejectWithValue(error);
-        }
-    }
-);
-
-export const doStopScreenshare = createAppThunk(() => (dispatch, getState) => {
-    const state = getState();
-    const screenshareStream = selectScreenshareStream(state);
-
-    if (!screenshareStream) {
-        return;
-    }
-
-    screenshareStream.getTracks().forEach((track) => track.stop());
-    dispatch(stopScreenshare({ stream: screenshareStream }));
 });
 
 /**
  * Selectors
  */
 
+export const selectBusyDeviceIds = (state: RootState) => state.localMedia.busyDeviceIds;
 export const selectCameraDeviceError = (state: RootState) => state.localMedia.cameraDeviceError;
 export const selectCurrentCameraDeviceId = (state: RootState) => state.localMedia.currentCameraDeviceId;
 export const selectCurrentMicrophoneDeviceId = (state: RootState) => state.localMedia.currentMicrophoneDeviceId;
@@ -432,8 +566,8 @@ export const selectLocalMediaRaw = (state: RootState) => state.localMedia;
 export const selectLocalMediaStatus = (state: RootState) => state.localMedia.status;
 export const selectLocalMediaStream = (state: RootState) => state.localMedia.stream;
 export const selectMicrophoneDeviceError = (state: RootState) => state.localMedia.microphoneDeviceError;
-export const selectScreenshareStream = (state: RootState) => state.localMedia.screenshareStream;
 export const selectLocalMediaStartError = (state: RootState) => state.localMedia.startError;
+export const selectLocalMediaIsSwitchingStream = (state: RootState) => state.localMedia.isSwitchingStream;
 export const selectLocalMediaConstraintsOptions = createSelector(selectLocalMediaDevices, (devices) => ({
     devices,
     options: {
@@ -447,11 +581,17 @@ export const selectLocalMediaConstraintsOptions = createSelector(selectLocalMedi
     },
 }));
 export const selectIsLocalMediaStarting = createSelector(selectLocalMediaStatus, (status) => status === "starting");
-export const selectCameraDevices = createSelector(selectLocalMediaDevices, (devices) =>
-    devices.filter((d) => d.kind === "videoinput")
+export const selectCameraDevices = createSelector(
+    selectLocalMediaDevices,
+    selectBusyDeviceIds,
+    (devices, busyDeviceIds) =>
+        devices.filter((d) => d.kind === "videoinput").filter((d) => !busyDeviceIds.includes(d.deviceId))
 );
-export const selectMicrophoneDevices = createSelector(selectLocalMediaDevices, (devices) =>
-    devices.filter((d) => d.kind === "audioinput")
+export const selectMicrophoneDevices = createSelector(
+    selectLocalMediaDevices,
+    selectBusyDeviceIds,
+    (devices, busyDeviceIds) =>
+        devices.filter((d) => d.kind === "audioinput").filter((d) => !busyDeviceIds.includes(d.deviceId))
 );
 export const selectSpeakerDevices = createSelector(selectLocalMediaDevices, (devices) =>
     devices.filter((d) => d.kind === "audiooutput")
@@ -544,5 +684,29 @@ startAppListening({
     },
     effect: (_action, { dispatch }) => {
         dispatch(doSetDevice({ audio: true, video: false }));
+    },
+});
+
+startAppListening({
+    matcher: isAnyOf(
+        doStartLocalMedia.fulfilled,
+        doUpdateDeviceList.fulfilled,
+        doSwitchLocalStream.fulfilled,
+        doSwitchLocalStream.rejected
+    ),
+    effect: (_action, { dispatch, getState }) => {
+        const state = getState();
+        const stream = selectLocalMediaStream(state);
+        const devices = selectLocalMediaDevices(state);
+
+        if (!stream) return;
+
+        const deviceData = getDeviceData({
+            audioTrack: stream.getAudioTracks()[0],
+            videoTrack: stream.getVideoTracks()[0],
+            devices,
+        });
+
+        dispatch(localStreamMetadataUpdated(deviceData));
     },
 });

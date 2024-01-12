@@ -5,7 +5,7 @@ import { LocalParticipant } from "../../../../lib/react";
 import { selectSignalConnectionRaw } from "./signalConnection";
 
 import { doAppJoin } from "./app";
-import { doToggleCameraEnabled, doToggleMicrophoneEnabled } from "./localMedia";
+import { toggleCameraEnabled, toggleMicrophoneEnabled } from "./localMedia";
 import { startAppListening } from "../listenerMiddleware";
 import { signalEvents } from "./signalConnection/actions";
 
@@ -120,7 +120,7 @@ export const selectLocalParticipantRole = (state: RootState) => state.localParti
 export const selectLocalParticipantIsScreenSharing = (state: RootState) => state.localParticipant.isScreenSharing;
 
 startAppListening({
-    actionCreator: doToggleCameraEnabled,
+    actionCreator: toggleCameraEnabled,
     effect: ({ payload }, { dispatch, getState }) => {
         const { enabled } = payload;
         const { isVideoEnabled } = selectLocalParticipantRaw(getState());
@@ -130,7 +130,7 @@ startAppListening({
 });
 
 startAppListening({
-    actionCreator: doToggleMicrophoneEnabled,
+    actionCreator: toggleMicrophoneEnabled,
     effect: ({ payload }, { dispatch, getState }) => {
         const { enabled } = payload;
         const { isAudioEnabled } = selectLocalParticipantRaw(getState());

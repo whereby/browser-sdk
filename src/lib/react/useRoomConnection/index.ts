@@ -7,12 +7,8 @@ import { doSendChatMessage } from "../../core/redux/slices/chat";
 import { doStartCloudRecording, doStopCloudRecording } from "../../core/redux/slices/cloudRecording";
 import { doAcceptWaitingParticipant, doRejectWaitingParticipant } from "../../core/redux/slices/waitingParticipants";
 import { doSetDisplayName } from "../../core/redux/slices/localParticipant";
-import {
-    doToggleCameraEnabled,
-    doToggleMicrophoneEnabled,
-    doStartScreenshare,
-    doStopScreenshare,
-} from "../../core/redux/slices/localMedia";
+import { toggleCameraEnabled, toggleMicrophoneEnabled } from "../../core/redux/slices/localMedia";
+import { doStartScreenshare, doStopScreenshare } from "../../core/redux/slices/localScreenshare";
 import { appLeft, doAppJoin } from "../../core/redux/slices/app";
 import { selectRoomConnectionState } from "./selector";
 import { doKnockRoom } from "../../core/redux/slices/roomConnection";
@@ -121,11 +117,11 @@ export function useRoomConnection(
         [store]
     );
     const toggleCamera = React.useCallback(
-        (enabled?: boolean) => store.dispatch(doToggleCameraEnabled({ enabled })),
+        (enabled?: boolean) => store.dispatch(toggleCameraEnabled({ enabled })),
         [store]
     );
     const toggleMicrophone = React.useCallback(
-        (enabled?: boolean) => store.dispatch(doToggleMicrophoneEnabled({ enabled })),
+        (enabled?: boolean) => store.dispatch(toggleMicrophoneEnabled({ enabled })),
         [store]
     );
     const acceptWaitingParticipant = React.useCallback(

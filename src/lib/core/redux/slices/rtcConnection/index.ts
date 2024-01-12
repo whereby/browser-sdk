@@ -18,12 +18,11 @@ import {
     selectLocalMediaStream,
     selectLocalMediaStatus,
     doSetDevice,
-    doStartScreenshare,
-    stopScreenshare,
 } from "../localMedia";
 import { rtcEvents } from "./actions";
 import { StreamStatusUpdate } from "./types";
 import { signalEvents } from "../signalConnection/actions";
+import { doStartScreenshare, stopScreenshare } from "../localScreenshare";
 
 export const createWebRtcEmitter = (dispatch: AppDispatch) => {
     return {

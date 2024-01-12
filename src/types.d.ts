@@ -343,4 +343,58 @@ declare module "@whereby/jslib-media/src/webrtc/MediaDevices" {
         constraintOpt: GetConstraintsOptions,
         getStreamOptions?: GetStreamOptions
     ): Promise<GetStreamResult>;
+
+    export function enumerate(): Promise<MediaDeviceInfo[]>;
+
+    export function getUpdatedDevices({
+        oldDevices,
+        newDevices,
+        currentAudioId,
+        currentVideoId,
+        currentSpeakerId,
+    }: {
+        oldDevices: MediaDeviceInfo[];
+        newDevices: MediaDeviceInfo[];
+        currentAudioId?: string | undefined;
+        currentVideoId?: string | undefined;
+        currentSpeakerId?: string | undefined;
+    }): {
+        addedDevices: {
+            audioinput?: { deviceId: string; label: string; kind: string };
+            videoinput?: { deviceId: string; label: string; kind: string };
+            audiooutput?: { deviceId: string; label: string; kind: string };
+        };
+        changedDevices: {
+            audioinput?: { deviceId: string; label: string; kind: string };
+            videoinput?: { deviceId: string; label: string; kind: string };
+            audiooutput?: { deviceId: string; label: string; kind: string };
+        };
+    };
+
+    export function getDeviceData({
+        audioTrack,
+        videoTrack,
+        devices,
+        stoppedVideoTrack,
+        lastAudioId,
+        lastVideoId,
+    }: {
+        audioTrack?: MediaStreamTrack | null;
+        videoTrack?: MediaStreamTrack | null;
+        devices: MediaDeviceInfo[];
+        stoppedVideoTrack?: boolean;
+        lastAudioId?: string | undefined;
+        lastVideoId?: string | undefined;
+    }): {
+        audio: {
+            deviceId: string;
+            label: string;
+            kind: string;
+        };
+        video: {
+            deviceId: string;
+            label: string;
+            kind: string;
+        };
+    };
 }

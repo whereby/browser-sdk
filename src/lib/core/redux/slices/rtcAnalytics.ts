@@ -8,12 +8,8 @@ import { selectOrganizationId } from "./organization";
 import { selectLocalParticipantRole, selectSelfId } from "./localParticipant";
 import { selectSignalStatus } from "./signalConnection";
 import { selectDeviceId } from "./deviceCredentials";
-import {
-    selectIsCameraEnabled,
-    selectIsMicrophoneEnabled,
-    selectLocalMediaStream,
-    selectScreenshareStream,
-} from "./localMedia";
+import { selectIsCameraEnabled, selectIsMicrophoneEnabled, selectLocalMediaStream } from "./localMedia";
+import { selectLocalScreenshareStream } from "./localScreenshare";
 
 type RtcAnalyticsCustomEvent = {
     actionType: string;
@@ -45,16 +41,16 @@ export const rtcAnalyticsCustomEvents: { [key: string]: RtcAnalyticsCustomEvent 
         getOutput: (value) => ({ stream: value }),
     },
     localScreenshareStream: {
-        actionType: "localMedia/doStartScreenshare/fulfilled",
+        actionType: "localScreenshare/doStartScreenshare/fulfilled",
         rtcEventName: "localScreenshareStream",
         getValue: (state: RootState) =>
-            selectScreenshareStream(state)
+            selectLocalScreenshareStream(state)
                 ?.getTracks()
                 .map((track) => ({ id: track.id, kind: track.kind, label: track.label })),
         getOutput: (value) => ({ tracks: value }),
     },
     localScreenshareStreamStopped: {
-        actionType: "localMedia/stopScreenshare",
+        actionType: "localScreeenshare/stopScreenshare",
         rtcEventName: "localScreenshareStream",
         getValue: () => () => null,
         getOutput: () => ({}),
