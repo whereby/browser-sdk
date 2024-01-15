@@ -415,6 +415,14 @@ export const selectStreamsToAccept = createSelector(
         for (const client of remoteParticipants) {
             const { streams, id: clientId, newJoiner } = client;
 
+            // Handle case where we get reversed streams from signal-server
+            // We do this to avoid creating two RTCPeerConnections potentially ending up in failed ice state
+            if (streams?.length > 1 && streams[1].id === "0") {
+                const tempStream = streams[0];
+                streams[1] = streams[0];
+                streams[0] = tempStream;
+            }
+
             for (let i = 0; i < streams.length; i++) {
                 const streamId = streams[i].id;
                 const state = streams[i].state;
