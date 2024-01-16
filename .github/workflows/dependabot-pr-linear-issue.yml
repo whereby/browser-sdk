@@ -1,0 +1,14 @@
+name: Dependabot PR -> Linear issue
+on:
+    pull_request:
+        branches: [main]
+        types: [opened]
+jobs:
+    create_linear_issue_if_needed:
+        name: "Create Linear issue if needed"
+        uses: whereby/github-actions/.github/workflows/dependabot_pr_to_linear_issue.yml@1.0.1
+        secrets:
+            linear_api_key: ${{ secrets.LINEAR_API_KEY }}
+        with:
+            linear_team_id: ${{ vars.LINEAR_PANDA_TEAM_ID }}
+            linear_state_id: ${{ vars.LINEAR_TRIAGE_STATE_ID }}
