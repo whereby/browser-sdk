@@ -24,6 +24,7 @@ describe("reducer", () => {
                                 userId: null,
                             },
                         ],
+                        session: null,
                     },
                 })
             );

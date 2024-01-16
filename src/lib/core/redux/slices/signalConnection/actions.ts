@@ -15,6 +15,7 @@ import {
     ScreenshareStartedEvent,
     ScreenshareStoppedEvent,
     VideoEnabledEvent,
+    RoomSessionEndedEvent,
 } from "@whereby/jslib-media/src/utils/ServerSocket";
 
 function createSignalEventAction<T>(name: string) {
@@ -34,6 +35,7 @@ export const signalEvents = {
     newClient: createSignalEventAction<NewClientEvent>("newClient"),
     roomJoined: createSignalEventAction<RoomJoinedEvent>("roomJoined"),
     roomKnocked: createSignalEventAction<RoomKnockedEvent>("roomKnocked"),
+    roomSessionEnded: createSignalEventAction<RoomSessionEndedEvent>("roomSessionEnded"),
     screenshareStarted: createSignalEventAction<ScreenshareStartedEvent>("screenshareStarted"),
     screenshareStopped: createSignalEventAction<ScreenshareStoppedEvent>("screenshareStopped"),
     streamingStopped: createSignalEventAction<void>("streamingStopped"),

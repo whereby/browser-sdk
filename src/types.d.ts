@@ -167,6 +167,12 @@ declare module "@whereby/jslib-media/src/utils/ServerSocket" {
     }
     interface NewClientEvent {
         client: SignalClient;
+        room?: {
+            session: {
+                createdAt: string;
+                id: string;
+            } | null;
+        };
     }
 
     interface KnockerLeftEvent {
@@ -193,6 +199,10 @@ declare module "@whereby/jslib-media/src/utils/ServerSocket" {
         room?: {
             clients: SignalClient[];
             knockers: SignalKnocker[];
+            session: {
+                createdAt: string;
+                id: string;
+            } | null;
         };
         selfId: string;
     }
@@ -202,6 +212,10 @@ declare module "@whereby/jslib-media/src/utils/ServerSocket" {
         displayName: string | null;
         imageUrl: string | null;
         liveVideo: boolean;
+    }
+
+    interface RoomSessionEndedEvent {
+        roomSessionId: string;
     }
 
     interface ScreenshareStartedEvent {
@@ -243,6 +257,7 @@ declare module "@whereby/jslib-media/src/utils/ServerSocket" {
         room_joined: RoomJoinedEvent;
         room_knocked: RoomKnockedEvent;
         room_left: void;
+        room_session_ended: RoomSessionEndedEvent;
         screenshare_started: ScreenshareStartedEvent;
         screenshare_stopped: ScreenshareStoppedEvent;
         streaming_stopped: void;

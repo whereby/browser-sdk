@@ -32,6 +32,7 @@ describe("remoteParticipantsSlice", () => {
                                 },
                             ],
                             knockers: [],
+                            session: null,
                         },
                     })
                 );
