@@ -19,6 +19,7 @@ function forwardSocketEvents(socket: ServerSocket, dispatch: ThunkDispatch<RootS
     socket.on("chat_message", (payload) => dispatch(signalEvents.chatMessage(payload)));
     socket.on("disconnect", () => dispatch(signalEvents.disconnect()));
     socket.on("room_knocked", (payload) => dispatch(signalEvents.roomKnocked(payload)));
+    socket.on("room_session_ended", (payload) => dispatch(signalEvents.roomSessionEnded(payload)));
     socket.on("knocker_left", (payload) => dispatch(signalEvents.knockerLeft(payload)));
     socket.on("knock_handled", (payload) => dispatch(signalEvents.knockHandled(payload)));
     socket.on("screenshare_started", (payload) => dispatch(signalEvents.screenshareStarted(payload)));
