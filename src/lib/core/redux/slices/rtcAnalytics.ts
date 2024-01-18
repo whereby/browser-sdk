@@ -170,6 +170,17 @@ export const doRtcAnalyticsCustomEventsInitialize = createAppThunk(() => (dispat
 
     if (!rtcManager) return;
 
+    // RTC stats require a `insightsStats` event to be sent to set the timestamp.
+    // This is a temporary workaround, we just send one dummy event on initialization.
+    rtcManager.sendStatsCustomEvent("insightsStats", {
+        _time: Date.now(),
+        ls: 0,
+        lr: 0,
+        bs: 0,
+        br: 0,
+        cpu: 0,
+    });
+
     Object.values(rtcAnalyticsCustomEvents).forEach(({ rtcEventName, getValue, getOutput }) => {
         const value = getValue(state);
         const output = { ...(getOutput(value) as Record<string, unknown>), _time: Date.now() };
