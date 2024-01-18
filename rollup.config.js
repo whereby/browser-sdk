@@ -9,16 +9,21 @@ const { dts } = require("rollup-plugin-dts");
 
 const peerDependencies = [...Object.keys(pkg.peerDependencies || {})];
 
-function makeCdnFilename() {
+function makeCdnFilename(package) {
     const major = pkg.version.split(".")[0];
-    const preRelease = pkg.version.split("-")[1];
-    let tag = "";
 
+    let tag = "";
+    const preRelease = pkg.version.split("-")[1];
     if (preRelease) {
         tag = `-${preRelease.split(".")[0]}`;
     }
 
-    return `v${major}${tag}.js`;
+    let packagePart = "";
+    if (package) {
+        packagePart = `-${package}`;
+    }
+
+    return `v${major}${packagePart}${tag}.js`;
 }
 
 const replaceValues = {
@@ -88,17 +93,19 @@ module.exports = [
         external: ["heresy", ...peerDependencies],
         plugins,
     },
-    // Legacy build of embedded lib in ESM format, bundling the dependencies
+
+    // CDN builds
     {
         input: "src/lib/embed/index.ts",
         output: {
-            exports: "named",
-            file: `dist/${makeCdnFilename()}`,
-            format: "esm",
+            file: `dist/cdn/${makeCdnFilename("embed")}`,
+            format: "iife",
+            name: "whereby",
         },
         plugins: [nodeResolve(), commonjs(), json(), terser(), replace(replaceValues), typescript()],
     },
-    // Roll-up .d.ts definition files
+
+    // Type definitions
     {
         input: "src/lib/react/index.ts",
         output: [{ file: "dist/react/index.d.ts", format: "es" }],
