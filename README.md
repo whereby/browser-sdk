@@ -158,3 +158,18 @@ export default MyComponent;
 > Although we have just higlighted two combinations of how to load and use the
 > web component, it should be possible to use this library with all the major
 > frontend frameworks.
+
+## Migrating from v1 to v2
+
+Migration from v1 to v2 is only relevant for users of the `<whereby-embed />`
+web component. The following changes are necessary when upgrading to v2:
+
+- If you import the web component in your app, you need to add `/embed` to the
+  import path, like so `import "whereby.com/browser-sdk/embed"`
+- If you load the web component using a `<script>` tag, the src needs to be 
+  changed to `https://cdn.srv.whereby.com/embed/v2-embed.js`. In addition, the
+  `type="module"` attribute is no longer required and can be removed.
+
+The functionality of the web component should be exactly as the latest version
+on the v1 branch, but a TypeScript definition is now available for projects
+using this language.
