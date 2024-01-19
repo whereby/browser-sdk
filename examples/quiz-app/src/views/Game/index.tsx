@@ -22,7 +22,6 @@ const Game = ({ localMedia, displayName, roomUrl }: GameProps) => {
     const roomConnection = useRoomConnection(roomUrl, {
         localMedia,
         displayName,
-        logger: console,
     });
 
     const { state: roomState } = roomConnection;

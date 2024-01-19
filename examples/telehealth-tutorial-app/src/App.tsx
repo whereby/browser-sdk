@@ -14,7 +14,7 @@ function App() {
     const chatMessageBottomRef = React.useRef<HTMLDivElement>(null);
 
     const roomConnection = useRoomConnection(ROOM_URL, {
-        localMediaConstraints: {
+        localMediaOptions: {
             audio: true,
             video: true,
         },

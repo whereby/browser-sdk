@@ -137,14 +137,18 @@ const Participants = ({ roomConnection, quizState, variant = "default", screen =
 
                         return (
                             <motion.div {...animationProps} key={id}>
-                                <VideoTile
-                                    muted={localParticipant?.id === id}
-                                    stream={stream}
-                                    name={`${displayName} - ${scores[id] || 0} points`}
-                                    hasAnswered={hasParticipantAnswered}
-                                    roundResult={roundResults[id]}
-                                    variant={tileSizeVariant}
-                                />
+                                {stream ? (
+                                    <VideoTile
+                                        muted={localParticipant?.id === id}
+                                        stream={stream}
+                                        name={`${displayName} - ${scores[id] || 0} points`}
+                                        hasAnswered={hasParticipantAnswered}
+                                        roundResult={roundResults[id]}
+                                        variant={tileSizeVariant}
+                                    />
+                                ) : (
+                                    <div>No media</div>
+                                )}
                             </motion.div>
                         );
                     })}
