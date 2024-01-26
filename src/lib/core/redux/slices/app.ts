@@ -13,7 +13,7 @@ export interface AppState {
     displayName: string | null;
     sdkVersion: string | null;
     externalId: string | null;
-    isLocalMediaDisabled: boolean;
+    isNodeSdk: boolean;
 }
 
 const initialState: AppState = {
@@ -24,7 +24,7 @@ const initialState: AppState = {
     displayName: null,
     sdkVersion: null,
     externalId: null,
-    isLocalMediaDisabled: true,
+    isNodeSdk: typeof process !== "undefined" && process.release.name === "node",
 };
 
 export const appSlice = createSlice({
@@ -47,7 +47,6 @@ export const appSlice = createSlice({
             return {
                 ...state,
                 ...action.payload,
-                isLocalMediaDisabled: action.payload.localMediaOptions?.disabled || false,
                 roomName: url.pathname,
                 wantsToJoin: true,
             };
@@ -80,4 +79,4 @@ export const selectAppRoomKey = (state: RootState) => state.app.roomKey;
 export const selectAppDisplayName = (state: RootState) => state.app.displayName;
 export const selectAppSdkVersion = (state: RootState) => state.app.sdkVersion;
 export const selectAppExternalId = (state: RootState) => state.app.externalId;
-export const selectAppIsLocalMediaDisabled = (state: RootState) => state.app.isLocalMediaDisabled;
+export const selectAppIsNodeSdk = (state: RootState) => state.app.isNodeSdk;

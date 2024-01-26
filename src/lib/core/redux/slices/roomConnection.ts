@@ -10,7 +10,7 @@ import {
     selectAppSdkVersion,
     selectAppExternalId,
     setRoomKey,
-    selectAppIsLocalMediaDisabled,
+    selectAppIsNodeSdk,
 } from "./app";
 
 import { selectOrganizationId } from "./organization";
@@ -195,17 +195,11 @@ export const selectShouldConnectRoom = createSelector(
         selectRoomConnectionStatus,
         selectSignalConnectionDeviceIdentified,
         selectLocalMediaStatus,
-        selectAppIsLocalMediaDisabled,
+        selectAppIsNodeSdk,
     ],
-    (
-        hasOrganizationIdFetched,
-        roomConnectionStatus,
-        signalConnectionDeviceIdentified,
-        localMediaStatus,
-        isLocalMediaDisabled
-    ) => {
+    (hasOrganizationIdFetched, roomConnectionStatus, signalConnectionDeviceIdentified, localMediaStatus, isNodeSdk) => {
         if (
-            (localMediaStatus === "started" || isLocalMediaDisabled) &&
+            (localMediaStatus === "started" || isNodeSdk) && // the node SDK doesn't use LocalMedia, so we can join without
             signalConnectionDeviceIdentified &&
             !!hasOrganizationIdFetched &&
             ["initializing", "reconnect"].includes(roomConnectionStatus)
