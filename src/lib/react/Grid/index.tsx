@@ -5,17 +5,20 @@ import { Bounds, Frame, Origin, makeFrame } from "./helpers/layout";
 import { makeVideoCellView } from "./helpers/cellView";
 import debounce from "../../../lib/utils/debounce";
 import { RoomConnectionRef } from "../useRoomConnection/types";
+import { doRtcReportStreamResolution } from "../../../lib/core/redux/slices/rtcConnection";
 
 function GridVideoCellView({
     cell,
     participant,
     render,
     onSetAspectRatio,
+    onResize,
 }: {
     cell: { aspectRatio: number; clientId: string; bounds: Bounds; origin: Origin };
     participant: RemoteParticipant | LocalParticipant;
     render?: () => React.ReactNode;
     onSetAspectRatio: ({ aspectRatio }: { aspectRatio: number }) => void;
+    onResize?: ({ width, height, stream }: { width: number; height: number; stream: MediaStream }) => void;
 }) {
     const handleAspectRatioChange = React.useCallback(
         ({ ar }: { ar: number }) => {
@@ -43,6 +46,7 @@ function GridVideoCellView({
                 <VideoView
                     stream={participant.stream}
                     onSetAspectRatio={({ aspectRatio }) => handleAspectRatioChange({ ar: aspectRatio })}
+                    onResize={onResize as any}
                 />
             ) : null}
         </div>
@@ -126,6 +130,16 @@ function Grid({ roomConnection, renderParticipant, videoGridGap = 0 }: GridProps
         });
     }, [containerFrame, videoCells, videoGridGap]);
 
+    // Handle resize
+    const handleResize = React.useCallback(
+        ({ width, height, stream }: { width: number; height: number; stream: MediaStream }) => {
+            if (!roomConnection._ref) return;
+
+            roomConnection._ref.dispatch(doRtcReportStreamResolution({ streamId: stream.id, width, height }));
+        },
+        [localParticipant, roomConnection._ref]
+    );
+
     return (
         <div
             ref={gridRef}
@@ -146,6 +160,7 @@ function Grid({ roomConnection, renderParticipant, videoGridGap = 0 }: GridProps
                         cell={cell}
                         participant={participant}
                         render={renderParticipant ? () => renderParticipant({ cell, participant }) : undefined}
+                        onResize={handleResize}
                         onSetAspectRatio={({ aspectRatio }) => {
                             setAspectRatios((prev) => {
                                 const index = prev.findIndex((item) => item.clientId === cell.clientId);
