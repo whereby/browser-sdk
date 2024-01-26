@@ -2,7 +2,7 @@ import { fitToBounds } from "./gridUtils";
 
 import * as centerGrid from "./centerGridLayout";
 
-import { makeOrigin, makeBounds, makeFrame, makeBox, Frame } from "./layout";
+import { makeOrigin, makeBounds, makeFrame, makeBox, Frame, Bounds, Origin } from "./layout";
 import { type Box } from "./layout";
 import layoutConstants from "./layoutConstants";
 
@@ -13,7 +13,7 @@ const MIN_GRID_WIDTH = 300;
 const FLOATING_VIDEO_SIZE = 200;
 const CONSTRAINED_OVERFLOW_TRIGGER = 12;
 
-function getMinGridBounds({ cellCount }: { cellCount: number }) {
+function getMinGridBounds({ cellCount }: { cellCount: number }): Bounds {
     // Reduce min grid dimensions if we have 6 videos or less
     const isSmallGrid = cellCount <= 6;
     const minGridHeight = isSmallGrid ? MIN_GRID_HEIGHT - 50 : MIN_GRID_HEIGHT;
@@ -27,9 +27,9 @@ export function fitSupersizedContent({
     minGridContainerBounds,
     hasPresentationGrid,
 }: {
-    bounds: { width: number; height: number };
+    bounds: Bounds;
     aspectRatio: number;
-    minGridContainerBounds: { width: number; height: number };
+    minGridContainerBounds: Bounds;
     hasPresentationGrid: boolean;
 }) {
     const { width, height } = bounds;
@@ -118,8 +118,8 @@ export function calculateStageLayout({
     hasVideoContent,
     isPortrait,
 }: {
-    containerBounds: { width: number; height: number };
-    containerOrigin: { top: number; left: number };
+    containerBounds: Bounds;
+    containerOrigin: Origin;
     gridGap: number;
     hasConstrainedOverflow: boolean;
     hasPresentationContent: boolean;
@@ -156,14 +156,14 @@ export function calculateVideosContainerLayout({
     hasVideoContent,
     minGridBounds,
 }: {
-    containerBounds: { width: number; height: number };
-    containerOrigin: { top: number; left: number };
+    containerBounds: Bounds;
+    containerOrigin: Origin;
     gridGap: number;
     supersizedContentAspectRatio: number;
     hasPresentationContent: boolean;
     hasPresentationGrid: boolean;
     hasVideoContent: boolean;
-    minGridBounds: { width: number; height: number };
+    minGridBounds: Bounds;
 }) {
     const { width, height } = containerBounds;
     let isPortrait = width <= height;
@@ -230,8 +230,8 @@ function calculateGridLayout({
     maxGridWidth,
     gridGap,
 }: {
-    containerBounds: { width: number; height: number };
-    paddings?: { top: number; left: number; bottom: number; right: number };
+    containerBounds: Bounds;
+    paddings?: Box;
     videos: { clientId: string; isDraggable: boolean; aspectRatio: number }[];
     isConstrained: boolean;
     maxGridWidth: number;
@@ -297,8 +297,8 @@ function calculateFloatingLayout({
     videoControlsHeight,
     margin = 8,
 }: {
-    roomBounds: { width: number; height: number };
-    containerFrame: { origin: { top: number; left: number }; bounds: { width: number; height: number } };
+    roomBounds: Bounds;
+    containerFrame: Frame;
     floatingVideo: { clientId: string; isDraggable: boolean; aspectRatio: number } | null;
     videoControlsHeight: number;
     margin?: number;
@@ -478,7 +478,7 @@ interface CalculateLayoutOptions {
     paddings?: Box;
     presentationVideos?: { clientId: string; isDraggable: boolean; aspectRatio: number }[];
     rebalanceLayout?: boolean;
-    roomBounds: { width: number; height: number };
+    roomBounds: Bounds;
     roomLayoutHasOverlow?: boolean;
     videoControlsHeight?: number;
     videos?: { clientId: string; isDraggable: boolean; aspectRatio: number }[];

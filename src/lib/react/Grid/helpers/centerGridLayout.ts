@@ -1,6 +1,6 @@
 import { getGridSizeForCount } from "./gridUtils";
 
-import { makeBox } from "./layout";
+import { Box, makeBox } from "./layout";
 
 const WIDE_AR = 16 / 9;
 const NORMAL_AR = 4 / 3;
@@ -127,7 +127,7 @@ export function calculateLayout({
     cellCount: number;
     gridGap: number;
     cellAspectRatios?: number[];
-    paddings?: ReturnType<typeof makeBox>;
+    paddings?: Box;
 }) {
     // Handle empty grid:
     if (!cellCount) {
