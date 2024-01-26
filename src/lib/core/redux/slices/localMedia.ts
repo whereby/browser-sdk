@@ -495,8 +495,8 @@ export const doStartLocalMedia = createAppAsyncThunk(
             { delay: 500 }
         );
 
-        if (global.navigator.mediaDevices) {
-            global.navigator.mediaDevices.addEventListener("devicechange", onDeviceChange);
+        if (navigator.mediaDevices) {
+            navigator.mediaDevices.addEventListener("devicechange", onDeviceChange);
         }
 
         // Resolve if existing stream is passed
@@ -539,8 +539,8 @@ export const doStopLocalMedia = createAppThunk(() => (dispatch, getState) => {
         track.stop();
     });
 
-    if (global.navigator.mediaDevices && onDeviceChange) {
-        global.navigator.mediaDevices.removeEventListener("devicechange", onDeviceChange);
+    if (navigator.mediaDevices && onDeviceChange) {
+        navigator.mediaDevices.removeEventListener("devicechange", onDeviceChange);
     }
 
     dispatch(localMediaStopped());
