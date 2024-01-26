@@ -1,7 +1,7 @@
 import * as React from "react";
 import { LocalParticipant, RemoteParticipant, VideoView } from "..";
 import { calculateLayout } from "./helpers/stageLayout";
-import { makeBounds, makeFrame } from "./helpers/layout";
+import { Bounds, Frame, Origin, makeFrame } from "./helpers/layout";
 import { makeVideoCellView } from "./helpers/cellView";
 import debounce from "../../../lib/utils/debounce";
 import { RoomConnectionRef } from "../useRoomConnection/types";
@@ -12,11 +12,20 @@ function GridVideoCellView({
     render,
     onSetAspectRatio,
 }: {
-    cell: { clientId: string; bounds: { width: number; height: number }; origin: { top: number; left: number } };
+    cell: { aspectRatio: number; clientId: string; bounds: Bounds; origin: Origin };
     participant: RemoteParticipant | LocalParticipant;
     render?: () => React.ReactNode;
     onSetAspectRatio: ({ aspectRatio }: { aspectRatio: number }) => void;
 }) {
+    const handleAspectRatioChange = React.useCallback(
+        ({ ar }: { ar: number }) => {
+            if (ar !== cell.aspectRatio) {
+                onSetAspectRatio({ aspectRatio: ar });
+            }
+        },
+        [cell.aspectRatio, onSetAspectRatio]
+    );
+
     return (
         <div
             style={{
@@ -31,7 +40,10 @@ function GridVideoCellView({
             {render ? (
                 render()
             ) : participant.stream ? (
-                <VideoView style={{}} stream={participant.stream} onSetAspectRatio={onSetAspectRatio} />
+                <VideoView
+                    stream={participant.stream}
+                    onSetAspectRatio={({ aspectRatio }) => handleAspectRatioChange({ ar: aspectRatio })}
+                />
             ) : null}
         </div>
     );
@@ -43,7 +55,7 @@ interface GridProps {
         cell,
         participant,
     }: {
-        cell: { clientId: string; bounds: { width: number; height: number }; origin: { top: number; left: number } };
+        cell: { clientId: string; bounds: Bounds; origin: Origin };
         participant: RemoteParticipant | LocalParticipant;
     }) => React.ReactNode;
     videoGridGap?: number;
@@ -52,61 +64,24 @@ interface GridProps {
 function Grid({ roomConnection, renderParticipant, videoGridGap = 0 }: GridProps) {
     const { remoteParticipants, localParticipant } = roomConnection.state;
     const gridRef = React.useRef<HTMLDivElement>(null);
-    const [videos, setVideos] = React.useState<ReturnType<typeof makeVideoCellView>[]>([]);
-    const [stageLayout, setStageLayout] = React.useState<ReturnType<typeof calculateLayout> | null>(null);
+    const [containerFrame, setContainerFrame] = React.useState<Frame | null>(null);
     const [aspectRatios, setAspectRatios] = React.useState<{ clientId: string; aspectRatio: number }[]>([]);
 
+    // Calculate container frame on resize
     React.useEffect(() => {
-        setVideos(
-            [localParticipant, ...remoteParticipants].map((participant) =>
-                makeVideoCellView({
-                    aspectRatio: 16 / 9,
-                    avatarSize: 0,
-                    cellPaddings: 10,
-                    client: participant,
-                })
-            )
-        );
-    }, [remoteParticipants, localParticipant]);
-
-    React.useEffect(() => {
-        setVideos((prev) => {
-            return prev.map((video) => {
-                const aspectRatio = aspectRatios.find((item) => item.clientId === video.clientId)?.aspectRatio;
-
-                if (aspectRatio) {
-                    return { ...video, aspectRatio };
-                }
-
-                return video;
-            });
-        });
-    }, [aspectRatios]);
-
-    React.useEffect(() => {
-        if (!gridRef.current || !videos.length) {
+        if (!gridRef.current) {
             return;
         }
 
         const resizeObserver = new ResizeObserver(
             debounce(
                 () => {
-                    setStageLayout(() => {
-                        return calculateLayout({
-                            frame: makeFrame({
-                                width: gridRef.current?.clientWidth,
-                                height: gridRef.current?.clientHeight,
-                            }),
-                            gridGap: 0,
-                            isConstrained: false,
-                            roomBounds: makeBounds({
-                                width: gridRef.current?.clientWidth,
-                                height: gridRef.current?.clientHeight,
-                            }),
-                            videos,
-                            videoGridGap,
-                        });
-                    });
+                    setContainerFrame(
+                        makeFrame({
+                            width: gridRef.current?.clientWidth,
+                            height: gridRef.current?.clientHeight,
+                        })
+                    );
                 },
                 { delay: 60 }
             )
@@ -116,7 +91,40 @@ function Grid({ roomConnection, renderParticipant, videoGridGap = 0 }: GridProps
         return () => {
             resizeObserver.disconnect();
         };
-    }, [videos]);
+    }, []);
+
+    // Merge local and remote participants
+    const participants = React.useMemo(() => {
+        return [...(localParticipant ? [localParticipant] : []), ...remoteParticipants];
+    }, [remoteParticipants, localParticipant]);
+
+    // Make video cells
+    const videoCells = React.useMemo(() => {
+        return participants.map((participant) => {
+            const aspectRatio = aspectRatios.find((item) => item.clientId === participant?.id)?.aspectRatio;
+
+            return makeVideoCellView({
+                aspectRatio: aspectRatio ?? 16 / 9,
+                avatarSize: 0,
+                cellPaddings: 10,
+                client: participant,
+            });
+        });
+    }, [participants, aspectRatios]);
+
+    // Calculate stage layout
+    const stageLayout = React.useMemo(() => {
+        if (!containerFrame) return null;
+
+        return calculateLayout({
+            frame: containerFrame,
+            gridGap: 0,
+            isConstrained: false,
+            roomBounds: containerFrame.bounds,
+            videos: videoCells,
+            videoGridGap,
+        });
+    }, [containerFrame, videoCells, videoGridGap]);
 
     return (
         <div
@@ -127,7 +135,7 @@ function Grid({ roomConnection, renderParticipant, videoGridGap = 0 }: GridProps
                 position: "relative",
             }}
         >
-            {[localParticipant, ...remoteParticipants].map((participant, i) => {
+            {participants.map((participant, i) => {
                 const cell = stageLayout?.videoGrid.cells[i];
 
                 if (!cell || !participant || !participant.stream || !cell.clientId) return null;

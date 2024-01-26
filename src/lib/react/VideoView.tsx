@@ -1,4 +1,4 @@
-import React, { useEffect, useRef } from "react";
+import * as React from "react";
 import debounce from "../utils/debounce";
 
 interface VideoViewSelfProps {
@@ -14,9 +14,9 @@ type VideoViewProps = VideoViewSelfProps &
     React.DetailedHTMLProps<React.VideoHTMLAttributes<HTMLVideoElement>, HTMLVideoElement>;
 
 export default ({ muted, mirror = false, stream, onResize, onSetAspectRatio, ...rest }: VideoViewProps) => {
-    const videoEl = useRef<HTMLVideoElement>(null);
+    const videoEl = React.useRef<HTMLVideoElement>(null);
 
-    useEffect(() => {
+    React.useEffect(() => {
         if (!videoEl.current) {
             return;
         }
@@ -51,7 +51,7 @@ export default ({ muted, mirror = false, stream, onResize, onSetAspectRatio, ...
         };
     }, [stream]);
 
-    useEffect(() => {
+    React.useEffect(() => {
         if (!videoEl.current) {
             return;
         }
