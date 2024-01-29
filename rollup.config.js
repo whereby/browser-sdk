@@ -6,25 +6,32 @@ const { terser } = require("rollup-plugin-terser");
 const pkg = require("./package.json");
 const typescript = require("rollup-plugin-typescript2");
 const { dts } = require("rollup-plugin-dts");
+const nodePolyfills = require("rollup-plugin-polyfill-node");
 
 const peerDependencies = [...Object.keys(pkg.peerDependencies || {})];
 
-function makeCdnFilename() {
+function makeCdnFilename(package) {
     const major = pkg.version.split(".")[0];
-    const preRelease = pkg.version.split("-")[1];
-    let tag = "";
 
+    let tag = "";
+    const preRelease = pkg.version.split("-")[1];
     if (preRelease) {
         tag = `-${preRelease.split(".")[0]}`;
     }
 
-    return `v${major}${tag}.js`;
+    let packagePart = "";
+    if (package) {
+        packagePart = `-${package}`;
+    }
+
+    return `v${major}${packagePart}${tag}.js`;
 }
 
 const replaceValues = {
     preventAssignment: true,
     values: {
         __SDK_VERSION__: pkg.version,
+        "process.env.NODE_ENV": JSON.stringify(process.env.NODE_ENV),
         "process.env.NODE_DEBUG": JSON.stringify(process.env.NODE_DEBUG),
         "process.env.AWF_BASE_URL": JSON.stringify(process.env.AWF_BASE_URL),
         "process.env.AWF_API_BASE_URL": JSON.stringify(process.env.AWF_API_BASE_URL),
@@ -36,6 +43,7 @@ const replaceValues = {
         "process.env.REACT_APP_SIGNAL_BASE_URL": JSON.stringify(
             process.env.REACT_APP_SIGNAL_BASE_URL || "wss://signal.appearin.net"
         ),
+        "process.env.REACT_APP_IS_DEV": JSON.stringify(process.env.REACT_APP_IS_DEV),
     },
 };
 
@@ -88,17 +96,46 @@ module.exports = [
         external: ["heresy", ...peerDependencies],
         plugins,
     },
-    // Legacy build of embedded lib in ESM format, bundling the dependencies
+
+    // CDN builds
     {
         input: "src/lib/embed/index.ts",
         output: {
-            exports: "named",
-            file: `dist/${makeCdnFilename()}`,
-            format: "esm",
+            file: `dist/cdn/${makeCdnFilename("embed")}`,
+            format: "iife",
+            name: "whereby",
         },
         plugins: [nodeResolve(), commonjs(), json(), terser(), replace(replaceValues), typescript()],
     },
-    // Roll-up .d.ts definition files
+    {
+        input: "src/lib/react/index.ts",
+        output: {
+            file: `dist/cdn/${makeCdnFilename("react")}`,
+            format: "iife",
+            name: "whereby.react",
+            globals: {
+                react: "React",
+            },
+        },
+        external: [...peerDependencies],
+        plugins: [
+            commonjs(), // Needs to come before `nodePolyfills`
+            nodePolyfills(),
+            nodeResolve({ browser: true, preferBuiltins: false }),
+            json(),
+            terser(),
+            replace({
+                preventAssignment: true,
+                // jslib-media uses global.navigator for some gUM calls, replace these
+                delimiters: [" ", "."],
+                values: { "global.navigator.mediaDevices": " navigator.mediaDevices." },
+            }),
+            replace(replaceValues),
+            typescript(),
+        ],
+    },
+
+    // Type definitions
     {
         input: "src/lib/react/index.ts",
         output: [{ file: "dist/react/index.d.ts", format: "es" }],

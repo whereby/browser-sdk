@@ -60,7 +60,7 @@ jobs:
                   aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
                   aws-region: eu-west-1
 
-            - uses: jakejarvis/s3-sync-action@master
+            - uses: jakejarvis/s3-sync-action@v0.5.1
               with:
                   args: --acl public-read --follow-symlinks
               env:
@@ -68,7 +68,7 @@ jobs:
                   AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
                   AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
                   AWS_REGION: "es-west-1"
-                  SOURCE_DIR: "dist/"
+                  SOURCE_DIR: "dist/cdn/"
                   DEST_DIR: "embed/"
 
             - name: Invalidate cloudfront publication

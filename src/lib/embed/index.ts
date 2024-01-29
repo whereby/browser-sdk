@@ -1,9 +1,10 @@
 import { define, ref } from "heresy";
+import { ReactHTMLElement } from "react";
 
 import { parseRoomUrlAndSubdomain } from "../utils/roomUrl";
 import { sdkVersion } from "../version";
 
-interface WherebyEmbedAttributes {
+interface WherebyEmbedElementAttributes extends ReactHTMLElement<HTMLElement> {
     audio: string;
     avatarUrl: string;
     background: string;
@@ -38,10 +39,48 @@ interface WherebyEmbedAttributes {
     video: string;
     virtualBackgroundUrl: string;
 }
+
+interface WherebyEmbedElementEventMap {
+    ready: CustomEvent;
+    knock: CustomEvent;
+    participantupdate: CustomEvent<{ count: number }>;
+    join: CustomEvent;
+    leave: CustomEvent<{ removed: boolean }>;
+    participant_join: CustomEvent<{ participant: { metadata: string } }>;
+    participant_leave: CustomEvent<{ participant: { metadata: string } }>;
+    microphone_toggle: CustomEvent<{ enabled: boolean }>;
+    camera_toggle: CustomEvent<{ enabled: boolean }>;
+    chat_toggle: CustomEvent<{ open: boolean }>;
+    pip_toggle: CustomEvent<{ open: boolean }>;
+    deny_device_permission: CustomEvent<{ denied: boolean }>;
+    screenshare_toggle: CustomEvent<{ enabled: boolean }>;
+    streaming_status_change: CustomEvent<{ status: string }>;
+    connection_status_change: CustomEvent<{ status: "stable" | "unstable" }>;
+}
+
+interface WherebyEmbedElementCommands {
+    startRecording: () => void;
+    stopRecording: () => void;
+    startStreaming: () => void;
+    stopStreaming: () => void;
+    toggleCamera: (enabled?: boolean) => void;
+    toggleMicrophone: (enabled?: boolean) => void;
+    toggleScreenshare: (enabled?: boolean) => void;
+    toogleChat: (enabled?: boolean) => void;
+}
+
+export interface WherebyEmbedElement extends HTMLIFrameElement, WherebyEmbedElementCommands {
+    addEventListener<K extends keyof (WherebyEmbedElementEventMap & HTMLElementEventMap)>(
+        type: K,
+        listener: (this: HTMLIFrameElement, ev: (WherebyEmbedElementEventMap & HTMLElementEventMap)[K]) => void,
+        options?: boolean | AddEventListenerOptions | undefined
+    ): void;
+}
+
 declare global {
     namespace JSX {
         interface IntrinsicElements {
-            ["whereby-embed"]: Partial<WherebyEmbedAttributes>;
+            ["whereby-embed"]: Partial<WherebyEmbedElementAttributes>;
         }
     }
 }
@@ -132,24 +171,32 @@ define("WherebyEmbed", {
     stopStreaming() {
         this._postCommand("stop_streaming");
     },
-    toggleCamera(enabled: boolean) {
+    toggleCamera(enabled?: boolean) {
         this._postCommand("toggle_camera", [enabled]);
     },
-    toggleMicrophone(enabled: boolean) {
+    toggleMicrophone(enabled?: boolean) {
         this._postCommand("toggle_microphone", [enabled]);
     },
-    toggleScreenshare(enabled: boolean) {
+    toggleScreenshare(enabled?: boolean) {
         this._postCommand("toggle_screenshare", [enabled]);
     },
-    toggleChat(enabled: boolean) {
+    toggleChat(enabled?: boolean) {
         this._postCommand("toggle_chat", [enabled]);
     },
 
-    onmessage({ origin, data }: { origin: string; data: { type: string; payload: string } }) {
+    onmessage<E extends keyof WherebyEmbedElementEventMap>({
+        origin,
+        data,
+    }: {
+        origin: string;
+        data: { type: E; payload: WherebyEmbedElementEventMap[E] };
+    }) {
         if (!this.roomUrl || origin !== this.roomUrl.origin) return;
         const { type, payload: detail } = data;
+
         this.dispatchEvent(new CustomEvent(type, { detail }));
     },
+
     render() {
         const {
             avatarurl: avatarUrl,
@@ -201,7 +248,7 @@ define("WherebyEmbed", {
         title=${title || "Video calling component"}
         ref=${this.iframe}
         src=${this.roomUrl}
-        allow="autoplay; camera; microphone; fullscreen; speaker; display-capture" />
+        allow="autoplay; camera; microphone; fullscreen; speaker; display-capture; media-capture" />
       `;
     },
 });

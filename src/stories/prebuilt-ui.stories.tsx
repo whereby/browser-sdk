@@ -1,6 +1,7 @@
 import { Story } from "@storybook/react";
-import React from "react";
+import React, { useEffect, useRef, useState } from "react";
 import "../lib/embed";
+import type { WherebyEmbedElement } from "../lib/embed";
 
 interface WherebyEmbedAttributes {
     audio: boolean;
@@ -75,8 +76,21 @@ const WherebyEmbed = ({
     video,
     virtualBackgroundUrl,
 }: Partial<WherebyEmbedAttributes>) => {
+    const elmRef = useRef<WherebyEmbedElement>(null);
+    const [cameraEnabled, setCameraEnabled] = useState(video);
+
+    useEffect(() => {
+        const element = elmRef.current;
+
+        element?.addEventListener("camera_toggle", (e) => {
+            const cameraEnabled = e.detail.enabled;
+            setCameraEnabled(cameraEnabled);
+        });
+    }, []);
+
     return (
         <p>
+            <span>Camera: {cameraEnabled ? "ENABLED" : "DISABLED"}</span>
             <whereby-embed
                 audio={offOn(audio)}
                 avatarUrl={avatarUrl}
@@ -98,15 +112,16 @@ const WherebyEmbed = ({
                 virtualBackgroundUrl={virtualBackgroundUrl}
                 room={room}
                 style={{ height: "100vh", width: "100%" }}
+                ref={elmRef}
             />
         </p>
     );
 };
 
 const Template: Story<Partial<WherebyEmbedAttributes>> = (args) => WherebyEmbed(args);
-export const WherebyEmbedElement = Template.bind({});
+export const WherebyEmbedElementExample = Template.bind({});
 
-WherebyEmbedElement.args = {
+WherebyEmbedElementExample.args = {
     audio: true,
     avatarUrl: "",
     background: true,
@@ -127,7 +142,7 @@ WherebyEmbedElement.args = {
     virtualBackgroundUrl: "",
 };
 
-WherebyEmbedElement.parameters = {
+WherebyEmbedElementExample.parameters = {
     docs: {
         transformSource: (src: string) => {
             return (src || "").replace(/><iframe(.+)$/, " />");

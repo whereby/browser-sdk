@@ -17,6 +17,7 @@ import { selectSignalStatus } from "./signalConnection";
 import { selectDeviceId } from "./deviceCredentials";
 import { doSetDevice, selectIsCameraEnabled, selectIsMicrophoneEnabled, selectLocalMediaStream } from "./localMedia";
 import { doStartScreenshare, selectLocalScreenshareStream, stopScreenshare } from "./localScreenshare";
+import { selectRoomConnectionSessionId } from "./roomConnection";
 
 type RtcAnalyticsCustomEvent = {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -99,6 +100,12 @@ export const rtcAnalyticsCustomEvents: { [key: string]: RtcAnalyticsCustomEvent 
         getValue: (state: RootState) => selectSignalStatus(state),
         getOutput: (value) => ({ status: value }),
     },
+    roomSessionId: {
+        action: null,
+        rtcEventName: "roomSessionId",
+        getValue: (state: RootState) => selectRoomConnectionSessionId(state),
+        getOutput: (value) => ({ roomSessionId: value }),
+    },
     rtcConnectionStatus: {
         action: null,
         rtcEventName: "rtcConnectionStatus",
@@ -162,6 +169,17 @@ export const doRtcAnalyticsCustomEventsInitialize = createAppThunk(() => (dispat
     const rtcManager = selectRtcConnectionRaw(state).rtcManager;
 
     if (!rtcManager) return;
+
+    // RTC stats require a `insightsStats` event to be sent to set the timestamp.
+    // This is a temporary workaround, we just send one dummy event on initialization.
+    rtcManager.sendStatsCustomEvent("insightsStats", {
+        _time: Date.now(),
+        ls: 0,
+        lr: 0,
+        bs: 0,
+        br: 0,
+        cpu: 0,
+    });
 
     Object.values(rtcAnalyticsCustomEvents).forEach(({ rtcEventName, getValue, getOutput }) => {
         const value = getValue(state);

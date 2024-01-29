@@ -77,6 +77,7 @@ function App() {
                     minimal="on"
                     room={roomUrl}
                     style={{ width: "100%", height: "100vh" }}
+                    // @ts-ignore
                     ref={elmRef}
                 />
             </div>

@@ -37,11 +37,13 @@ export type ConnectionStatus =
  */
 
 export interface RoomConnectionState {
+    session: { createdAt: string; id: string } | null;
     status: ConnectionStatus;
     error: unknown;
 }
 
 const initialState: RoomConnectionState = {
+    session: null,
     status: "initializing",
     error: null,
 };
@@ -72,6 +74,23 @@ export const roomConnectionSlice = createSlice({
             return {
                 ...state,
                 status: "connected",
+                session: action.payload.room?.session ?? null,
+            };
+        });
+        builder.addCase(signalEvents.newClient, (state, action) => {
+            return {
+                ...state,
+                session: action.payload.room?.session ?? null,
+            };
+        });
+        builder.addCase(signalEvents.roomSessionEnded, (state, action) => {
+            if (state.session?.id !== action.payload.roomSessionId) {
+                return state;
+            }
+
+            return {
+                ...state,
+                session: null,
             };
         });
         builder.addCase(socketReconnecting, (state) => {
@@ -161,6 +180,8 @@ export const doConnectRoom = createAppThunk(() => (dispatch, getState) => {
  */
 
 export const selectRoomConnectionRaw = (state: RootState) => state.roomConnection;
+export const selectRoomConnectionSession = (state: RootState) => state.roomConnection.session;
+export const selectRoomConnectionSessionId = (state: RootState) => state.roomConnection.session?.id;
 export const selectRoomConnectionStatus = (state: RootState) => state.roomConnection.status;
 
 /**

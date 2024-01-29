@@ -17,6 +17,7 @@ describe("roomConnectionSlice", () => {
 
                 expect(result).toEqual({
                     status: "room_locked",
+                    session: null,
                     error: null,
                 });
             });
@@ -33,6 +34,7 @@ describe("roomConnectionSlice", () => {
 
                 expect(result).toEqual({
                     status: "connected",
+                    session: null,
                     error: null,
                 });
             });

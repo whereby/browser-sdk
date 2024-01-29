@@ -1,4 +1,4 @@
-import { createStore } from "../store.setup";
+import { createStore, mockRtcManager } from "../store.setup";
 import { doRtcAnalyticsCustomEventsInitialize, rtcAnalyticsState } from "../../slices/rtcAnalytics";
 import { diff } from "deep-object-diff";
 
@@ -27,5 +27,6 @@ describe("actions", () => {
                 "userRole",
             ])
         );
+        expect(mockRtcManager.sendStatsCustomEvent).toHaveBeenCalledWith("insightsStats", expect.any(Object));
     });
 });
