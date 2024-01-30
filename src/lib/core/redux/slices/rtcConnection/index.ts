@@ -11,7 +11,7 @@ import RtcManagerDispatcher, {
 import { createReactor, startAppListening } from "../../listenerMiddleware";
 import { selectRemoteParticipants, streamStatusUpdated } from "../remoteParticipants";
 import { StreamState } from "../../../../../lib/RoomParticipant";
-import { selectAppWantsToJoin } from "../app";
+import { selectAppIsNodeSdk, selectAppWantsToJoin } from "../app";
 import {
     selectIsCameraEnabled,
     selectIsMicrophoneEnabled,
@@ -23,6 +23,7 @@ import { rtcEvents } from "./actions";
 import { StreamStatusUpdate } from "./types";
 import { signalEvents } from "../signalConnection/actions";
 import { doStartScreenshare, stopScreenshare } from "../localScreenshare";
+import { Chrome111 as MediasoupDeviceHandler } from "mediasoup-client/lib/handlers/Chrome111";
 
 export const createWebRtcEmitter = (dispatch: AppDispatch) => {
     return {
@@ -165,6 +166,7 @@ export const doConnectRtc = createAppThunk(() => (dispatch, getState) => {
     const dispatcher = selectRtcConnectionRaw(state).rtcManagerDispatcher;
     const isCameraEnabled = selectIsCameraEnabled(state);
     const isMicrophoneEnabled = selectIsMicrophoneEnabled(state);
+    const isNodeSdk = selectAppIsNodeSdk(state);
 
     if (dispatcher) {
         return;
@@ -193,6 +195,7 @@ export const doConnectRtc = createAppThunk(() => (dispatch, getState) => {
             vp9On: false,
             h264On: false,
             simulcastScreenshareOn: false,
+            deviceHandlerFactory: isNodeSdk ? MediasoupDeviceHandler.createFactory() : undefined,
         },
     });
 

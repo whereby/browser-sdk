@@ -1,6 +1,6 @@
 {
     "name": "@whereby.com/browser-sdk",
-    "version": "2.1.0-beta2",
+    "version": "2.1.0-beta3",
     "description": "Modules for integration Whereby video in web apps",
     "author": "Whereby AS",
     "license": "MIT",
@@ -11,6 +11,10 @@
     "browserslist": "> 0.5%, last 2 versions, not dead",
     "source": "src/index.js",
     "exports": {
+        "./core": {
+            "import": "./dist/core/index.js",
+            "types": "./dist/core/index.d.ts"
+        },
         "./react": {
             "import": "./dist/react/index.esm.js",
             "types": "./dist/react/index.d.ts"
@@ -26,6 +30,9 @@
     },
     "typesVersions": {
         "*": {
+            "core": [
+                "dist/core/index.d.ts"
+            ],
             "react": [
                 "dist/react/index.d.ts"
             ],
@@ -109,7 +116,7 @@
     "dependencies": {
         "@reduxjs/toolkit": "^2.0.1",
         "@swc/helpers": "^0.3.13",
-        "@whereby/jslib-media": "whereby/jslib-media.git#1.4.1",
+        "@whereby/jslib-media": "whereby/jslib-media.git#1.7.2",
         "axios": "^1.2.3",
         "btoa": "^1.2.1",
         "events": "^3.3.0",

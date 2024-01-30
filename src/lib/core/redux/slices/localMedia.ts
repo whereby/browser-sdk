@@ -3,10 +3,11 @@ import { getStream, getUpdatedDevices, getDeviceData } from "@whereby/jslib-medi
 import { createAppAsyncThunk, createAppThunk } from "../../redux/thunk";
 import { RootState } from "../../redux/store";
 import { createReactor, startAppListening } from "../../redux/listenerMiddleware";
-import { doAppJoin, selectAppWantsToJoin } from "./app";
+import { doAppJoin, selectAppIsNodeSdk, selectAppWantsToJoin } from "./app";
 import debounce from "../../../utils/debounce";
 
 export type LocalMediaOptions = {
+    disabled?: boolean;
     audio: boolean;
     video: boolean;
 };
@@ -606,7 +607,11 @@ export const selectLocalMediaShouldStartWithOptions = createSelector(
     selectAppWantsToJoin,
     selectLocalMediaStatus,
     selectLocalMediaOptions,
-    (appWantsToJoin, localMediaStatus, localMediaOptions) => {
+    selectAppIsNodeSdk,
+    (appWantsToJoin, localMediaStatus, localMediaOptions, isNodeSdk) => {
+        if (isNodeSdk) {
+            return;
+        }
         if (appWantsToJoin && localMediaStatus === "" && localMediaOptions) {
             return localMediaOptions;
         }
