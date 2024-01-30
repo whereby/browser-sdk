@@ -6,6 +6,7 @@ import fakeWebcamFrame from "../lib/utils/fakeWebcamFrame";
 import fakeAudioStream from "../lib/utils/fakeAudioStream";
 import "./styles.css";
 import Grid from "./components/Grid";
+import { Grid as VideoGrid } from "../lib/react/Grid";
 
 export default {
     title: "Examples/Custom UI",
@@ -171,4 +172,64 @@ RoomConnectionStrictMode.parameters = {
             code: "Disabled for this story, see https://github.com/storybookjs/storybook/issues/11554",
         },
     },
+};
+
+export const GridStory = ({ roomUrl }: { roomUrl: string; displayName?: string }) => {
+    if (!roomUrl || !roomUrl.match(roomRegEx)) {
+        return <p>Set room url on the Controls panel</p>;
+    }
+
+    const roomConnection = useRoomConnection(roomUrl, { localMediaOptions: { audio: false, video: true } });
+
+    return (
+        <div style={{ height: "100vh" }}>
+            <VideoGrid roomConnection={roomConnection} videoGridGap={10} />
+        </div>
+    );
+};
+
+export const GridWithCustomVideosStory = ({ roomUrl }: { roomUrl: string; displayName?: string }) => {
+    if (!roomUrl || !roomUrl.match(roomRegEx)) {
+        return <p>Set room url on the Controls panel</p>;
+    }
+
+    const roomConnection = useRoomConnection(roomUrl, { localMediaOptions: { audio: false, video: true } });
+
+    return (
+        <div style={{ height: "100vh" }}>
+            <VideoGrid
+                roomConnection={roomConnection}
+                videoGridGap={10}
+                renderParticipant={({ participant }) => {
+                    if (!participant.stream) {
+                        return null;
+                    }
+
+                    return (
+                        <div
+                            style={{
+                                display: "flex",
+                                flexDirection: "column",
+                                alignItems: "center",
+                                justifyContent: "center",
+                                height: "100%",
+                            }}
+                        >
+                            <VideoView
+                                style={{
+                                    border: "4px dashed red",
+                                    boxSizing: "border-box",
+                                    borderRadius: "100%",
+                                    objectFit: "cover",
+                                    width: "60%",
+                                }}
+                                stream={participant.stream}
+                            />
+                            <p>{participant.displayName}</p>
+                        </div>
+                    );
+                }}
+            />
+        </div>
+    );
 };

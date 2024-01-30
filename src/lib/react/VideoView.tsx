@@ -1,4 +1,4 @@
-import React, { useEffect, useRef } from "react";
+import * as React from "react";
 import debounce from "../utils/debounce";
 
 interface VideoViewSelfProps {
@@ -7,16 +7,17 @@ interface VideoViewSelfProps {
     mirror?: boolean;
     style?: React.CSSProperties;
     onResize?: ({ width, height, stream }: { width: number; height: number; stream: MediaStream }) => void;
+    onSetAspectRatio?: ({ aspectRatio }: { aspectRatio: number }) => void;
 }
 
 type VideoViewProps = VideoViewSelfProps &
     React.DetailedHTMLProps<React.VideoHTMLAttributes<HTMLVideoElement>, HTMLVideoElement>;
 
-export default ({ muted, mirror = false, stream, onResize, ...rest }: VideoViewProps) => {
-    const videoEl = useRef<HTMLVideoElement>(null);
+export default ({ muted, mirror = false, stream, onResize, onSetAspectRatio, ...rest }: VideoViewProps) => {
+    const videoEl = React.useRef<HTMLVideoElement>(null);
 
-    useEffect(() => {
-        if (!videoEl.current || !onResize) {
+    React.useEffect(() => {
+        if (!videoEl.current) {
             return;
         }
 
@@ -24,11 +25,19 @@ export default ({ muted, mirror = false, stream, onResize, ...rest }: VideoViewP
             debounce(
                 () => {
                     if (videoEl.current && stream?.id) {
-                        onResize({
-                            width: videoEl.current.clientWidth,
-                            height: videoEl.current.clientHeight,
-                            stream,
-                        });
+                        if (onResize) {
+                            onResize({
+                                width: videoEl.current.clientWidth,
+                                height: videoEl.current.clientHeight,
+                                stream,
+                            });
+                        }
+                        const h = videoEl.current.videoHeight;
+                        const w = videoEl.current.videoWidth;
+
+                        if (w && h && w + h > 20 && onSetAspectRatio) {
+                            onSetAspectRatio({ aspectRatio: w / h });
+                        }
                     }
                 },
                 { delay: 1000, edges: true }
@@ -42,7 +51,7 @@ export default ({ muted, mirror = false, stream, onResize, ...rest }: VideoViewP
         };
     }, [stream]);
 
-    useEffect(() => {
+    React.useEffect(() => {
         if (!videoEl.current) {
             return;
         }

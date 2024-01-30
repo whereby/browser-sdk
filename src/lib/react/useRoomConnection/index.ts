@@ -1,5 +1,5 @@
 import * as React from "react";
-import { RoomConnectionState, RoomConnectionActions, UseRoomConnectionOptions } from "./types";
+import { RoomConnectionState, UseRoomConnectionOptions, RoomConnectionRef, VideoViewComponentProps } from "./types";
 import { Store, createStore, observeStore } from "../../core/redux/store";
 import VideoView from "../VideoView";
 import { createServices } from "../../services";
@@ -21,19 +21,6 @@ const initialState: RoomConnectionState = {
     connectionStatus: "initializing",
     screenshares: [],
     waitingParticipants: [],
-};
-
-type VideoViewComponentProps = Omit<React.ComponentProps<typeof VideoView>, "onResize">;
-
-interface RoomConnectionComponents {
-    VideoView: (props: VideoViewComponentProps) => ReturnType<typeof VideoView>;
-}
-
-export type RoomConnectionRef = {
-    state: RoomConnectionState;
-    actions: RoomConnectionActions;
-    components: RoomConnectionComponents;
-    _ref: Store;
 };
 
 const defaultRoomConnectionOptions: UseRoomConnectionOptions = {
