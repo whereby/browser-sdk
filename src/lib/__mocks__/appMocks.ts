@@ -1,7 +1,7 @@
 import { Credentials } from "../api";
 import Organization from "../api/models/Organization";
 import { SignalClient } from "@whereby/jslib-media/src/utils/ServerSocket";
-import { RemoteParticipant } from "../RoomParticipant";
+import { RemoteParticipant } from "../core";
 import { v4 as uuid } from "uuid";
 import MockMediaStream from "./MediaStream";
 
