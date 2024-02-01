@@ -1,5 +1,9 @@
 import * as React from "react";
-import { LocalParticipant, RemoteParticipant, VideoView } from "..";
+import type {
+    LocalParticipantState as LocalParticipant,
+    RemoteParticipantState as RemoteParticipant,
+} from "../useRoomConnection/types";
+import VideoView from "../VideoView";
 import { calculateLayout } from "./helpers/stageLayout";
 import { Bounds, Frame, Origin, makeFrame } from "./helpers/layout";
 import { makeVideoCellView } from "./helpers/cellView";
@@ -46,6 +50,7 @@ function GridVideoCellView({
                 <VideoView
                     stream={participant.stream}
                     onSetAspectRatio={({ aspectRatio }) => handleAspectRatioChange({ ar: aspectRatio })}
+                    // eslint-disable-next-line @typescript-eslint/no-explicit-any
                     onResize={onResize as any}
                 />
             ) : null}
