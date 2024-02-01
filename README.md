@@ -1,9 +1,6 @@
 # `@whereby.com/browser-sdk`
 
-Whereby browser SDK is a library for seamless integration of Whereby
-(https://whereby.com) video calls into your web application.
-
-**For a more detailed set of instructions, including the building of a [simple telehealth app](https://docs.whereby.com/whereby-101/create-your-video-experience/in-a-web-page/using-whereby-react-hooks-build-a-telehealth-app), please see our [documentation](https://docs.whereby.com/reference/react-hooks-reference).**
+The Whereby browser SDK is a library for seamless integration of [Whereby](https://whereby.com/) video calls into your web application. You can use it to build a [completely custom integration](https://docs.whereby.com/whereby-101/create-your-video/in-a-web-page/using-whereby-react-hooks-build-a-telehealth-app) of Whereby-powered video calls using [React Hooks](https://docs.whereby.com/reference/react-hooks-reference), or you can also embed pre-built Whereby rooms in a web application [using a Web Component](https://docs.whereby.com/whereby-101/create-your-video/in-a-web-page/using-the-whereby-embed-element).
 
 ## Installation
 
@@ -21,8 +18,8 @@ yarn add @whereby.com/browser-sdk
 
 > [!IMPORTANT]
 > In order to make use of this functionality, you must have a Whereby account
-> from which you can create room urls, either [manually or through our
-> API](https://docs.whereby.com/creating-and-deleting-rooms).
+> from which you can create room URLs, either [manually or through the Whereby
+> API](https://docs.whereby.com/whereby-101/creating-and-deleting-rooms).
 
 ### React hooks
 
@@ -122,10 +119,9 @@ export default function MyNextVideoExperience() {
 
 ### Web component for embedding
 
-Use the `<whereby-embed />` web component to make use of Whereby's pre-built
-responsive UI. Refer to our
-[documentation](https://docs.whereby.com/embedding-rooms/in-a-web-page/using-the-whereby-embed-element)
-to learn which attributes are supported.
+Use the `<whereby-embed />` web component to make use of Whereby's pre-built responsive UI. Refer to our [guide](https://docs.whereby.com/whereby-101/create-your-video/in-a-web-page/using-the-whereby-embed-element) and 
+[Web Component Reference](https://docs.whereby.com/reference/using-the-whereby-embed-element)
+to learn which attributes are supported, how to listen to events, and send commands.
 
 #### React
 
@@ -141,14 +137,19 @@ export default MyComponent;
 
 #### In plain HTML
 
-```html
+You can import it in your project as follows:
+
+```
+import "@whereby.com/browser-sdk/embed"
+```
+
+And embed rooms using the Web Component.
+
+```
 <html>
-    <head>
-        <script src="...."></script>
-    </head>
     <body>
         <div class="container">
-            <whereby-embed room="<room_url>" />
+            <whereby-embed room="some-room" />
         </div>
     </body>
 </html>
@@ -157,7 +158,13 @@ export default MyComponent;
 > [!NOTE]
 > Although we have just higlighted two combinations of how to load and use the
 > web component, it should be possible to use this library with all the major
-> frontend frameworks.
+> frontend frameworks and bundlers.
+> 
+> If you don't want to use a bundler, you can use a script tag, like so:
+> ```
+> <script src="https://cdn.srv.whereby.com/embed/v2-embed.js"></script>
+> ```
+
 
 ## Migrating from v1 to v2
 
