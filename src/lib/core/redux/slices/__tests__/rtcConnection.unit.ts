@@ -5,7 +5,7 @@ import {
     selectStreamsToAccept,
 } from "../rtcConnection";
 import { oneOf, randomRemoteParticipant } from "../../../../../lib/__mocks__/appMocks";
-import { StreamState } from "../../../../../lib/RoomParticipant";
+import { StreamState } from "../../../../../lib/core/RoomParticipant";
 
 describe("rtcConnectionSlice", () => {
     describe("reactors", () => {

@@ -1,4 +1,4 @@
-import { LocalParticipant, RemoteParticipant, Screenshare } from "../../RoomParticipant";
+import { LocalParticipant, RemoteParticipant, Screenshare } from "../../core";
 
 import { ChatMessage as SignalChatMessage } from "@whereby/jslib-media/src/utils/ServerSocket";
 import { LocalMediaOptions } from "../../core/redux/slices/localMedia";

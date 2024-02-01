@@ -1,4 +1,4 @@
-import { StreamState } from "../../../../../lib/RoomParticipant";
+import { StreamState } from "../../../../../lib/core/RoomParticipant";
 
 export interface StreamStatusUpdate {
     clientId: string;

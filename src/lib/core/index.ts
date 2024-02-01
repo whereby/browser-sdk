@@ -8,3 +8,4 @@ export * from "./redux/slices/remoteParticipants";
 export * from "./redux/slices/rtcConnection";
 export * from "./redux/slices/signalConnection";
 export * from "../version";
+export * from "./RoomParticipant";
