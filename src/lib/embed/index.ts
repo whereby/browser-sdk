@@ -51,6 +51,7 @@ interface WherebyEmbedElementEventMap {
     microphone_toggle: CustomEvent<{ enabled: boolean }>;
     camera_toggle: CustomEvent<{ enabled: boolean }>;
     chat_toggle: CustomEvent<{ open: boolean }>;
+    people_toggle: CustomEvent<{ open: boolean }>;
     pip_toggle: CustomEvent<{ open: boolean }>;
     deny_device_permission: CustomEvent<{ denied: boolean }>;
     screenshare_toggle: CustomEvent<{ enabled: boolean }>;
