@@ -27,6 +27,7 @@ const events = [
     "participant_join",
     "participant_leave",
     "participantupdate",
+    "people_toggle",
     "pip_toggle",
     "screenshare_toggle",
 ];
