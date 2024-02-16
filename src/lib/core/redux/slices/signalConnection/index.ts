@@ -8,6 +8,7 @@ import ServerSocket from "@whereby/jslib-media/src/utils/ServerSocket";
 import { Credentials } from "../../../../../lib/api";
 import { appLeft, selectAppWantsToJoin } from "../app";
 import { signalEvents } from "./actions";
+export * from "./actions";
 
 function forwardSocketEvents(socket: ServerSocket, dispatch: ThunkDispatch<RootState, unknown, AnyAction>) {
     socket.on("room_joined", (payload) => dispatch(signalEvents.roomJoined(payload)));
