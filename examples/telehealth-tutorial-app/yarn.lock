@@ -2578,8 +2578,9 @@
     events "^3.3.0"
     heresy "^1.0.4"
 
-"@whereby/jslib-media@github:whereby/jslib-media#1.4.1":
+"@whereby/jslib-media@whereby/jslib-media.git#1.4.1":
   version "1.4.1"
+  uid abc55b7e2d3af9c71cb3f3a2953291bb79725064
   resolved "https://codeload.github.com/whereby/jslib-media/tar.gz/abc55b7e2d3af9c71cb3f3a2953291bb79725064"
   dependencies:
     events "^3.3.0"
@@ -4136,9 +4137,9 @@ ee-first@1.1.1:
   integrity sha512-WMwm9LhRUo+WUaRN+vRuETqG89IgZphVSNkdFgeb6sS/E4OrDIN7t48CAewSHXc6C8lefD8KKfr5vY61brQlow==
 
 ejs@^3.1.6:
-  version "3.1.9"
-  resolved "https://registry.yarnpkg.com/ejs/-/ejs-3.1.9.tgz#03c9e8777fe12686a9effcef22303ca3d8eeb361"
-  integrity sha512-rC+QVNMJWv+MtPgkt0y+0rVEIdbtxVADApW9JXrUVlzHetgcyczP/E7DJmWJ4fJCZF2cPcBk0laWO9ZHMG3DmQ==
+  version "3.1.10"
+  resolved "https://registry.yarnpkg.com/ejs/-/ejs-3.1.10.tgz#69ab8358b14e896f80cc39e62087b88500c3ac3b"
+  integrity sha512-UeJmFfOrAQS8OJWPZ4qtgHyWExa088/MtK5UEyoJGFH67cDEXkZSviOiKRCZ4Xij0zxI3JECgYs3oKx+AizQBA==
   dependencies:
     jake "^10.8.5"
 
